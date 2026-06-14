@@ -1,0 +1,117 @@
+<?php
+
+use SlimVolume\Frontend\PlayerData;
+use SlimVolume\Frontend\TemplateLoader;
+
+if (! defined('ABSPATH')) {
+    exit;
+}
+
+get_header();
+
+$release_id = get_the_ID();
+$config     = PlayerData::get_release_page_config($release_id);
+$playlist   = $config['playlist'] ?? [];
+?>
+
+<main class="sv-release sv-release-single">
+    <?php while (have_posts()) : the_post(); ?>
+        <p class="sv-breadcrumb">
+            <a href="<?php echo esc_url(home_url('/')); ?>">Home</a>
+            <span aria-hidden="true"> / </span>
+            <a href="<?php echo esc_url(get_post_type_archive_link('sv_release')); ?>">Music</a>
+            <span aria-hidden="true"> / </span>
+            <span><?php the_title(); ?></span>
+        </p>
+
+        <header class="sv-release-hero">
+            <?php if (has_post_thumbnail()) : ?>
+                <div class="sv-release-hero__art">
+                    <?php the_post_thumbnail('large'); ?>
+                </div>
+            <?php endif; ?>
+
+            <div class="sv-release-hero__content">
+                <h1><?php the_title(); ?></h1>
+
+                <?php
+                $release_date = (string) get_post_meta($release_id, '_sv_release_date', true);
+                $release_type = (string) get_post_meta($release_id, '_sv_release_type', true);
+                ?>
+
+                <?php if ($release_type || $release_date) : ?>
+                    <p class="sv-release-hero__meta">
+                        <?php echo esc_html(trim($release_type . ' ' . $release_date)); ?>
+                    </p>
+                <?php endif; ?>
+
+                <div class="sv-release-hero__description">
+                    <?php the_content(); ?>
+                </div>
+            </div>
+        </header>
+
+        <?php if ($playlist) : ?>
+            <section class="sv-release-tracklist">
+                <h2><?php esc_html_e('Tracks', 'slim-volume'); ?></h2>
+
+                <ol class="sv-track-list">
+                    <?php foreach ($playlist as $index => $track) : ?>
+                        <?php
+                        $track_id    = (int) ($track['id'] ?? 0);
+                        $release     = $track['release'] ?? [];
+                        $release_id_from_track = (int) ($release['id'] ?? $release_id);
+                        ?>
+                        <li
+                            class="sv-track-row"
+                            data-sv-track-row
+                            data-sv-track-id="<?php echo esc_attr((string) $track_id); ?>"
+                            data-sv-release-id="<?php echo esc_attr((string) $release_id_from_track); ?>"
+                            data-sv-track-slug="<?php echo esc_attr((string) ($track['slug'] ?? '')); ?>"
+                            data-sv-release-slug="<?php echo esc_attr((string) ($release['slug'] ?? '')); ?>"
+                            data-sv-track-index="<?php echo esc_attr((string) $index); ?>"
+                        >
+                            <button
+                                type="button"
+                                class="sv-track-row__play"
+                                data-sv-play-button="true"
+                                aria-label="<?php echo esc_attr(sprintf(__('Play %s', 'slim-volume'), $track['title'] ?? 'track')); ?>"
+                            >
+                                ▶
+                            </button>
+
+                            <a class="sv-track-row__title" href="<?php echo esc_url((string) ($track['trackUrl'] ?? '#')); ?>">
+                                <?php echo esc_html((string) ($track['title'] ?? '')); ?>
+                            </a>
+
+                            <?php if (! empty($track['duration'])) : ?>
+                                <span class="sv-track-row__duration">
+                                    <?php echo esc_html((string) $track['duration']); ?>
+                                </span>
+                            <?php endif; ?>
+                        </li>
+                    <?php endforeach; ?>
+                </ol>
+            </section>
+        <?php endif; ?>
+
+        <?php
+        $credits = (string) get_post_meta($release_id, '_sv_release_credits', true);
+        ?>
+
+        <?php if ($credits) : ?>
+            <section class="sv-release-credits">
+                <h2><?php esc_html_e('Credits', 'slim-volume'); ?></h2>
+                <div class="sv-rich-text">
+                    <?php echo wp_kses_post(wpautop($credits)); ?>
+                </div>
+            </section>
+        <?php endif; ?>
+
+        <?php PlayerData::render_page_config($config); ?>
+        <?php TemplateLoader::render('partials/player-shell.php'); ?>
+    <?php endwhile; ?>
+</main>
+
+<?php
+get_footer();
