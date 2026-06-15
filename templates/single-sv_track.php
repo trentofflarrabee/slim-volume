@@ -55,7 +55,7 @@ if ($can_download && $download_url) {
 $track_links = array_filter($track_links);
 ?>
 
-<main class="sv-track sv-track-single">
+<main id="primary" class="sv-track sv-track-single" data-sv-page-content>
     <?php while (have_posts()) : the_post(); ?>
         <p class="sv-breadcrumb">
             <a href="<?php echo esc_url(home_url('/')); ?>">Home</a>
@@ -180,9 +180,10 @@ $track_links = array_filter($track_links);
         <?php endif; ?>
 
         <?php PlayerData::render_page_config($config); ?>
-        <?php TemplateLoader::render('partials/player-shell.php'); ?>
     <?php endwhile; ?>
 </main>
+
+<?php require SLIM_VOLUME_PATH . 'templates/partials/player-shell.php'; ?>
 
 <?php
 get_footer();

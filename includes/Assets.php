@@ -41,6 +41,30 @@ final class Assets
                 true
             );
         }
+
+        $navigation_js_path = SLIM_VOLUME_PATH . 'assets/js/slim-volume-navigation.js';
+
+        if (file_exists($navigation_js_path)) {
+            wp_enqueue_script(
+                'slim-volume-navigation',
+                SLIM_VOLUME_URL . 'assets/js/slim-volume-navigation.js',
+                ['slim-volume-player'],
+                filemtime($navigation_js_path),
+                true
+            );
+
+            wp_add_inline_script(
+                'slim-volume-navigation',
+                'window.SVNavigationConfig = ' . wp_json_encode(
+                    [
+                        'musicBaseUrl'    => home_url('/music/'),
+                        'contentSelector' => '[data-sv-page-content]',
+                    ]
+                ) . ';',
+                'before'
+            );
+        }
+
     }
 
     public static function enqueue_admin(string $hook): void

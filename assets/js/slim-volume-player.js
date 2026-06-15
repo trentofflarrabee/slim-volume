@@ -12,14 +12,14 @@
     drawerOpen: false,
 
     visualizer: {
-    context: null,
-    analyser: null,
-    source: null,
-    data: null,
-    frame: null,
-    canvasContext: null,
-    initialized: false,
-    failed: false,
+      context: null,
+      analyser: null,
+      source: null,
+      data: null,
+      frame: null,
+      canvasContext: null,
+      initialized: false,
+      failed: false,
     },
 
     els: {},
@@ -55,7 +55,9 @@
       this.els.art = this.root.querySelector("[data-sv-player-art]");
 
       this.els.playToggle = this.root.querySelector("[data-sv-play-toggle]");
-      this.els.playToggleIcon = this.root.querySelector("[data-sv-play-toggle-icon]");
+      this.els.playToggleIcon = this.root.querySelector(
+        "[data-sv-play-toggle-icon]",
+      );
       this.els.prev = this.root.querySelector("[data-sv-prev]");
       this.els.next = this.root.querySelector("[data-sv-next]");
 
@@ -65,20 +67,32 @@
       this.els.duration = this.root.querySelector("[data-sv-duration]");
 
       this.els.drawer = this.root.querySelector("[data-sv-drawer]");
-      this.els.drawerToggle = this.root.querySelector("[data-sv-drawer-toggle]");
-      this.els.drawerToggleLabel = this.root.querySelector("[data-sv-drawer-toggle-label]");
+      this.els.drawerToggle = this.root.querySelector(
+        "[data-sv-drawer-toggle]",
+      );
+      this.els.drawerToggleLabel = this.root.querySelector(
+        "[data-sv-drawer-toggle-label]",
+      );
       this.els.queueCount = this.root.querySelector("[data-sv-queue-count]");
       this.els.drawerClose = this.root.querySelector("[data-sv-drawer-close]");
       this.els.drawerArt = this.root.querySelector("[data-sv-drawer-art]");
       this.els.drawerTitle = this.root.querySelector("[data-sv-drawer-title]");
-      this.els.drawerRelease = this.root.querySelector("[data-sv-drawer-release]");
-      this.els.drawerTrackLink = this.root.querySelector("[data-sv-drawer-track-link]");
-      this.els.drawerReleaseLink = this.root.querySelector("[data-sv-drawer-release-link]");
+      this.els.drawerRelease = this.root.querySelector(
+        "[data-sv-drawer-release]",
+      );
+      this.els.drawerTrackLink = this.root.querySelector(
+        "[data-sv-drawer-track-link]",
+      );
+      this.els.drawerReleaseLink = this.root.querySelector(
+        "[data-sv-drawer-release-link]",
+      );
       this.els.drawerLinks = this.root.querySelector("[data-sv-drawer-links]");
       this.els.queue = this.root.querySelector("[data-sv-queue]");
 
       this.els.visualizer = this.root.querySelector("[data-sv-visualizer]");
-      this.els.visualizerCanvas = this.root.querySelector("[data-sv-visualizer-canvas]");
+      this.els.visualizerCanvas = this.root.querySelector(
+        "[data-sv-visualizer-canvas]",
+      );
     },
 
     publicApi() {
@@ -139,8 +153,12 @@
           return app.currentIndex;
         },
 
-        configureFromPage() {
-          app.configureFromPage();
+        configureFromPage(options = {}) {
+          app.configureFromPage(options);
+        },
+
+        refreshPage(options = {}) {
+          app.refreshPage(options);
         },
 
         syncNowPlayingUi() {
@@ -164,22 +182,34 @@
         },
 
         startVisualizer() {
-            app.startVisualizer();
-            },
-
-            stopVisualizer() {
-            app.stopVisualizer();
+          app.startVisualizer();
         },
 
+        stopVisualizer() {
+          app.stopVisualizer();
+        },
       };
     },
 
-    configureFromPage() {
+    configureFromPage(options = {}) {
+      const preserveActive = !!options.preserveActive;
+      const hasActiveAudio = this.hasActiveAudio();
+
       const script = document.querySelector(
-        'script[type="application/json"][data-sv-player-config]'
+        'script[type="application/json"][data-sv-player-config]',
       );
 
-      if (!script) return;
+      if (!script) {
+        this.albumTracklist = [];
+
+        if (!preserveActive || !hasActiveAudio) {
+          this.playlist = [];
+          this.currentIndex = -1;
+          this.currentTrack = null;
+        }
+
+        return;
+      }
 
       let config = null;
 
@@ -192,6 +222,10 @@
 
       if (Array.isArray(config.playlist) && config.playlist.length) {
         this.albumTracklist = config.playlist.slice();
+
+        if (preserveActive && hasActiveAudio) {
+          return;
+        }
 
         this.loadPlaylist(config.playlist, {
           startIndex:
@@ -206,11 +240,34 @@
       if (config.track) {
         this.albumTracklist = [config.track];
 
+        if (preserveActive && hasActiveAudio) {
+          return;
+        }
+
         this.loadPlaylist([config.track], {
           startIndex: 0,
           autoplay: !!config.autoplay,
           load: false,
         });
+      }
+    },
+
+    hasActiveAudio() {
+      return !!(this.audio && (this.audio.currentSrc || this.audio.src));
+    },
+
+    refreshPage(options = {}) {
+      this.configureFromPage({
+        preserveActive: !!options.preserveActive,
+      });
+
+      this.bindTrackPlayButtons();
+      this.syncNowPlayingUi();
+      this.syncPlayButtonState();
+      this.renderDrawer();
+
+      if (!this.hasActiveAudio()) {
+        this.drawVisualizerIdle();
       }
     },
 
@@ -241,60 +298,60 @@
 
       if (this.els.seek) {
         this.els.seek.addEventListener("click", (event) => {
-            if (!this.audio || !this.audio.duration) return;
+          if (!this.audio || !this.audio.duration) return;
 
-            const rect = this.els.seek.getBoundingClientRect();
-            if (!rect.width) return;
+          const rect = this.els.seek.getBoundingClientRect();
+          if (!rect.width) return;
 
-            const percent = Math.max(
+          const percent = Math.max(
             0,
-            Math.min(1, (event.clientX - rect.left) / rect.width)
-            );
+            Math.min(1, (event.clientX - rect.left) / rect.width),
+          );
 
-            this.seek(percent * this.audio.duration);
+          this.seek(percent * this.audio.duration);
         });
 
         this.els.seek.addEventListener("keydown", (event) => {
-            if (!this.audio || !this.audio.duration) return;
+          if (!this.audio || !this.audio.duration) return;
 
-            const duration = this.audio.duration;
-            const current = this.audio.currentTime || 0;
-            const smallStep = 5;
-            const largeStep = 15;
+          const duration = this.audio.duration;
+          const current = this.audio.currentTime || 0;
+          const smallStep = 5;
+          const largeStep = 15;
 
-            let nextTime = null;
+          let nextTime = null;
 
-            switch (event.key) {
+          switch (event.key) {
             case "ArrowLeft":
-                nextTime = current - smallStep;
-                break;
+              nextTime = current - smallStep;
+              break;
 
             case "ArrowRight":
-                nextTime = current + smallStep;
-                break;
+              nextTime = current + smallStep;
+              break;
 
             case "PageDown":
-                nextTime = current - largeStep;
-                break;
+              nextTime = current - largeStep;
+              break;
 
             case "PageUp":
-                nextTime = current + largeStep;
-                break;
+              nextTime = current + largeStep;
+              break;
 
             case "Home":
-                nextTime = 0;
-                break;
+              nextTime = 0;
+              break;
 
             case "End":
-                nextTime = duration;
-                break;
+              nextTime = duration;
+              break;
 
             default:
-                return;
-            }
+              return;
+          }
 
-            event.preventDefault();
-            this.seek(Math.max(0, Math.min(duration, nextTime)));
+          event.preventDefault();
+          this.seek(Math.max(0, Math.min(duration, nextTime)));
         });
       }
 
@@ -323,7 +380,7 @@
 
           const index = parseInt(
             button.getAttribute("data-sv-queue-index") || "-1",
-            10
+            10,
           );
 
           if (!Number.isFinite(index) || index < 0) return;
@@ -349,20 +406,20 @@
         this.syncPlayButtonState();
         this.syncNowPlayingUi();
         this.startVisualizer();
-        });
+      });
 
-    this.audio.addEventListener("pause", () => {
+      this.audio.addEventListener("pause", () => {
         this.syncPlayButtonState();
         this.renderDrawer();
         this.stopVisualizer();
         this.drawVisualizerIdle();
-    });
+      });
 
-    this.audio.addEventListener("ended", () => {
+      this.audio.addEventListener("ended", () => {
         this.syncPlayButtonState();
         this.stopVisualizer();
         this.next();
-    });
+      });
 
       this.audio.addEventListener("loadedmetadata", () => {
         this.updateDurationUi();
@@ -378,6 +435,12 @@
       const buttons = document.querySelectorAll('[data-sv-play-button="true"]');
 
       buttons.forEach((button) => {
+        if (button.__svPlayButtonBound) {
+          return;
+        }
+
+        button.__svPlayButtonBound = true;
+
         button.addEventListener("click", (event) => {
           if (
             event.defaultPrevented ||
@@ -447,7 +510,7 @@
 
       this.currentIndex = Math.max(
         0,
-        Math.min(startIndex, this.playlist.length - 1)
+        Math.min(startIndex, this.playlist.length - 1),
       );
 
       if (options.load !== false) {
@@ -709,7 +772,7 @@
           Number.isFinite(index) && index >= 0 ? tracks[index] : null;
 
         const isCurrent =
-        track && buttonTrack && String(track.id) === String(buttonTrack.id);
+          track && buttonTrack && String(track.id) === String(buttonTrack.id);
 
         const hasAudio = !!(buttonTrack && buttonTrack.audioUrl);
 
@@ -717,10 +780,10 @@
         button.classList.toggle("is-disabled", !hasAudio);
 
         if (!hasAudio) {
-        button.textContent = "No Audio";
-        button.setAttribute("aria-label", "No audio available");
-        button.classList.remove("is-current", "is-playing");
-        return;
+          button.textContent = "No Audio";
+          button.setAttribute("aria-label", "No audio available");
+          button.classList.remove("is-current", "is-playing");
+          return;
         }
 
         if (isCurrent && isPlaying) {
@@ -751,19 +814,19 @@
         !!(this.audio && (this.audio.currentSrc || this.audio.src)) ||
         this.playlist.length > 0;
 
-        if (this.els.playToggle) {
+      if (this.els.playToggle) {
         this.els.playToggle.setAttribute(
-            "aria-label",
-            isPlaying ? "Pause" : "Play"
+          "aria-label",
+          isPlaying ? "Pause" : "Play",
         );
         this.els.playToggle.disabled = !canPlay;
         this.els.playToggle.classList.toggle("is-disabled", !canPlay);
         this.els.playToggle.classList.toggle("is-playing", isPlaying);
-        }
+      }
 
-        if (this.els.playToggleIcon) {
+      if (this.els.playToggleIcon) {
         this.els.playToggleIcon.textContent = isPlaying ? "⏸" : "▶";
-        }
+      }
 
       if (this.els.prev) {
         this.els.prev.disabled = this.currentIndex <= 0;
@@ -823,30 +886,27 @@
       this.root.classList.toggle("sv-player--drawer-open", this.drawerOpen);
       this.root.setAttribute(
         "data-sv-drawer-state",
-        this.drawerOpen ? "open" : "closed"
+        this.drawerOpen ? "open" : "closed",
       );
 
-      document.body.classList.toggle(
-        "sv-player-drawer-open",
-        this.drawerOpen
-      );
+      document.body.classList.toggle("sv-player-drawer-open", this.drawerOpen);
 
       if (this.els.drawer) {
         this.els.drawer.hidden = !this.drawerOpen;
       }
 
-    if (this.els.drawerToggle) {
-    this.els.drawerToggle.setAttribute(
-        "aria-expanded",
-        this.drawerOpen ? "true" : "false"
-    );
-    }
+      if (this.els.drawerToggle) {
+        this.els.drawerToggle.setAttribute(
+          "aria-expanded",
+          this.drawerOpen ? "true" : "false",
+        );
+      }
 
-    if (this.els.drawerToggleLabel) {
-    this.els.drawerToggleLabel.textContent = this.drawerOpen
-        ? "Close"
-        : "Queue";
-    }
+      if (this.els.drawerToggleLabel) {
+        this.els.drawerToggleLabel.textContent = this.drawerOpen
+          ? "Close"
+          : "Queue";
+      }
 
       this.renderDrawer();
     },
@@ -875,7 +935,8 @@
         }
 
         if (this.els.drawerTrackLink) this.els.drawerTrackLink.hidden = true;
-        if (this.els.drawerReleaseLink) this.els.drawerReleaseLink.hidden = true;
+        if (this.els.drawerReleaseLink)
+          this.els.drawerReleaseLink.hidden = true;
         if (this.els.drawerLinks) this.els.drawerLinks.innerHTML = "";
 
         return;
@@ -968,13 +1029,13 @@
 
       if (this.els.queueCount) {
         if (tracks.length) {
-            this.els.queueCount.hidden = false;
-            this.els.queueCount.textContent = String(tracks.length);
+          this.els.queueCount.hidden = false;
+          this.els.queueCount.textContent = String(tracks.length);
         } else {
-            this.els.queueCount.hidden = true;
-            this.els.queueCount.textContent = "0";
+          this.els.queueCount.hidden = true;
+          this.els.queueCount.textContent = "0";
         }
-        }
+      }
 
       this.els.queue.innerHTML = "";
 
@@ -1000,7 +1061,7 @@
         item.classList.toggle("is-playing", !!isCurrent && isPlaying);
         item.classList.toggle(
           "is-queued",
-          !currentTrack && index === this.currentIndex
+          !currentTrack && index === this.currentIndex,
         );
 
         const button = document.createElement("button");
@@ -1061,13 +1122,13 @@
         status.className = "sv-player__queue-status";
 
         if (!track.audioUrl) {
-        status.textContent = "No audio";
+          status.textContent = "No audio";
         } else if (isCurrent && isPlaying) {
-        status.textContent = "Playing";
+          status.textContent = "Playing";
         } else if (isCurrent) {
-        status.textContent = "Paused";
+          status.textContent = "Paused";
         } else {
-        status.textContent = "";
+          status.textContent = "";
         }
 
         body.appendChild(title);
@@ -1083,198 +1144,217 @@
     },
 
     initVisualizer() {
-  if (this.visualizer.initialized || this.visualizer.failed) {
-    return;
-  }
+      if (this.visualizer.initialized || this.visualizer.failed) {
+        return;
+      }
 
-  if (!this.audio || !this.els.visualizerCanvas) {
-    return;
-  }
+      if (!this.audio || !this.els.visualizerCanvas) {
+        return;
+      }
 
-  const AudioContext = window.AudioContext || window.webkitAudioContext;
+      const AudioContext = window.AudioContext || window.webkitAudioContext;
 
-  if (!AudioContext) {
-    this.visualizer.failed = true;
-    this.markVisualizerUnavailable();
-    return;
-  }
+      if (!AudioContext) {
+        this.visualizer.failed = true;
+        this.markVisualizerUnavailable();
+        return;
+      }
 
-  try {
-    const context = new AudioContext();
-    const analyser = context.createAnalyser();
+      try {
+        const context = new AudioContext();
+        const analyser = context.createAnalyser();
 
-    analyser.fftSize = 128;
-    analyser.smoothingTimeConstant = 0.82;
+        analyser.fftSize = 128;
+        analyser.smoothingTimeConstant = 0.82;
 
-    const source = context.createMediaElementSource(this.audio);
+        const source = context.createMediaElementSource(this.audio);
 
-    source.connect(analyser);
-    analyser.connect(context.destination);
+        source.connect(analyser);
+        analyser.connect(context.destination);
 
-    this.visualizer.context = context;
-    this.visualizer.analyser = analyser;
-    this.visualizer.source = source;
-    this.visualizer.data = new Uint8Array(analyser.frequencyBinCount);
-    this.visualizer.canvasContext =
-      this.els.visualizerCanvas.getContext("2d");
-    this.visualizer.initialized = true;
+        this.visualizer.context = context;
+        this.visualizer.analyser = analyser;
+        this.visualizer.source = source;
+        this.visualizer.data = new Uint8Array(analyser.frequencyBinCount);
+        this.visualizer.canvasContext =
+          this.els.visualizerCanvas.getContext("2d");
+        this.visualizer.initialized = true;
 
-    this.root.classList.add("sv-player--visualizer-ready");
-  } catch (err) {
-    console.warn("[SVPlayer] Visualizer unavailable.", err);
+        this.root.classList.add("sv-player--visualizer-ready");
+      } catch (err) {
+        console.warn("[SVPlayer] Visualizer unavailable.", err);
 
-    this.visualizer.failed = true;
-    this.markVisualizerUnavailable();
-  }
-},
+        this.visualizer.failed = true;
+        this.markVisualizerUnavailable();
+      }
+    },
 
-startVisualizer() {
-  if (!this.els.visualizerCanvas) {
-    return;
-  }
+    startVisualizer() {
+      if (!this.els.visualizerCanvas) {
+        return;
+      }
 
-  this.initVisualizer();
+      this.initVisualizer();
 
-  if (this.visualizer.failed || !this.visualizer.initialized) {
-    this.drawVisualizerIdle();
-    return;
-  }
+      if (this.visualizer.failed || !this.visualizer.initialized) {
+        this.drawVisualizerIdle();
+        return;
+      }
 
-  const context = this.visualizer.context;
+      const context = this.visualizer.context;
 
-  if (context && context.state === "suspended") {
-    context.resume().catch((err) => {
-      console.warn("[SVPlayer] Could not resume AudioContext.", err);
-    });
-  }
+      if (context && context.state === "suspended") {
+        context.resume().catch((err) => {
+          console.warn("[SVPlayer] Could not resume AudioContext.", err);
+        });
+      }
 
-  if (this.visualizer.frame) {
-    cancelAnimationFrame(this.visualizer.frame);
-    this.visualizer.frame = null;
-  }
+      if (this.visualizer.frame) {
+        cancelAnimationFrame(this.visualizer.frame);
+        this.visualizer.frame = null;
+      }
 
-  const draw = () => {
-    this.drawVisualizerFrame();
-    this.visualizer.frame = requestAnimationFrame(draw);
-  };
+      const draw = () => {
+        this.drawVisualizerFrame();
+        this.visualizer.frame = requestAnimationFrame(draw);
+      };
 
-  draw();
-},
+      draw();
+    },
 
-stopVisualizer() {
-  if (this.visualizer.frame) {
-    cancelAnimationFrame(this.visualizer.frame);
-    this.visualizer.frame = null;
-  }
-},
+    stopVisualizer() {
+      if (this.visualizer.frame) {
+        cancelAnimationFrame(this.visualizer.frame);
+        this.visualizer.frame = null;
+      }
+    },
 
-drawVisualizerFrame() {
-  const canvas = this.els.visualizerCanvas;
-  const ctx = this.visualizer.canvasContext;
-  const analyser = this.visualizer.analyser;
-  const data = this.visualizer.data;
+    drawVisualizerFrame() {
+      const canvas = this.els.visualizerCanvas;
+      const ctx = this.visualizer.canvasContext;
+      const analyser = this.visualizer.analyser;
+      const data = this.visualizer.data;
 
-  if (!canvas || !ctx || !analyser || !data) {
-    return;
-  }
+      if (!canvas || !ctx || !analyser || !data) {
+        return;
+      }
 
-  const width = canvas.width;
-  const height = canvas.height;
+      const width = canvas.width;
+      const height = canvas.height;
 
-  analyser.getByteFrequencyData(data);
+      analyser.getByteFrequencyData(data);
 
-  ctx.clearRect(0, 0, width, height);
+      ctx.clearRect(0, 0, width, height);
 
-  const bars = 36;
-  const gap = 4;
-  const barWidth = Math.max(3, Math.floor((width - gap * (bars - 1)) / bars));
-  const step = Math.max(1, Math.floor(data.length / bars));
+      const bars = 36;
+      const gap = 4;
+      const barWidth = Math.max(
+        3,
+        Math.floor((width - gap * (bars - 1)) / bars),
+      );
+      const step = Math.max(1, Math.floor(data.length / bars));
 
-  for (let i = 0; i < bars; i += 1) {
-    let sum = 0;
+      for (let i = 0; i < bars; i += 1) {
+        let sum = 0;
 
-    for (let j = 0; j < step; j += 1) {
-      sum += data[i * step + j] || 0;
-    }
+        for (let j = 0; j < step; j += 1) {
+          sum += data[i * step + j] || 0;
+        }
 
-    const value = sum / step;
-    const normalized = value / 255;
-    const eased = Math.pow(normalized, 0.72);
+        const value = sum / step;
+        const normalized = value / 255;
+        const eased = Math.pow(normalized, 0.72);
 
-    const barHeight = Math.max(4, eased * height);
-    const x = i * (barWidth + gap);
-    const y = height - barHeight;
+        const barHeight = Math.max(4, eased * height);
+        const x = i * (barWidth + gap);
+        const y = height - barHeight;
 
-    ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
-    this.roundRect(ctx, x, y, barWidth, barHeight, Math.min(8, barWidth / 2));
-    ctx.fill();
-  }
-},
+        ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
+        this.roundRect(
+          ctx,
+          x,
+          y,
+          barWidth,
+          barHeight,
+          Math.min(8, barWidth / 2),
+        );
+        ctx.fill();
+      }
+    },
 
-drawVisualizerIdle() {
-  const canvas = this.els.visualizerCanvas;
+    drawVisualizerIdle() {
+      const canvas = this.els.visualizerCanvas;
 
-  if (!canvas) {
-    return;
-  }
+      if (!canvas) {
+        return;
+      }
 
-  const ctx =
-    this.visualizer.canvasContext || canvas.getContext("2d");
+      const ctx = this.visualizer.canvasContext || canvas.getContext("2d");
 
-  if (!ctx) {
-    return;
-  }
+      if (!ctx) {
+        return;
+      }
 
-  this.visualizer.canvasContext = ctx;
+      this.visualizer.canvasContext = ctx;
 
-  const width = canvas.width;
-  const height = canvas.height;
-  const bars = 36;
-  const gap = 4;
-  const barWidth = Math.max(3, Math.floor((width - gap * (bars - 1)) / bars));
+      const width = canvas.width;
+      const height = canvas.height;
+      const bars = 36;
+      const gap = 4;
+      const barWidth = Math.max(
+        3,
+        Math.floor((width - gap * (bars - 1)) / bars),
+      );
 
-  ctx.clearRect(0, 0, width, height);
+      ctx.clearRect(0, 0, width, height);
 
-  for (let i = 0; i < bars; i += 1) {
-    const wave = Math.sin(i * 0.72) * 0.5 + 0.5;
-    const barHeight = 8 + wave * 22;
-    const x = i * (barWidth + gap);
-    const y = height - barHeight;
+      for (let i = 0; i < bars; i += 1) {
+        const wave = Math.sin(i * 0.72) * 0.5 + 0.5;
+        const barHeight = 8 + wave * 22;
+        const x = i * (barWidth + gap);
+        const y = height - barHeight;
 
-    ctx.fillStyle = "rgba(255, 255, 255, 0.22)";
-    this.roundRect(ctx, x, y, barWidth, barHeight, Math.min(8, barWidth / 2));
-    ctx.fill();
-  }
-},
+        ctx.fillStyle = "rgba(255, 255, 255, 0.22)";
+        this.roundRect(
+          ctx,
+          x,
+          y,
+          barWidth,
+          barHeight,
+          Math.min(8, barWidth / 2),
+        );
+        ctx.fill();
+      }
+    },
 
-markVisualizerUnavailable() {
-  if (this.els.visualizer) {
-    this.els.visualizer.classList.add("is-unavailable");
-  }
+    markVisualizerUnavailable() {
+      if (this.els.visualizer) {
+        this.els.visualizer.classList.add("is-unavailable");
+      }
 
-  this.drawVisualizerIdle();
-},
+      this.drawVisualizerIdle();
+    },
 
-roundRect(ctx, x, y, width, height, radius) {
-  const safeRadius = Math.min(radius, width / 2, height / 2);
+    roundRect(ctx, x, y, width, height, radius) {
+      const safeRadius = Math.min(radius, width / 2, height / 2);
 
-  ctx.beginPath();
-  ctx.moveTo(x + safeRadius, y);
-  ctx.lineTo(x + width - safeRadius, y);
-  ctx.quadraticCurveTo(x + width, y, x + width, y + safeRadius);
-  ctx.lineTo(x + width, y + height - safeRadius);
-  ctx.quadraticCurveTo(
-    x + width,
-    y + height,
-    x + width - safeRadius,
-    y + height
-  );
-  ctx.lineTo(x + safeRadius, y + height);
-  ctx.quadraticCurveTo(x, y + height, x, y + height - safeRadius);
-  ctx.lineTo(x, y + safeRadius);
-  ctx.quadraticCurveTo(x, y, x + safeRadius, y);
-  ctx.closePath();
-},
+      ctx.beginPath();
+      ctx.moveTo(x + safeRadius, y);
+      ctx.lineTo(x + width - safeRadius, y);
+      ctx.quadraticCurveTo(x + width, y, x + width, y + safeRadius);
+      ctx.lineTo(x + width, y + height - safeRadius);
+      ctx.quadraticCurveTo(
+        x + width,
+        y + height,
+        x + width - safeRadius,
+        y + height,
+      );
+      ctx.lineTo(x + safeRadius, y + height);
+      ctx.quadraticCurveTo(x, y + height, x, y + height - safeRadius);
+      ctx.lineTo(x, y + safeRadius);
+      ctx.quadraticCurveTo(x, y, x + safeRadius, y);
+      ctx.closePath();
+    },
 
     formatTime(seconds) {
       if (!Number.isFinite(seconds) || seconds < 0) return "0:00";

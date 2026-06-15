@@ -9,7 +9,7 @@ if (! defined('ABSPATH')) {
 get_header();
 ?>
 
-<main class="sv-archive sv-music-archive">
+<main id="primary" class="sv-archive sv-music-archive" data-sv-page-content>
     <header class="sv-page-header">
         <p class="sv-breadcrumb">
             <a href="<?php echo esc_url(home_url('/')); ?>">Home</a>
@@ -57,8 +57,9 @@ get_header();
         <p><?php esc_html_e('No releases found.', 'slim-volume'); ?></p>
     <?php endif; ?>
 
-    <?php TemplateLoader::render('partials/player-shell.php'); ?>
 </main>
+
+<?php require SLIM_VOLUME_PATH . 'templates/partials/player-shell.php'; ?>
 
 <?php
 get_footer();

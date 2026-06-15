@@ -14,7 +14,7 @@ $config     = PlayerData::get_release_page_config($release_id);
 $playlist   = $config['playlist'] ?? [];
 ?>
 
-<main class="sv-release sv-release-single">
+<main id="primary" class="sv-release sv-release-single" data-sv-page-content>
     <?php while (have_posts()) : the_post(); ?>
         <p class="sv-breadcrumb">
             <a href="<?php echo esc_url(home_url('/')); ?>">Home</a>
@@ -136,9 +136,10 @@ $playlist   = $config['playlist'] ?? [];
         <?php endif; ?>
 
         <?php PlayerData::render_page_config($config); ?>
-        <?php TemplateLoader::render('partials/player-shell.php'); ?>
     <?php endwhile; ?>
 </main>
+
+<?php require SLIM_VOLUME_PATH . 'templates/partials/player-shell.php'; ?>
 
 <?php
 get_footer();
