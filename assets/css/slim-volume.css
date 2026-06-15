@@ -356,3 +356,228 @@ body.sv-player-ready {
     text-align: left;
   }
 }
+
+.sv-player audio[data-sv-audio] {
+  display: none;
+}
+
+body.sv-player-drawer-open {
+  padding-bottom: 480px;
+}
+
+.sv-player__bar {
+  grid-template-columns: 52px minmax(120px, 1fr) auto minmax(120px, 260px) auto auto;
+}
+
+.sv-player__drawer[hidden] {
+  display: none;
+}
+
+.sv-player__drawer {
+  max-height: min(420px, calc(100vh - 120px));
+  overflow: auto;
+  border-bottom: 1px solid var(--sv-player-border);
+  background: var(--sv-player-bg);
+}
+
+.sv-player__drawer-inner {
+  width: min(1180px, calc(100% - 24px));
+  margin: 0 auto;
+  padding: 22px 0 24px;
+}
+
+.sv-player__drawer-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: center;
+  margin-bottom: 18px;
+}
+
+.sv-player__drawer-heading,
+.sv-player__drawer-subheading,
+.sv-player__drawer-title {
+  margin: 0;
+}
+
+.sv-player__drawer-grid {
+  display: grid;
+  grid-template-columns: minmax(260px, 360px) minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+
+.sv-player__drawer-current {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.sv-player__drawer-art {
+  width: 96px;
+  height: 96px;
+  border-radius: 14px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.sv-player__drawer-art img,
+.sv-player__queue-art img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.sv-player__drawer-release {
+  margin: 6px 0 0;
+  color: var(--sv-player-muted);
+}
+
+.sv-player__drawer-primary-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.sv-player__drawer-primary-links a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.sv-player__drawer-links {
+  margin-top: 14px;
+}
+
+.sv-player__drawer-links .sv-link-pill {
+  border-color: var(--sv-player-border);
+}
+
+.sv-player__queue {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.sv-player__queue-item {
+  margin: 0;
+}
+
+.sv-player__queue-button {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  width: 100%;
+  min-height: 58px;
+  padding: 7px 10px;
+  cursor: pointer;
+  color: inherit;
+  text-align: left;
+  border: 1px solid var(--sv-player-border);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.sv-player__queue-button:hover,
+.sv-player__queue-button:focus {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.sv-player__queue-button:disabled,
+.sv-player__queue-button.is-disabled {
+  cursor: not-allowed;
+  opacity: 0.48;
+}
+
+.sv-player__queue-art {
+  display: block;
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.sv-player__queue-body {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.sv-player__queue-title,
+.sv-player__queue-meta {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sv-player__queue-title {
+  font-weight: 700;
+}
+
+.sv-player__queue-meta,
+.sv-player__queue-status,
+.sv-player__queue-empty {
+  color: var(--sv-player-muted);
+  font-size: 0.88rem;
+}
+
+.sv-player__queue-item.is-current .sv-player__queue-button,
+.sv-player__queue-item.is-playing .sv-player__queue-button {
+  border-color: currentColor;
+}
+
+.sv-player__queue-item.is-queued .sv-player__queue-button {
+  border-style: dashed;
+}
+
+.sv-player__drawer-toggle {
+  white-space: nowrap;
+}
+
+@media (max-width: 760px) {
+  body.sv-player-drawer-open {
+    padding-bottom: 620px;
+  }
+
+  .sv-player__bar {
+    grid-template-columns: 44px 1fr auto auto;
+  }
+
+  .sv-player__drawer-toggle {
+    grid-column: 4;
+    grid-row: 1;
+  }
+
+  .sv-player__drawer-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .sv-player__drawer-current {
+    grid-template-columns: 74px minmax(0, 1fr);
+  }
+
+  .sv-player__drawer-art {
+    width: 74px;
+    height: 74px;
+  }
+
+  .sv-player__queue-button {
+    grid-template-columns: 40px minmax(0, 1fr);
+  }
+
+  .sv-player__queue-status {
+    display: none;
+  }
+
+  .sv-player__queue-art {
+    width: 40px;
+    height: 40px;
+  }
+}
