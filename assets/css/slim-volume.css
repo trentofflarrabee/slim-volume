@@ -581,3 +581,94 @@ body.sv-player-drawer-open {
     height: 40px;
   }
 }
+
+.sv-player__icon-button {
+  display: inline-grid;
+  place-items: center;
+  width: 42px;
+  min-width: 42px;
+  height: 42px;
+  padding: 0;
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.sv-player__play-button {
+  width: 48px;
+  min-width: 48px;
+  height: 48px;
+  font-size: 1.08rem;
+}
+
+.sv-player__button:focus-visible,
+.sv-player__progress:focus-visible,
+.sv-player__queue-button:focus-visible,
+.sv-link-pill:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 3px;
+}
+
+.sv-player__button.is-playing {
+  border-color: currentColor;
+}
+
+.sv-player__drawer-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sv-player__queue-count {
+  display: inline-grid;
+  place-items: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: 999px;
+  color: var(--sv-player-bg);
+  background: var(--sv-player-text);
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.sv-player__queue-count[hidden] {
+  display: none;
+}
+
+.sv-track-row__play.is-disabled,
+.sv-track-hero__play.is-disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.sv-player__queue-status {
+  min-width: 64px;
+  text-align: right;
+}
+
+.sv-player__queue-button.is-disabled .sv-player__queue-status {
+  color: rgba(255, 255, 255, 0.52);
+}
+
+@media (max-width: 760px) {
+  .sv-player__icon-button {
+    width: 38px;
+    min-width: 38px;
+    height: 38px;
+  }
+
+  .sv-player__play-button {
+    width: 42px;
+    min-width: 42px;
+    height: 42px;
+  }
+
+  .sv-player__drawer-toggle {
+    padding-inline: 10px;
+  }
+
+  .sv-player__drawer-toggle [data-sv-drawer-toggle-label] {
+    display: none;
+  }
+}

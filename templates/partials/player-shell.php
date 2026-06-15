@@ -83,16 +83,16 @@ if (! defined('ABSPATH')) {
         </div>
 
         <div class="sv-player__controls">
-            <button type="button" class="sv-player__button" data-sv-prev>
-                <?php esc_html_e('Prev', 'slim-volume'); ?>
+            <button type="button" class="sv-player__button sv-player__icon-button" data-sv-prev aria-label="<?php esc_attr_e('Previous track', 'slim-volume'); ?>">
+                <span aria-hidden="true">⏮</span>
             </button>
 
-            <button type="button" class="sv-player__button" data-sv-play-toggle>
-                <?php esc_html_e('Play', 'slim-volume'); ?>
+            <button type="button" class="sv-player__button sv-player__icon-button sv-player__play-button" data-sv-play-toggle aria-label="<?php esc_attr_e('Play', 'slim-volume'); ?>">
+                <span data-sv-play-toggle-icon aria-hidden="true">▶</span>
             </button>
 
-            <button type="button" class="sv-player__button" data-sv-next>
-                <?php esc_html_e('Next', 'slim-volume'); ?>
+            <button type="button" class="sv-player__button sv-player__icon-button" data-sv-next aria-label="<?php esc_attr_e('Next track', 'slim-volume'); ?>">
+                <span aria-hidden="true">⏭</span>
             </button>
         </div>
 
@@ -122,7 +122,8 @@ if (! defined('ABSPATH')) {
             aria-controls="sv-player-drawer"
             aria-expanded="false"
         >
-            <?php esc_html_e('Queue', 'slim-volume'); ?>
+            <span data-sv-drawer-toggle-label><?php esc_html_e('Queue', 'slim-volume'); ?></span>
+            <span class="sv-player__queue-count" data-sv-queue-count hidden>0</span>
         </button>
     </div>
 </div>

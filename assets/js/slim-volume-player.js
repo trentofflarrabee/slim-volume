@@ -43,6 +43,7 @@
       this.els.art = this.root.querySelector("[data-sv-player-art]");
 
       this.els.playToggle = this.root.querySelector("[data-sv-play-toggle]");
+      this.els.playToggleIcon = this.root.querySelector("[data-sv-play-toggle-icon]");
       this.els.prev = this.root.querySelector("[data-sv-prev]");
       this.els.next = this.root.querySelector("[data-sv-next]");
 
@@ -53,6 +54,8 @@
 
       this.els.drawer = this.root.querySelector("[data-sv-drawer]");
       this.els.drawerToggle = this.root.querySelector("[data-sv-drawer-toggle]");
+      this.els.drawerToggleLabel = this.root.querySelector("[data-sv-drawer-toggle-label]");
+      this.els.queueCount = this.root.querySelector("[data-sv-queue-count]");
       this.els.drawerClose = this.root.querySelector("[data-sv-drawer-close]");
       this.els.drawerArt = this.root.querySelector("[data-sv-drawer-art]");
       this.els.drawerTitle = this.root.querySelector("[data-sv-drawer-title]");
@@ -214,17 +217,60 @@
 
       if (this.els.seek) {
         this.els.seek.addEventListener("click", (event) => {
-          if (!this.audio || !this.audio.duration) return;
+            if (!this.audio || !this.audio.duration) return;
 
-          const rect = this.els.seek.getBoundingClientRect();
-          if (!rect.width) return;
+            const rect = this.els.seek.getBoundingClientRect();
+            if (!rect.width) return;
 
-          const percent = Math.max(
+            const percent = Math.max(
             0,
             Math.min(1, (event.clientX - rect.left) / rect.width)
-          );
+            );
 
-          this.seek(percent * this.audio.duration);
+            this.seek(percent * this.audio.duration);
+        });
+
+        this.els.seek.addEventListener("keydown", (event) => {
+            if (!this.audio || !this.audio.duration) return;
+
+            const duration = this.audio.duration;
+            const current = this.audio.currentTime || 0;
+            const smallStep = 5;
+            const largeStep = 15;
+
+            let nextTime = null;
+
+            switch (event.key) {
+            case "ArrowLeft":
+                nextTime = current - smallStep;
+                break;
+
+            case "ArrowRight":
+                nextTime = current + smallStep;
+                break;
+
+            case "PageDown":
+                nextTime = current - largeStep;
+                break;
+
+            case "PageUp":
+                nextTime = current + largeStep;
+                break;
+
+            case "Home":
+                nextTime = 0;
+                break;
+
+            case "End":
+                nextTime = duration;
+                break;
+
+            default:
+                return;
+            }
+
+            event.preventDefault();
+            this.seek(Math.max(0, Math.min(duration, nextTime)));
         });
       }
 
@@ -634,7 +680,19 @@
           Number.isFinite(index) && index >= 0 ? tracks[index] : null;
 
         const isCurrent =
-          track && buttonTrack && String(track.id) === String(buttonTrack.id);
+        track && buttonTrack && String(track.id) === String(buttonTrack.id);
+
+        const hasAudio = !!(buttonTrack && buttonTrack.audioUrl);
+
+        button.disabled = !hasAudio;
+        button.classList.toggle("is-disabled", !hasAudio);
+
+        if (!hasAudio) {
+        button.textContent = "No Audio";
+        button.setAttribute("aria-label", "No audio available");
+        button.classList.remove("is-current", "is-playing");
+        return;
+        }
 
         if (isCurrent && isPlaying) {
           button.textContent = "Pause";
@@ -664,15 +722,19 @@
         !!(this.audio && (this.audio.currentSrc || this.audio.src)) ||
         this.playlist.length > 0;
 
-      if (this.els.playToggle) {
-        this.els.playToggle.textContent = isPlaying ? "Pause" : "Play";
+        if (this.els.playToggle) {
         this.els.playToggle.setAttribute(
-          "aria-label",
-          isPlaying ? "Pause" : "Play"
+            "aria-label",
+            isPlaying ? "Pause" : "Play"
         );
         this.els.playToggle.disabled = !canPlay;
         this.els.playToggle.classList.toggle("is-disabled", !canPlay);
-      }
+        this.els.playToggle.classList.toggle("is-playing", isPlaying);
+        }
+
+        if (this.els.playToggleIcon) {
+        this.els.playToggleIcon.textContent = isPlaying ? "⏸" : "▶";
+        }
 
       if (this.els.prev) {
         this.els.prev.disabled = this.currentIndex <= 0;
@@ -744,15 +806,18 @@
         this.els.drawer.hidden = !this.drawerOpen;
       }
 
-      if (this.els.drawerToggle) {
-        this.els.drawerToggle.setAttribute(
-          "aria-expanded",
-          this.drawerOpen ? "true" : "false"
-        );
-        this.els.drawerToggle.textContent = this.drawerOpen
-          ? "Close"
-          : "Queue";
-      }
+    if (this.els.drawerToggle) {
+    this.els.drawerToggle.setAttribute(
+        "aria-expanded",
+        this.drawerOpen ? "true" : "false"
+    );
+    }
+
+    if (this.els.drawerToggleLabel) {
+    this.els.drawerToggleLabel.textContent = this.drawerOpen
+        ? "Close"
+        : "Queue";
+    }
 
       this.renderDrawer();
     },
@@ -872,6 +937,16 @@
 
       const tracks = this.playlist.length ? this.playlist : this.albumTracklist;
 
+      if (this.els.queueCount) {
+        if (tracks.length) {
+            this.els.queueCount.hidden = false;
+            this.els.queueCount.textContent = String(tracks.length);
+        } else {
+            this.els.queueCount.hidden = true;
+            this.els.queueCount.textContent = "0";
+        }
+        }
+
       this.els.queue.innerHTML = "";
 
       if (!tracks.length) {
@@ -955,7 +1030,16 @@
 
         const status = document.createElement("span");
         status.className = "sv-player__queue-status";
-        status.textContent = isCurrent && isPlaying ? "Playing" : "";
+
+        if (!track.audioUrl) {
+        status.textContent = "No audio";
+        } else if (isCurrent && isPlaying) {
+        status.textContent = "Playing";
+        } else if (isCurrent) {
+        status.textContent = "Paused";
+        } else {
+        status.textContent = "";
+        }
 
         body.appendChild(title);
         body.appendChild(meta);
