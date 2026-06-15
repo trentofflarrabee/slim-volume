@@ -14,6 +14,7 @@ require_once SLIM_VOLUME_PATH . 'includes/Rewrite.php';
 require_once SLIM_VOLUME_PATH . 'includes/Assets.php';
 require_once SLIM_VOLUME_PATH . 'includes/Frontend/TemplateLoader.php';
 require_once SLIM_VOLUME_PATH . 'includes/Frontend/PlayerData.php';
+require_once SLIM_VOLUME_PATH . 'includes/Admin/ReleaseMetaBoxes.php';
 require_once SLIM_VOLUME_PATH . 'includes/Admin/TrackMetaBoxes.php';
 
 final class Plugin
@@ -35,7 +36,10 @@ final class Plugin
         add_action('init', [Meta::class, 'register']);
         add_action('init', [Rewrite::class, 'register']);
 
+        add_action('add_meta_boxes', [Admin\ReleaseMetaBoxes::class, 'register']);
         add_action('add_meta_boxes', [Admin\TrackMetaBoxes::class, 'register']);
+
+        add_action('save_post_' . PostTypes::RELEASE, [Admin\ReleaseMetaBoxes::class, 'save']);
         add_action('save_post_' . PostTypes::TRACK, [Admin\TrackMetaBoxes::class, 'save']);
 
         add_filter('query_vars', [Rewrite::class, 'add_query_vars']);
@@ -45,6 +49,7 @@ final class Plugin
         add_filter('template_include', [Frontend\TemplateLoader::class, 'template_include']);
 
         add_action('wp_enqueue_scripts', [Assets::class, 'enqueue_frontend']);
+        add_action('admin_enqueue_scripts', [Assets::class, 'enqueue_admin']);
     }
 
     public static function activate(): void

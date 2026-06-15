@@ -215,6 +215,15 @@ final class PlayerData
                 $value = (string) get_post_meta($release_id, $meta_key, true);
             }
 
+            if ($name === 'download' && ! $value) {
+                $download_attachment_id = (int) get_post_meta($track_id, '_sv_download_attachment_id', true);
+
+                if ($download_attachment_id > 0) {
+                    $attachment_url = wp_get_attachment_url($download_attachment_id);
+                    $value = $attachment_url ?: '';
+                }
+            }
+
             $links[$name] = $value ? esc_url_raw($value) : '';
         }
 

@@ -103,6 +103,7 @@ final class Meta
             '_sv_disc_number',
             '_sv_duration_seconds',
             '_sv_audio_attachment_id',
+            '_sv_download_attachment_id',
         ];
 
         foreach ($integer_fields as $key) {
