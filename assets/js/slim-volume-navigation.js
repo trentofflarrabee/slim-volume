@@ -8,6 +8,8 @@
     musicBaseUrl: config.musicBaseUrl || "/music/",
     currentRequest: null,
     isNavigating: false,
+    lastUrl: window.location.href,
+    scrollPositions: {},
 
     init() {
       const content = document.querySelector(this.contentSelector);
@@ -26,7 +28,7 @@
           url: window.location.href,
         },
         "",
-        window.location.href
+        window.location.href,
       );
 
       document.addEventListener("click", (event) => {
@@ -34,13 +36,14 @@
       });
 
       window.addEventListener("popstate", () => {
+        this.saveScrollPosition(this.lastUrl || window.location.href);
+
         this.navigate(window.location.href, {
           push: false,
-          scrollToTop: true,
+          scrollToTop: false,
+          restoreScroll: true,
         });
       });
-
-
     },
 
     handleClick(event) {
@@ -60,15 +63,48 @@
 
       event.preventDefault();
 
+      this.saveScrollPosition(this.lastUrl || window.location.href);
+
       this.navigate(link.href, {
         push: true,
         scrollToTop: true,
       });
     },
 
+    isIgnoredLink(link) {
+      if (!link) return true;
+
+      if (link.closest("#wpadminbar")) return true;
+      if (link.closest(".comment-navigation")) return true;
+      if (link.closest(".comments-area")) return true;
+
+      if (link.classList.contains("post-edit-link")) return true;
+      if (link.classList.contains("comment-reply-link")) return true;
+
+      const href = link.getAttribute("href") || "";
+
+      if (!href) return true;
+
+      const ignoredFragments = [
+        "wp-admin",
+        "wp-login.php",
+        "wp-login",
+        "wp-register.php",
+        "wp-comments-post.php",
+        "customize.php",
+        "preview=true",
+        "replytocom=",
+        "unapproved=",
+        "moderation-hash=",
+      ];
+
+      return ignoredFragments.some((fragment) => href.includes(fragment));
+    },
+
     shouldHandleLink(link) {
       if (link.hasAttribute("download")) return false;
       if (link.hasAttribute("data-sv-no-ajax")) return false;
+      if (this.isIgnoredLink(link)) return false;
 
       const target = (link.getAttribute("target") || "").toLowerCase();
 
@@ -90,11 +126,7 @@
 
       const current = new URL(window.location.href);
 
-      if (
-        url.pathname === current.pathname &&
-        url.search === current.search &&
-        url.hash
-      ) {
+      if (url.pathname === current.pathname && url.search === current.search) {
         return false;
       }
 
@@ -114,6 +146,48 @@
       const path = url.pathname.replace(/\/+$/, "");
 
       return path === basePath || path.startsWith(basePath + "/");
+    },
+
+    getScrollKey(url) {
+      try {
+        const parsed = new URL(url, window.location.origin);
+        return parsed.pathname + parsed.search;
+      } catch (err) {
+        return String(url);
+      }
+    },
+
+    saveScrollPosition(url) {
+      this.scrollPositions[this.getScrollKey(url)] = {
+        x: window.scrollX || window.pageXOffset || 0,
+        y: window.scrollY || window.pageYOffset || 0,
+      };
+    },
+
+    restoreScrollPosition(url) {
+      const position = this.scrollPositions[this.getScrollKey(url)] || {
+        x: 0,
+        y: 0,
+      };
+
+      const applyScroll = () => {
+        window.scrollTo({
+          top: position.y,
+          left: position.x,
+          behavior: "auto",
+        });
+      };
+
+      /*
+       * Apply more than once because after AJAX content swap,
+       * images/fonts/layout can shift slightly after the first paint.
+       */
+      requestAnimationFrame(() => {
+        applyScroll();
+
+        window.setTimeout(applyScroll, 75);
+        window.setTimeout(applyScroll, 250);
+      });
     },
 
     navigate(url, options = {}) {
@@ -185,7 +259,7 @@
             url,
           },
           "",
-          url
+          url,
         );
       }
 
@@ -195,10 +269,9 @@
     updateBodyClasses(nextDocument) {
       if (!nextDocument.body) return;
 
-      const keepClasses = [
-        "sv-player-ready",
-        "sv-player-drawer-open",
-      ].filter((className) => document.body.classList.contains(className));
+      const keepClasses = ["sv-player-ready", "sv-player-drawer-open"].filter(
+        (className) => document.body.classList.contains(className),
+      );
 
       document.body.className = nextDocument.body.className;
 
@@ -208,7 +281,10 @@
     },
 
     afterSwap(url, options = {}) {
-      if (window.SVPlayer && typeof window.SVPlayer.refreshPage === "function") {
+      if (
+        window.SVPlayer &&
+        typeof window.SVPlayer.refreshPage === "function"
+      ) {
         window.SVPlayer.refreshPage({
           preserveActive: true,
         });
@@ -223,19 +299,24 @@
         });
       }
 
-      if (options.scrollToTop !== false) {
+      if (options.restoreScroll) {
+        this.restoreScrollPosition(url);
+      } else if (options.scrollToTop !== false) {
         window.scrollTo({
           top: 0,
+          left: 0,
           behavior: "auto",
         });
       }
+
+      this.lastUrl = url;
 
       document.dispatchEvent(
         new CustomEvent("slimVolume:navigated", {
           detail: {
             url,
           },
-        })
+        }),
       );
     },
   };
