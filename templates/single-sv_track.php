@@ -114,11 +114,10 @@ $track_links = array_filter($track_links);
                             <a
                                 class="sv-link-pill"
                                 href="<?php echo esc_url($url); ?>"
+                                target="_blank"
+                                rel="noopener noreferrer"
                                 <?php if ($label === 'Download') : ?>
                                     download
-                                <?php else : ?>
-                                    target="_blank"
-                                    rel="noopener noreferrer"
                                 <?php endif; ?>
                             >
                                 <?php echo esc_html($label); ?>

@@ -1010,12 +1010,12 @@
           link.href = links[key];
           link.textContent = labels[key];
 
-          if (key === "download") {
-            link.setAttribute("download", "");
-          } else {
-            link.target = "_blank";
-            link.rel = "noopener noreferrer";
-          }
+        link.target = "_blank";
+        link.rel = "noopener noreferrer";
+
+        if (key === "download") {
+        link.setAttribute("download", "");
+        }
 
           this.els.drawerLinks.appendChild(link);
         });

@@ -708,3 +708,17 @@ body.sv-player-drawer-open {
     height: 90px;
   }
 }
+
+body.sv-ajax-loading [data-sv-page-content] {
+  opacity: 0.55;
+  pointer-events: none;
+  transition: opacity 160ms ease;
+}
+
+[data-sv-page-content] {
+  transition: opacity 160ms ease;
+}
+
+[data-sv-page-content]:focus {
+  outline: none;
+}
