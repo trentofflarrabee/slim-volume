@@ -11,6 +11,10 @@
     currentTrack: null,
     drawerOpen: false,
 
+    storageKey: "slimVolumePlayerState:v1",
+    saveStateTimer: null,
+    pendingRestoreTime: null,
+
     visualizer: {
       context: null,
       analyser: null,
@@ -37,8 +41,15 @@
       this.cacheEls();
       this.bindCoreControls();
       this.bindAudioEvents();
-      this.configureFromPage();
+
+      const restored = this.restoreState();
+
+      if (!restored) {
+        this.configureFromPage();
+      }
+
       this.bindTrackPlayButtons();
+      this.bindPageQueueButtons();
       this.syncNowPlayingUi();
       this.syncPlayButtonState();
       this.renderDrawer();
@@ -262,6 +273,7 @@
       });
 
       this.bindTrackPlayButtons();
+      this.bindPageQueueButtons();
       this.syncNowPlayingUi();
       this.syncPlayButtonState();
       this.renderDrawer();
@@ -413,6 +425,7 @@
         this.renderDrawer();
         this.stopVisualizer();
         this.drawVisualizerIdle();
+        this.scheduleSaveState();
       });
 
       this.audio.addEventListener("ended", () => {
@@ -422,12 +435,24 @@
       });
 
       this.audio.addEventListener("loadedmetadata", () => {
+        this.applyPendingRestoreTime();
         this.updateDurationUi();
+        this.updateProgressUi();
         this.renderDrawer();
+        this.scheduleSaveState();
       });
 
       this.audio.addEventListener("timeupdate", () => {
         this.updateProgressUi();
+        this.scheduleSaveState();
+      });
+      window.addEventListener("beforeunload", () => {
+        if (this.saveStateTimer) {
+          window.clearTimeout(this.saveStateTimer);
+          this.saveStateTimer = null;
+        }
+
+        this.saveState();
       });
     },
 
@@ -500,6 +525,217 @@
       });
     },
 
+ bindPageQueueButtons() {
+  const buttons = document.querySelectorAll('[data-sv-page-queue-button="true"]');
+
+  buttons.forEach((button) => {
+    if (button.__svPageQueueButtonBound) {
+      return;
+    }
+
+    button.__svPageQueueButtonBound = true;
+
+    button.addEventListener("click", (event) => {
+      event.preventDefault();
+
+      const action = button.getAttribute("data-sv-page-queue-action") || "play";
+
+      const pageQueue = this.albumTracklist.length
+        ? this.albumTracklist
+        : [];
+
+      if (!pageQueue.length) {
+        return;
+      }
+
+      if (action === "append") {
+        this.appendTracksToQueue(pageQueue);
+        this.syncPageQueueButtons();
+        return;
+      }
+
+      const rawStartIndex = button.getAttribute("data-sv-page-queue-start-index");
+      const preferredIndex = parseInt(rawStartIndex || "0", 10);
+
+      const playableIndex = this.getFirstPlayableIndex(
+        pageQueue,
+        Number.isFinite(preferredIndex) ? preferredIndex : 0
+      );
+
+      if (playableIndex < 0) {
+        return;
+      }
+
+      this.loadPlaylist(pageQueue, {
+        startIndex: playableIndex,
+        autoplay: true,
+        load: true,
+      });
+
+      this.syncPageQueueButtons();
+    });
+  });
+
+  this.syncPageQueueButtons();
+},
+
+syncPageQueueButtons() {
+  const buttons = document.querySelectorAll('[data-sv-page-queue-button="true"]');
+
+  if (!buttons.length) {
+    return;
+  }
+
+  const pageQueue = this.albumTracklist.length
+    ? this.albumTracklist
+    : [];
+
+  const playablePageTracks = pageQueue.filter((track) => {
+    return !!(track && track.audioUrl);
+  });
+
+  const hasPlayableTrack = playablePageTracks.length > 0;
+  const activeQueueMatchesPage = this.isSameQueue(this.playlist, pageQueue);
+
+  const allPlayableTracksAlreadyQueued =
+    hasPlayableTrack &&
+    playablePageTracks.every((track) => {
+      return this.isTrackInQueue(track);
+    });
+
+  buttons.forEach((button) => {
+    const action = button.getAttribute("data-sv-page-queue-action") || "play";
+
+    button.disabled = !hasPlayableTrack;
+    button.classList.toggle("is-disabled", !hasPlayableTrack);
+
+    if (!hasPlayableTrack) {
+      button.textContent = "No Audio Available";
+      button.setAttribute("aria-label", "No audio available for this release");
+      return;
+    }
+
+    if (action === "append") {
+      button.disabled = allPlayableTracksAlreadyQueued;
+      button.classList.toggle("is-disabled", allPlayableTracksAlreadyQueued);
+
+      if (allPlayableTracksAlreadyQueued) {
+        button.textContent = "Already in Queue";
+        button.setAttribute("aria-label", "This release is already in the queue");
+        return;
+      }
+
+      button.textContent = "Add This Release to Queue";
+      button.setAttribute("aria-label", "Add this release to the queue");
+      return;
+    }
+
+    if (activeQueueMatchesPage) {
+      button.textContent = "Restart Release";
+      button.setAttribute("aria-label", "Restart this release");
+      return;
+    }
+
+    button.textContent = "Play This Release";
+    button.setAttribute("aria-label", "Play this release");
+  });
+},
+
+    getFirstPlayableIndex(tracks, preferredIndex = 0) {
+      if (!Array.isArray(tracks) || !tracks.length) {
+        return -1;
+      }
+
+      const safePreferred = Number.isFinite(preferredIndex)
+        ? Math.max(0, Math.min(preferredIndex, tracks.length - 1))
+        : 0;
+
+      if (tracks[safePreferred] && tracks[safePreferred].audioUrl) {
+        return safePreferred;
+      }
+
+      return tracks.findIndex((track) => {
+        return !!(track && track.audioUrl);
+      });
+    },
+
+    isSameQueue(queueA, queueB) {
+      if (!Array.isArray(queueA) || !Array.isArray(queueB)) {
+        return false;
+      }
+
+      if (!queueA.length || queueA.length !== queueB.length) {
+        return false;
+      }
+
+      return queueA.every((track, index) => {
+        return (
+          track &&
+          queueB[index] &&
+          String(track.id) === String(queueB[index].id)
+        );
+      });
+    },
+
+    isTrackInQueue(track) {
+      if (!track || !track.id || !Array.isArray(this.playlist)) {
+        return false;
+      }
+
+      return this.playlist.some((queuedTrack) => {
+        return queuedTrack && String(queuedTrack.id) === String(track.id);
+      });
+    },
+
+    appendTracksToQueue(tracks) {
+      if (!Array.isArray(tracks) || !tracks.length) {
+        return false;
+      }
+
+      const playableTracks = tracks.filter((track) => {
+        return !!(track && track.audioUrl);
+      });
+
+      if (!playableTracks.length) {
+        return false;
+      }
+
+      const existingIds = new Set(
+        this.playlist
+          .filter((track) => track && track.id)
+          .map((track) => String(track.id)),
+      );
+
+      const newTracks = playableTracks.filter((track) => {
+        return !existingIds.has(String(track.id));
+      });
+
+      if (!newTracks.length) {
+        return false;
+      }
+
+      const wasEmpty = !this.playlist.length;
+
+      this.playlist = this.playlist.concat(newTracks);
+
+      if (wasEmpty) {
+        this.currentIndex = this.getFirstPlayableIndex(this.playlist, 0);
+      }
+
+      this.syncNowPlayingUi();
+      this.syncPlayButtonState();
+      this.renderDrawer();
+      this.scheduleSaveState();
+
+      return true;
+    },
+
+    appendTrackToQueue(track) {
+      return this.appendTracksToQueue([track]);
+    },
+
+// 
+
     loadPlaylist(tracks, options = {}) {
       if (!Array.isArray(tracks) || !tracks.length) return;
 
@@ -522,6 +758,7 @@
 
       this.syncPlayButtonState();
       this.renderDrawer();
+      this.scheduleSaveState();
     },
 
     loadTrack(track, options = {}) {
@@ -568,6 +805,7 @@
       this.syncNowPlayingUi();
       this.syncPlayButtonState();
       this.renderDrawer();
+      this.scheduleSaveState();
 
       if (options.autoplay) {
         this.play();
@@ -840,6 +1078,7 @@
       }
 
       this.syncTrackPlayButtons(this.getCurrentTrack());
+      this.syncPageQueueButtons();
       this.renderDrawer();
     },
 
@@ -909,6 +1148,7 @@
       }
 
       this.renderDrawer();
+      this.scheduleSaveState();
     },
 
     renderDrawer() {
@@ -1010,12 +1250,12 @@
           link.href = links[key];
           link.textContent = labels[key];
 
-        link.target = "_blank";
-        link.rel = "noopener noreferrer";
+          link.target = "_blank";
+          link.rel = "noopener noreferrer";
 
-        if (key === "download") {
-        link.setAttribute("download", "");
-        }
+          if (key === "download") {
+            link.setAttribute("download", "");
+          }
 
           this.els.drawerLinks.appendChild(link);
         });
@@ -1363,6 +1603,173 @@
       const secs = Math.floor(seconds % 60);
 
       return `${mins}:${String(secs).padStart(2, "0")}`;
+    },
+
+    restoreState() {
+      if (!window.localStorage) {
+        return false;
+      }
+
+      let state = null;
+
+      try {
+        state = JSON.parse(
+          window.localStorage.getItem(this.storageKey) || "null",
+        );
+      } catch (err) {
+        console.warn("[SVPlayer] Could not parse saved player state.", err);
+        this.clearSavedState();
+        return false;
+      }
+
+      if (!state || !Array.isArray(state.playlist) || !state.playlist.length) {
+        return false;
+      }
+
+      /*
+       * Ignore very old state. This keeps the player from restoring something
+       * surprising days later.
+       */
+      const maxAge = 24 * 60 * 60 * 1000;
+      const savedAt = typeof state.savedAt === "number" ? state.savedAt : 0;
+
+      if (!savedAt || Date.now() - savedAt > maxAge) {
+        this.clearSavedState();
+        return false;
+      }
+
+      this.playlist = state.playlist.slice();
+
+      if (Array.isArray(state.albumTracklist) && state.albumTracklist.length) {
+        this.albumTracklist = state.albumTracklist.slice();
+      }
+
+      this.currentIndex =
+        typeof state.currentIndex === "number" ? state.currentIndex : 0;
+
+      this.currentIndex = Math.max(
+        0,
+        Math.min(this.currentIndex, this.playlist.length - 1),
+      );
+
+      let track = null;
+
+      if (state.currentTrackId) {
+        track = this.playlist.find((item) => {
+          return item && String(item.id) === String(state.currentTrackId);
+        });
+      }
+
+      if (!track) {
+        track = this.playlist[this.currentIndex] || null;
+      }
+
+      if (!track || !track.audioUrl) {
+        this.clearSavedState();
+        return false;
+      }
+
+      this.currentTrack = track;
+
+      this.audio.src = track.audioUrl;
+      this.audio.load();
+
+      this.pendingRestoreTime =
+        typeof state.currentTime === "number" && state.currentTime > 0
+          ? state.currentTime
+          : null;
+
+      this.syncNowPlayingUi();
+      this.syncPlayButtonState();
+      this.renderDrawer();
+
+      if (state.drawerOpen) {
+        this.setDrawerOpen(true);
+      }
+
+      return true;
+    },
+
+    applyPendingRestoreTime() {
+      if (!this.audio || this.pendingRestoreTime === null) {
+        return;
+      }
+
+      if (!Number.isFinite(this.audio.duration) || this.audio.duration <= 0) {
+        return;
+      }
+
+      const restoreTime = Math.max(
+        0,
+        Math.min(this.pendingRestoreTime, this.audio.duration - 1),
+      );
+
+      try {
+        this.audio.currentTime = restoreTime;
+      } catch (err) {
+        console.warn("[SVPlayer] Could not restore playback position.", err);
+      }
+
+      this.pendingRestoreTime = null;
+    },
+
+    clearSavedState() {
+      if (!window.localStorage) {
+        return;
+      }
+
+      try {
+        window.localStorage.removeItem(this.storageKey);
+      } catch (err) {
+        console.warn("[SVPlayer] Could not clear saved player state.", err);
+      }
+    },
+
+    scheduleSaveState() {
+      if (this.saveStateTimer) {
+        window.clearTimeout(this.saveStateTimer);
+      }
+
+      this.saveStateTimer = window.setTimeout(() => {
+        this.saveState();
+      }, 250);
+    },
+
+    saveState() {
+      if (!window.localStorage) {
+        return;
+      }
+
+      const track = this.getCurrentTrack();
+      const hasPlaylist =
+        Array.isArray(this.playlist) && this.playlist.length > 0;
+      const hasAlbumTracklist =
+        Array.isArray(this.albumTracklist) && this.albumTracklist.length > 0;
+      const hasAudio = this.hasActiveAudio();
+
+      /*
+       * Do not overwrite an existing useful saved state with an empty state.
+       * This can happen on pages like /music where no queue is loaded by default.
+       */
+      if (!track && !hasPlaylist && !hasAlbumTracklist && !hasAudio) {
+        return;
+      }
+
+      const state = {
+        playlist: this.playlist,
+        albumTracklist: this.albumTracklist,
+        currentIndex: this.currentIndex,
+        currentTrackId: track && track.id ? track.id : null,
+        currentTime: this.audio ? this.audio.currentTime || 0 : 0,
+        drawerOpen: this.drawerOpen,
+        savedAt: Date.now(),
+      };
+
+      try {
+        window.localStorage.setItem(this.storageKey, JSON.stringify(state));
+      } catch (err) {
+        console.warn("[SVPlayer] Could not save player state.", err);
+      }
     },
   };
 
