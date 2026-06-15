@@ -7,7 +7,7 @@ if (! defined('ABSPATH')) {
 ?>
 
 <div class="sv-player" data-sv-player data-sv-drawer-state="closed">
-    <audio data-sv-audio preload="metadata"></audio>
+    <audio data-sv-audio preload="metadata" crossorigin="anonymous"></audio>
 
     <section
         id="sv-player-drawer"
@@ -58,6 +58,16 @@ if (! defined('ABSPATH')) {
                             aria-label="<?php esc_attr_e('Current track links', 'slim-volume'); ?>"
                         ></nav>
                     </div>
+
+                    <div class="sv-player__visualizer" data-sv-visualizer aria-hidden="true">
+                        <canvas
+                            class="sv-player__visualizer-canvas"
+                            data-sv-visualizer-canvas
+                            width="640"
+                            height="160"
+                        ></canvas>
+                    </div>
+
                 </section>
 
                 <section class="sv-player__drawer-queue" aria-label="<?php esc_attr_e('Queue', 'slim-volume'); ?>">

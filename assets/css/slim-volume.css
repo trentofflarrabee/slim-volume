@@ -672,3 +672,39 @@ body.sv-player-drawer-open {
     display: none;
   }
 }
+
+.sv-player__visualizer {
+  grid-column: 1 / -1;
+  margin-top: 18px;
+  padding: 14px;
+  border: 1px solid var(--sv-player-border);
+  border-radius: 16px;
+  background:
+    radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.08), transparent 28%),
+    rgba(255, 255, 255, 0.04);
+}
+
+.sv-player__visualizer-canvas {
+  display: block;
+  width: 100%;
+  height: 120px;
+}
+
+.sv-player__visualizer.is-unavailable {
+  opacity: 0.62;
+}
+
+.sv-player--visualizer-ready .sv-player__visualizer {
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.03);
+}
+
+@media (max-width: 760px) {
+  .sv-player__visualizer {
+    margin-top: 14px;
+    padding: 10px;
+  }
+
+  .sv-player__visualizer-canvas {
+    height: 90px;
+  }
+}

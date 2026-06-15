@@ -11,6 +11,17 @@
     currentTrack: null,
     drawerOpen: false,
 
+    visualizer: {
+    context: null,
+    analyser: null,
+    source: null,
+    data: null,
+    frame: null,
+    canvasContext: null,
+    initialized: false,
+    failed: false,
+    },
+
     els: {},
 
     init() {
@@ -31,6 +42,7 @@
       this.syncNowPlayingUi();
       this.syncPlayButtonState();
       this.renderDrawer();
+      this.drawVisualizerIdle();
 
       document.body.classList.add("sv-player-ready");
 
@@ -64,6 +76,9 @@
       this.els.drawerReleaseLink = this.root.querySelector("[data-sv-drawer-release-link]");
       this.els.drawerLinks = this.root.querySelector("[data-sv-drawer-links]");
       this.els.queue = this.root.querySelector("[data-sv-queue]");
+
+      this.els.visualizer = this.root.querySelector("[data-sv-visualizer]");
+      this.els.visualizerCanvas = this.root.querySelector("[data-sv-visualizer-canvas]");
     },
 
     publicApi() {
@@ -147,6 +162,15 @@
         renderDrawer() {
           app.renderDrawer();
         },
+
+        startVisualizer() {
+            app.startVisualizer();
+            },
+
+            stopVisualizer() {
+            app.stopVisualizer();
+        },
+
       };
     },
 
@@ -324,17 +348,21 @@
       this.audio.addEventListener("play", () => {
         this.syncPlayButtonState();
         this.syncNowPlayingUi();
-      });
+        this.startVisualizer();
+        });
 
-      this.audio.addEventListener("pause", () => {
+    this.audio.addEventListener("pause", () => {
         this.syncPlayButtonState();
         this.renderDrawer();
-      });
+        this.stopVisualizer();
+        this.drawVisualizerIdle();
+    });
 
-      this.audio.addEventListener("ended", () => {
+    this.audio.addEventListener("ended", () => {
         this.syncPlayButtonState();
+        this.stopVisualizer();
         this.next();
-      });
+    });
 
       this.audio.addEventListener("loadedmetadata", () => {
         this.updateDurationUi();
@@ -463,6 +491,7 @@
       if (cleanCurrentSrc !== cleanNextSrc) {
         this.audio.src = track.audioUrl;
         this.audio.load();
+        this.drawVisualizerIdle();
       }
 
       if (options.reset === true) {
@@ -1052,6 +1081,200 @@
         this.els.queue.appendChild(item);
       });
     },
+
+    initVisualizer() {
+  if (this.visualizer.initialized || this.visualizer.failed) {
+    return;
+  }
+
+  if (!this.audio || !this.els.visualizerCanvas) {
+    return;
+  }
+
+  const AudioContext = window.AudioContext || window.webkitAudioContext;
+
+  if (!AudioContext) {
+    this.visualizer.failed = true;
+    this.markVisualizerUnavailable();
+    return;
+  }
+
+  try {
+    const context = new AudioContext();
+    const analyser = context.createAnalyser();
+
+    analyser.fftSize = 128;
+    analyser.smoothingTimeConstant = 0.82;
+
+    const source = context.createMediaElementSource(this.audio);
+
+    source.connect(analyser);
+    analyser.connect(context.destination);
+
+    this.visualizer.context = context;
+    this.visualizer.analyser = analyser;
+    this.visualizer.source = source;
+    this.visualizer.data = new Uint8Array(analyser.frequencyBinCount);
+    this.visualizer.canvasContext =
+      this.els.visualizerCanvas.getContext("2d");
+    this.visualizer.initialized = true;
+
+    this.root.classList.add("sv-player--visualizer-ready");
+  } catch (err) {
+    console.warn("[SVPlayer] Visualizer unavailable.", err);
+
+    this.visualizer.failed = true;
+    this.markVisualizerUnavailable();
+  }
+},
+
+startVisualizer() {
+  if (!this.els.visualizerCanvas) {
+    return;
+  }
+
+  this.initVisualizer();
+
+  if (this.visualizer.failed || !this.visualizer.initialized) {
+    this.drawVisualizerIdle();
+    return;
+  }
+
+  const context = this.visualizer.context;
+
+  if (context && context.state === "suspended") {
+    context.resume().catch((err) => {
+      console.warn("[SVPlayer] Could not resume AudioContext.", err);
+    });
+  }
+
+  if (this.visualizer.frame) {
+    cancelAnimationFrame(this.visualizer.frame);
+    this.visualizer.frame = null;
+  }
+
+  const draw = () => {
+    this.drawVisualizerFrame();
+    this.visualizer.frame = requestAnimationFrame(draw);
+  };
+
+  draw();
+},
+
+stopVisualizer() {
+  if (this.visualizer.frame) {
+    cancelAnimationFrame(this.visualizer.frame);
+    this.visualizer.frame = null;
+  }
+},
+
+drawVisualizerFrame() {
+  const canvas = this.els.visualizerCanvas;
+  const ctx = this.visualizer.canvasContext;
+  const analyser = this.visualizer.analyser;
+  const data = this.visualizer.data;
+
+  if (!canvas || !ctx || !analyser || !data) {
+    return;
+  }
+
+  const width = canvas.width;
+  const height = canvas.height;
+
+  analyser.getByteFrequencyData(data);
+
+  ctx.clearRect(0, 0, width, height);
+
+  const bars = 36;
+  const gap = 4;
+  const barWidth = Math.max(3, Math.floor((width - gap * (bars - 1)) / bars));
+  const step = Math.max(1, Math.floor(data.length / bars));
+
+  for (let i = 0; i < bars; i += 1) {
+    let sum = 0;
+
+    for (let j = 0; j < step; j += 1) {
+      sum += data[i * step + j] || 0;
+    }
+
+    const value = sum / step;
+    const normalized = value / 255;
+    const eased = Math.pow(normalized, 0.72);
+
+    const barHeight = Math.max(4, eased * height);
+    const x = i * (barWidth + gap);
+    const y = height - barHeight;
+
+    ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
+    this.roundRect(ctx, x, y, barWidth, barHeight, Math.min(8, barWidth / 2));
+    ctx.fill();
+  }
+},
+
+drawVisualizerIdle() {
+  const canvas = this.els.visualizerCanvas;
+
+  if (!canvas) {
+    return;
+  }
+
+  const ctx =
+    this.visualizer.canvasContext || canvas.getContext("2d");
+
+  if (!ctx) {
+    return;
+  }
+
+  this.visualizer.canvasContext = ctx;
+
+  const width = canvas.width;
+  const height = canvas.height;
+  const bars = 36;
+  const gap = 4;
+  const barWidth = Math.max(3, Math.floor((width - gap * (bars - 1)) / bars));
+
+  ctx.clearRect(0, 0, width, height);
+
+  for (let i = 0; i < bars; i += 1) {
+    const wave = Math.sin(i * 0.72) * 0.5 + 0.5;
+    const barHeight = 8 + wave * 22;
+    const x = i * (barWidth + gap);
+    const y = height - barHeight;
+
+    ctx.fillStyle = "rgba(255, 255, 255, 0.22)";
+    this.roundRect(ctx, x, y, barWidth, barHeight, Math.min(8, barWidth / 2));
+    ctx.fill();
+  }
+},
+
+markVisualizerUnavailable() {
+  if (this.els.visualizer) {
+    this.els.visualizer.classList.add("is-unavailable");
+  }
+
+  this.drawVisualizerIdle();
+},
+
+roundRect(ctx, x, y, width, height, radius) {
+  const safeRadius = Math.min(radius, width / 2, height / 2);
+
+  ctx.beginPath();
+  ctx.moveTo(x + safeRadius, y);
+  ctx.lineTo(x + width - safeRadius, y);
+  ctx.quadraticCurveTo(x + width, y, x + width, y + safeRadius);
+  ctx.lineTo(x + width, y + height - safeRadius);
+  ctx.quadraticCurveTo(
+    x + width,
+    y + height,
+    x + width - safeRadius,
+    y + height
+  );
+  ctx.lineTo(x + safeRadius, y + height);
+  ctx.quadraticCurveTo(x, y + height, x, y + height - safeRadius);
+  ctx.lineTo(x, y + safeRadius);
+  ctx.quadraticCurveTo(x, y, x + safeRadius, y);
+  ctx.closePath();
+},
 
     formatTime(seconds) {
       if (!Number.isFinite(seconds) || seconds < 0) return "0:00";
