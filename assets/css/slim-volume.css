@@ -782,3 +782,32 @@ body.sv-ajax-loading [data-sv-page-content] {
 
   box-shadow: none;
 }
+
+.sv-track-row__queue {
+  cursor: pointer;
+  color: inherit;
+  background: transparent;
+  border: 1px solid var(--sv-card-border);
+  border-radius: 999px;
+  padding: 6px 10px;
+  font: inherit;
+  font-size: 0.88rem;
+  line-height: 1;
+}
+
+.sv-track-row__queue:hover,
+.sv-track-row__queue:focus {
+  transform: translateY(-1px);
+}
+
+.sv-track-row__queue:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 3px;
+}
+
+.sv-track-row__queue:disabled,
+.sv-track-row__queue.is-disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+  transform: none;
+}

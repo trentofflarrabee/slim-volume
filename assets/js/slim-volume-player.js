@@ -49,6 +49,7 @@
       }
 
       this.bindTrackPlayButtons();
+      this.bindTrackQueueButtons();
       this.bindPageQueueButtons();
       this.syncNowPlayingUi();
       this.syncPlayButtonState();
@@ -273,6 +274,7 @@
       });
 
       this.bindTrackPlayButtons();
+      this.bindTrackQueueButtons();
       this.bindPageQueueButtons();
       this.syncNowPlayingUi();
       this.syncPlayButtonState();
@@ -524,6 +526,92 @@
         });
       });
     },
+
+
+    bindTrackQueueButtons() {
+  const buttons = document.querySelectorAll('[data-sv-track-queue-button="true"]');
+
+  buttons.forEach((button) => {
+    if (button.__svTrackQueueButtonBound) {
+      return;
+    }
+
+    button.__svTrackQueueButtonBound = true;
+
+    button.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+
+      const indexSource = button.closest("[data-sv-track-index]") || button;
+      const rawIndex = indexSource.getAttribute("data-sv-track-index");
+      const index = parseInt(rawIndex || "-1", 10);
+
+      if (!Number.isFinite(index) || index < 0) {
+        return;
+      }
+
+      const tracks = this.albumTracklist.length
+        ? this.albumTracklist
+        : this.playlist;
+
+      const track = tracks[index];
+
+      if (!track || !track.audioUrl) {
+        return;
+      }
+
+      this.appendTrackToQueue(track);
+      this.syncTrackQueueButtons();
+    });
+  });
+
+  this.syncTrackQueueButtons();
+},
+
+syncTrackQueueButtons() {
+  const buttons = document.querySelectorAll('[data-sv-track-queue-button="true"]');
+
+  if (!buttons.length) {
+    return;
+  }
+
+  const tracks = this.albumTracklist.length
+    ? this.albumTracklist
+    : this.playlist;
+
+  buttons.forEach((button) => {
+    const indexSource = button.closest("[data-sv-track-index]") || button;
+    const rawIndex = indexSource.getAttribute("data-sv-track-index");
+    const index = parseInt(rawIndex || "-1", 10);
+
+    const track = Number.isFinite(index) && index >= 0
+      ? tracks[index]
+      : null;
+
+    const hasAudio = !!(track && track.audioUrl);
+    const isQueued = hasAudio && this.isTrackInQueue(track);
+
+    button.disabled = !hasAudio || isQueued;
+    button.classList.toggle("is-disabled", !hasAudio || isQueued);
+    button.classList.toggle("is-queued", !!isQueued);
+
+    if (!hasAudio) {
+      button.textContent = "No Audio";
+      button.setAttribute("aria-label", "No audio available");
+      return;
+    }
+
+    if (isQueued) {
+      button.textContent = "In Queue";
+      button.setAttribute("aria-label", "This track is already in the queue");
+      return;
+    }
+
+    button.textContent = "Add to Queue";
+    button.setAttribute("aria-label", `Add ${track.title || "track"} to queue`);
+  });
+},
+    
 
  bindPageQueueButtons() {
   const buttons = document.querySelectorAll('[data-sv-page-queue-button="true"]');
@@ -1077,9 +1165,10 @@ syncPageQueueButtons() {
           this.currentIndex >= this.playlist.length - 1;
       }
 
-      this.syncTrackPlayButtons(this.getCurrentTrack());
-      this.syncPageQueueButtons();
-      this.renderDrawer();
+    this.syncTrackPlayButtons(this.getCurrentTrack());
+    this.syncTrackQueueButtons();
+    this.syncPageQueueButtons();
+    this.renderDrawer();
     },
 
     updateProgressUi() {

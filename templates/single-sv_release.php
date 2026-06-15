@@ -113,9 +113,21 @@ $playlist   = $config['playlist'] ?? [];
                 data-sv-track-slug="<?php echo esc_attr((string) ($track['slug'] ?? '')); ?>"
                 data-sv-release-slug="<?php echo esc_attr((string) ($release['slug'] ?? '')); ?>"
                 data-sv-track-index="<?php echo esc_attr((string) $index); ?>">
-                <button type="button" class="sv-track-row__play" data-sv-play-button="true"
+
+                <button type="button" 
+                class="sv-track-row__play" 
+                data-sv-play-button="true"
                     aria-label="<?php echo esc_attr(sprintf(__('Play %s', 'slim-volume'), $track['title'] ?? 'track')); ?>">
                     ▶
+                </button>
+
+                <button
+                    type="button"
+                    class="sv-track-row__queue"
+                    data-sv-track-queue-button="true"
+                    data-sv-track-index="<?php echo esc_attr((string) $index); ?>"
+                >
+                    <?php esc_html_e('Add to Queue', 'slim-volume'); ?>
                 </button>
 
                 <a class="sv-track-row__title" href="<?php echo esc_url((string) ($track['trackUrl'] ?? '#')); ?>">
