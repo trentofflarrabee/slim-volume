@@ -16,6 +16,43 @@ $config     = PlayerData::get_track_page_config($track_id);
 $lyrics     = (string) get_post_meta($track_id, '_sv_lyrics', true);
 $credits    = (string) get_post_meta($track_id, '_sv_track_credits', true);
 $duration   = (string) get_post_meta($track_id, '_sv_duration', true);
+
+$playlist = isset($config['playlist']) && is_array($config['playlist'])
+    ? $config['playlist']
+    : [];
+
+$current_index = isset($config['currentIndex'])
+    ? (int) $config['currentIndex']
+    : 0;
+
+$previous_track = $playlist[$current_index - 1] ?? null;
+$next_track     = $playlist[$current_index + 1] ?? null;
+
+$track_links = [
+    'Spotify'     => (string) get_post_meta($track_id, '_sv_spotify_url', true),
+    'Apple Music' => (string) get_post_meta($track_id, '_sv_apple_music_url', true),
+    'YouTube'     => (string) get_post_meta($track_id, '_sv_youtube_url', true),
+    'Bandcamp'    => (string) get_post_meta($track_id, '_sv_bandcamp_url', true),
+    'Purchase'    => (string) get_post_meta($track_id, '_sv_purchase_url', true),
+];
+
+$download_url = (string) get_post_meta($track_id, '_sv_download_url', true);
+
+if (! $download_url) {
+    $download_attachment_id = (int) get_post_meta($track_id, '_sv_download_attachment_id', true);
+
+    if ($download_attachment_id > 0) {
+        $download_url = wp_get_attachment_url($download_attachment_id) ?: '';
+    }
+}
+
+$can_download = (bool) get_post_meta($track_id, '_sv_can_download', true);
+
+if ($can_download && $download_url) {
+    $track_links['Download'] = $download_url;
+}
+
+$track_links = array_filter($track_links);
 ?>
 
 <main class="sv-track sv-track-single">
@@ -70,6 +107,26 @@ $duration   = (string) get_post_meta($track_id, '_sv_duration', true);
                 >
                     <?php esc_html_e('Play Track', 'slim-volume'); ?>
                 </button>
+
+                <?php if ($track_links) : ?>
+                    <nav class="sv-link-list sv-track-links" aria-label="<?php esc_attr_e('Track links', 'slim-volume'); ?>">
+                        <?php foreach ($track_links as $label => $url) : ?>
+                            <a
+                                class="sv-link-pill"
+                                href="<?php echo esc_url($url); ?>"
+                                <?php if ($label === 'Download') : ?>
+                                    download
+                                <?php else : ?>
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                <?php endif; ?>
+                            >
+                                <?php echo esc_html($label); ?>
+                            </a>
+                        <?php endforeach; ?>
+                    </nav>
+                <?php endif; ?>
+
             </div>
         </header>
 
@@ -98,6 +155,28 @@ $duration   = (string) get_post_meta($track_id, '_sv_duration', true);
                     <?php echo wp_kses_post(wpautop($credits)); ?>
                 </div>
             </section>
+        <?php endif; ?>
+
+        <?php if ($previous_track || $next_track) : ?>
+            <nav class="sv-track-nav" aria-label="<?php esc_attr_e('Track navigation', 'slim-volume'); ?>">
+                <div class="sv-track-nav__previous">
+                    <?php if ($previous_track) : ?>
+                        <a href="<?php echo esc_url((string) ($previous_track['trackUrl'] ?? '#')); ?>">
+                            <span><?php esc_html_e('Previous Track', 'slim-volume'); ?></span>
+                            <strong><?php echo esc_html((string) ($previous_track['title'] ?? '')); ?></strong>
+                        </a>
+                    <?php endif; ?>
+                </div>
+
+                <div class="sv-track-nav__next">
+                    <?php if ($next_track) : ?>
+                        <a href="<?php echo esc_url((string) ($next_track['trackUrl'] ?? '#')); ?>">
+                            <span><?php esc_html_e('Next Track', 'slim-volume'); ?></span>
+                            <strong><?php echo esc_html((string) ($next_track['title'] ?? '')); ?></strong>
+                        </a>
+                    <?php endif; ?>
+                </div>
+            </nav>
         <?php endif; ?>
 
         <?php PlayerData::render_page_config($config); ?>

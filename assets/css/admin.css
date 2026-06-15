@@ -1,0 +1,131 @@
+.column-sv_artwork {
+  width: 72px;
+}
+
+.column-sv_track_number {
+  width: 60px;
+}
+
+.column-sv_release_date,
+.column-sv_duration {
+  width: 120px;
+}
+
+.column-sv_track_count,
+.column-sv_featured,
+.column-sv_lyrics,
+.column-sv_download {
+  width: 100px;
+}
+
+.sv-admin-thumb {
+  display: block;
+  width: 56px;
+  height: 56px;
+  border-radius: 8px;
+  object-fit: cover;
+  background: #f0f0f1;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.08);
+}
+
+.sv-admin-thumb--empty {
+  position: relative;
+}
+
+.sv-admin-thumb--empty::before {
+  content: "—";
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: #8c8f94;
+}
+
+.sv-admin-status {
+  display: inline-flex;
+  align-items: center;
+  max-width: 180px;
+  min-height: 22px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  line-height: 1.4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sv-admin-status--yes {
+  color: #0a4b25;
+  background: #dff6e8;
+}
+
+.sv-admin-status--no {
+  color: #8a2424;
+  background: #f8dddd;
+}
+
+.sv-admin-status--warning {
+  color: #6f4e00;
+  background: #fff3cd;
+}
+.sv-release-track-manager {
+  margin-top: 4px;
+}
+
+.sv-release-tracks-table {
+  margin-top: 12px;
+}
+
+.sv-release-tracks-table th,
+.sv-release-tracks-table td {
+  vertical-align: middle;
+}
+
+.sv-release-tracks-table__art {
+  width: 72px;
+}
+
+.sv-release-tracks-table__number {
+  width: 56px;
+}
+
+.sv-release-tracks-table .sv-admin-status {
+  max-width: 220px;
+}
+.sv-release-tracks-table__handle {
+  width: 42px;
+  text-align: center;
+}
+
+.sv-track-sort-handle {
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  cursor: move;
+  border-radius: 6px;
+  color: #50575e;
+  background: #f0f0f1;
+  border: 1px solid #c3c4c7;
+  font-size: 16px;
+  line-height: 1;
+}
+
+.sv-track-sort-handle:hover,
+.sv-track-sort-handle:focus {
+  color: #1d2327;
+  background: #fff;
+}
+
+.sv-track-sort-placeholder {
+  height: 64px;
+  outline: 2px dashed #72aee6;
+  outline-offset: -4px;
+  background: #f0f6fc;
+}
+
+.sv-release-tracks-table tbody tr.ui-sortable-helper {
+  background: #fff;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.16);
+}

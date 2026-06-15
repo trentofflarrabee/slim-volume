@@ -225,43 +225,71 @@
     },
 
     bindTrackPlayButtons() {
-      const buttons = document.querySelectorAll('[data-sv-play-button="true"]');
+    const buttons = document.querySelectorAll('[data-sv-play-button="true"]');
 
-      buttons.forEach((button) => {
+    buttons.forEach((button) => {
         button.addEventListener("click", (event) => {
-          if (
+        if (
             event.defaultPrevented ||
             event.button !== 0 ||
             event.metaKey ||
             event.ctrlKey ||
             event.shiftKey ||
             event.altKey
-          ) {
+        ) {
             return;
-          }
+        }
 
-          event.preventDefault();
-          event.stopPropagation();
+        event.preventDefault();
+        event.stopPropagation();
 
-          const indexSource = button.closest("[data-sv-track-index]") || button;
-          const rawIndex = indexSource.getAttribute("data-sv-track-index");
-          const index = parseInt(rawIndex || "0", 10);
+        const indexSource = button.closest("[data-sv-track-index]") || button;
+        const rawIndex = indexSource.getAttribute("data-sv-track-index");
+        const index = parseInt(rawIndex || "0", 10);
 
-          if (!Number.isFinite(index) || index < 0) return;
+        if (!Number.isFinite(index) || index < 0) return;
 
-          const tracks = this.albumTracklist.length
+        const tracks = this.albumTracklist.length
             ? this.albumTracklist
             : this.playlist;
 
-          if (!tracks.length || !tracks[index]) return;
+        if (!tracks.length || !tracks[index]) return;
 
-          this.loadPlaylist(tracks, {
+        const clickedTrack = tracks[index];
+        const currentTrack = this.getCurrentTrack();
+
+        const isSameTrack =
+            currentTrack &&
+            clickedTrack &&
+            String(currentTrack.id) === String(clickedTrack.id);
+
+        const hasLoadedAudio = !!(
+            this.audio &&
+            (this.audio.currentSrc || this.audio.src)
+        );
+
+        /*
+        * Important:
+        * If the visitor clicks the currently loaded track,
+        * toggle pause/play instead of restarting the song.
+        */
+        if (isSameTrack && hasLoadedAudio) {
+            if (this.audio.paused || this.audio.ended) {
+            this.play();
+            } else {
+            this.pause();
+            }
+
+            return;
+        }
+
+        this.loadPlaylist(tracks, {
             startIndex: index,
             autoplay: true,
             load: true,
-          });
         });
-      });
+        });
+    });
     },
 
     loadPlaylist(tracks, options = {}) {
@@ -425,12 +453,13 @@
     },
 
     syncNowPlayingUi() {
-      const track = this.getCurrentTrack();
+    const track = this.getCurrentTrack();
 
-      this.updateMetaUi(track);
-      this.syncActiveTrackRows(track);
-      this.updateProgressUi();
-      this.updateDurationUi();
+    this.updateMetaUi(track);
+    this.syncActiveTrackRows(track);
+    this.syncTrackPlayButtons(track);
+    this.updateProgressUi();
+    this.updateDurationUi();
     },
 
     updateMetaUi(track) {
@@ -505,6 +534,49 @@
       });
     },
 
+    syncTrackPlayButtons(track) {
+        const buttons = document.querySelectorAll('[data-sv-play-button="true"]');
+        const isPlaying = !!this.audio && !this.audio.paused && !this.audio.ended;
+
+        buttons.forEach((button) => {
+            const indexSource = button.closest("[data-sv-track-index]") || button;
+            const rawIndex = indexSource.getAttribute("data-sv-track-index");
+            const index = parseInt(rawIndex || "0", 10);
+
+            const tracks = this.albumTracklist.length
+            ? this.albumTracklist
+            : this.playlist;
+
+            const buttonTrack = Number.isFinite(index) && index >= 0
+            ? tracks[index]
+            : null;
+
+            const isCurrent =
+            track &&
+            buttonTrack &&
+            String(track.id) === String(buttonTrack.id);
+
+            if (isCurrent && isPlaying) {
+            button.textContent = "Pause";
+            button.setAttribute("aria-label", `Pause ${track.title || "track"}`);
+            button.classList.add("is-playing");
+            return;
+            }
+
+            if (isCurrent) {
+            button.textContent = "Play";
+            button.setAttribute("aria-label", `Play ${track.title || "track"}`);
+            button.classList.add("is-current");
+            button.classList.remove("is-playing");
+            return;
+            }
+
+            button.textContent = "Play";
+            button.setAttribute("aria-label", "Play track");
+            button.classList.remove("is-current", "is-playing");
+        });
+    },
+
     syncPlayButtonState() {
       const isPlaying = !!this.audio && !this.audio.paused && !this.audio.ended;
       const canPlay =
@@ -531,6 +603,8 @@
           this.currentIndex < 0 ||
           this.currentIndex >= this.playlist.length - 1;
       }
+
+      this.syncTrackPlayButtons(this.getCurrentTrack());
     },
 
     updateProgressUi() {

@@ -45,13 +45,49 @@ final class Assets
 
     public static function enqueue_admin(string $hook): void
     {
-        if (! in_array($hook, ['post.php', 'post-new.php'], true)) {
+        if (! in_array($hook, ['post.php', 'post-new.php', 'edit.php'], true)) {
             return;
         }
 
         $screen = get_current_screen();
 
-        if (! $screen || $screen->post_type !== PostTypes::TRACK) {
+        if (
+            ! $screen
+            || ! in_array($screen->post_type, [PostTypes::RELEASE, PostTypes::TRACK], true)
+        ) {
+            return;
+        }
+
+        $css_path = SLIM_VOLUME_PATH . 'assets/css/admin.css';
+
+        if (file_exists($css_path)) {
+            wp_enqueue_style(
+                'slim-volume-admin',
+                SLIM_VOLUME_URL . 'assets/css/admin.css',
+                [],
+                filemtime($css_path)
+            );
+        }
+
+        if ($screen->post_type === PostTypes::RELEASE) {
+            wp_enqueue_script('jquery-ui-sortable');
+
+            $release_js_path = SLIM_VOLUME_PATH . 'assets/js/admin-release-tracks.js';
+
+            if (file_exists($release_js_path)) {
+                wp_enqueue_script(
+                    'slim-volume-admin-release-tracks',
+                    SLIM_VOLUME_URL . 'assets/js/admin-release-tracks.js',
+                    ['jquery', 'jquery-ui-sortable'],
+                    filemtime($release_js_path),
+                    true
+                );
+            }
+
+            return;
+        }
+
+        if ($screen->post_type !== PostTypes::TRACK) {
             return;
         }
 

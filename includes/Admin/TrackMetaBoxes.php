@@ -55,7 +55,11 @@ final class TrackMetaBoxes
     {
         wp_nonce_field('sv_save_track_details', 'sv_track_details_nonce');
 
-        $release_id          = (int) get_post_meta($post->ID, '_sv_release_id', true);
+        $release_id = (int) get_post_meta($post->ID, '_sv_release_id', true);
+        if ($release_id <= 0 && isset($_GET['sv_release_id'])) {
+            $release_id = absint($_GET['sv_release_id']);
+        }
+        
         $track_number        = (int) get_post_meta($post->ID, '_sv_track_number', true);
         $disc_number         = (int) get_post_meta($post->ID, '_sv_disc_number', true);
         $duration            = (string) get_post_meta($post->ID, '_sv_duration', true);

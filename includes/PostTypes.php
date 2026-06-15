@@ -19,6 +19,11 @@ final class PostTypes
         self::register_tracks();
     }
 
+    public static function add_theme_support(): void
+    {
+        add_theme_support('post-thumbnails', [self::RELEASE, self::TRACK]);
+    }
+
     private static function register_releases(): void
     {
         register_post_type(

@@ -45,6 +45,33 @@ $playlist   = $config['playlist'] ?? [];
                     </p>
                 <?php endif; ?>
 
+                <?php
+                    $release_links = [
+                        'Spotify'     => (string) get_post_meta($release_id, '_sv_spotify_url', true),
+                        'Apple Music' => (string) get_post_meta($release_id, '_sv_apple_music_url', true),
+                        'YouTube'     => (string) get_post_meta($release_id, '_sv_youtube_url', true),
+                        'Bandcamp'    => (string) get_post_meta($release_id, '_sv_bandcamp_url', true),
+                        'Purchase'    => (string) get_post_meta($release_id, '_sv_purchase_url', true),
+                    ];
+
+                    $release_links = array_filter($release_links);
+                    ?>
+
+                    <?php if ($release_links) : ?>
+                        <nav class="sv-link-list sv-release-links" aria-label="<?php esc_attr_e('Release links', 'slim-volume'); ?>">
+                            <?php foreach ($release_links as $label => $url) : ?>
+                                <a
+                                    class="sv-link-pill"
+                                    href="<?php echo esc_url($url); ?>"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                >
+                                    <?php echo esc_html($label); ?>
+                                </a>
+                            <?php endforeach; ?>
+                        </nav>
+                    <?php endif; ?>
+
                 <div class="sv-release-hero__description">
                     <?php the_content(); ?>
                 </div>

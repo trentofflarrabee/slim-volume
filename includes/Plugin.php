@@ -16,6 +16,8 @@ require_once SLIM_VOLUME_PATH . 'includes/Frontend/TemplateLoader.php';
 require_once SLIM_VOLUME_PATH . 'includes/Frontend/PlayerData.php';
 require_once SLIM_VOLUME_PATH . 'includes/Admin/ReleaseMetaBoxes.php';
 require_once SLIM_VOLUME_PATH . 'includes/Admin/TrackMetaBoxes.php';
+require_once SLIM_VOLUME_PATH . 'includes/Admin/AdminColumns.php';
+require_once SLIM_VOLUME_PATH . 'includes/Admin/ReleaseTrackManager.php';
 
 final class Plugin
 {
@@ -32,15 +34,21 @@ final class Plugin
 
     public function boot(): void
     {
+        add_action('after_setup_theme', [PostTypes::class, 'add_theme_support']);
+
         add_action('init', [PostTypes::class, 'register']);
         add_action('init', [Meta::class, 'register']);
         add_action('init', [Rewrite::class, 'register']);
 
         add_action('add_meta_boxes', [Admin\ReleaseMetaBoxes::class, 'register']);
         add_action('add_meta_boxes', [Admin\TrackMetaBoxes::class, 'register']);
+        add_action('add_meta_boxes', [Admin\ReleaseTrackManager::class, 'register']);
 
         add_action('save_post_' . PostTypes::RELEASE, [Admin\ReleaseMetaBoxes::class, 'save']);
+        add_action('save_post_' . PostTypes::RELEASE, [Admin\ReleaseTrackManager::class, 'save_order']);
         add_action('save_post_' . PostTypes::TRACK, [Admin\TrackMetaBoxes::class, 'save']);
+
+        add_action('admin_init', [Admin\AdminColumns::class, 'register']);
 
         add_filter('query_vars', [Rewrite::class, 'add_query_vars']);
         add_action('pre_get_posts', [Rewrite::class, 'resolve_nested_track_query']);
