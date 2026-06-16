@@ -1,7 +1,9 @@
 (function () {
   "use strict";
 
-  const config = window.SVNavigationConfig || {};
+  const globalConfig = window.SVConfig || {};
+  const navConfig = window.SVNavigationConfig || {};
+  const config = Object.assign({}, globalConfig, navConfig);
 
   const Nav = {
     contentSelector: config.contentSelector || "[data-sv-page-content]",
@@ -12,6 +14,10 @@
     scrollPositions: {},
 
     init() {
+      if (config.ajaxNavigation === false) {
+        return;
+      }
+
       const content = document.querySelector(this.contentSelector);
 
       if (!content) {

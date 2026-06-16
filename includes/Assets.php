@@ -28,7 +28,7 @@ final class Assets
                 'slim-volume',
                 SLIM_VOLUME_URL . 'assets/css/slim-volume.css',
                 [],
-                filemtime($css_path)
+                self::asset_version($css_path)
             );
         }
 
@@ -37,10 +37,27 @@ final class Assets
                 'slim-volume-player',
                 SLIM_VOLUME_URL . 'assets/js/slim-volume-player.js',
                 [],
-                filemtime($js_path),
+                self::asset_version($js_path),
                 true
             );
         }
+
+
+        wp_add_inline_script(
+            'slim-volume-player',
+            'window.SVConfig = ' . wp_json_encode(
+                [
+                    'version'          => defined('SLIM_VOLUME_VERSION') ? SLIM_VOLUME_VERSION : '0.1.0',
+                    'ajaxNavigation'   => true,
+                    'persistence'      => true,
+                    'visualizer'       => true,
+                    'debug'            => defined('SCRIPT_DEBUG') && SCRIPT_DEBUG,
+                    'contentSelector'  => '[data-sv-page-content]',
+                    'musicBaseUrl'     => home_url('/music/'),
+                ]
+            ) . ';',
+            'before'
+        );
 
         $navigation_js_path = SLIM_VOLUME_PATH . 'assets/js/slim-volume-navigation.js';
 
@@ -49,7 +66,7 @@ final class Assets
                 'slim-volume-navigation',
                 SLIM_VOLUME_URL . 'assets/js/slim-volume-navigation.js',
                 ['slim-volume-player'],
-                filemtime($navigation_js_path),
+                self::asset_version($navigation_js_path),
                 true
             );
 
@@ -64,7 +81,6 @@ final class Assets
                 'before'
             );
         }
-
     }
 
     public static function enqueue_admin(string $hook): void
@@ -89,7 +105,7 @@ final class Assets
                 'slim-volume-admin',
                 SLIM_VOLUME_URL . 'assets/css/admin.css',
                 [],
-                filemtime($css_path)
+                self::asset_version($css_path)
             );
         }
 
@@ -103,7 +119,7 @@ final class Assets
                     'slim-volume-admin-release-tracks',
                     SLIM_VOLUME_URL . 'assets/js/admin-release-tracks.js',
                     ['jquery', 'jquery-ui-sortable'],
-                    filemtime($release_js_path),
+                    self::asset_version($release_js_path),
                     true
                 );
             }
@@ -124,9 +140,20 @@ final class Assets
                 'slim-volume-admin-track-media',
                 SLIM_VOLUME_URL . 'assets/js/admin-track-media.js',
                 ['jquery'],
-                filemtime($js_path),
+                self::asset_version($js_path),
                 true
             );
         }
+    }
+
+    private static function asset_version(string $path): string
+    {
+        if (file_exists($path)) {
+            return (string) filemtime($path);
+        }
+
+        return defined('SLIM_VOLUME_VERSION')
+            ? (string) SLIM_VOLUME_VERSION
+            : '0.1.0';
     }
 }

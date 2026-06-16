@@ -60,7 +60,15 @@
 
       document.body.classList.add("sv-player-ready");
 
-      window.SVPlayer = this.publicApi();
+      const publicApi = this.publicApi();
+
+      if (this.isDebugEnabled()) {
+        publicApi.debugSnapshot = () => {
+          return this.getDebugSnapshot();
+        };
+      }
+
+      window.SVPlayer = publicApi;
     },
 
     cacheEls() {
@@ -203,11 +211,6 @@
         stopVisualizer() {
           app.stopVisualizer();
         },
-
-        debugSnapshot() {
-  return app.getDebugSnapshot();
-},
-
       };
     },
 
@@ -389,140 +392,140 @@
         });
       }
 
-if (this.els.queue) {
-  this.els.queue.addEventListener("click", (event) => {
-    const target = event.target instanceof Element ? event.target : null;
+      if (this.els.queue) {
+        this.els.queue.addEventListener("click", (event) => {
+          const target = event.target instanceof Element ? event.target : null;
 
-    if (!target) return;
+          if (!target) return;
 
-    const removeButton = target.closest("[data-sv-remove-queue-index]");
+          const removeButton = target.closest("[data-sv-remove-queue-index]");
 
-    if (removeButton) {
-      event.preventDefault();
-      event.stopPropagation();
+          if (removeButton) {
+            event.preventDefault();
+            event.stopPropagation();
 
-      const removeIndex = parseInt(
-        removeButton.getAttribute("data-sv-remove-queue-index") || "-1",
-        10
-      );
+            const removeIndex = parseInt(
+              removeButton.getAttribute("data-sv-remove-queue-index") || "-1",
+              10,
+            );
 
-      this.removeTrackFromQueue(removeIndex);
-      return;
-    }
+            this.removeTrackFromQueue(removeIndex);
+            return;
+          }
 
-    const button = target.closest("[data-sv-queue-index]");
-    if (!button) return;
+          const button = target.closest("[data-sv-queue-index]");
+          if (!button) return;
 
-    event.preventDefault();
+          event.preventDefault();
 
-    const index = parseInt(
-      button.getAttribute("data-sv-queue-index") || "-1",
-      10
-    );
+          const index = parseInt(
+            button.getAttribute("data-sv-queue-index") || "-1",
+            10,
+          );
 
-    if (!Number.isFinite(index) || index < 0) return;
-    if (!this.playlist[index]) return;
+          if (!Number.isFinite(index) || index < 0) return;
+          if (!this.playlist[index]) return;
 
-    this.loadPlaylist(this.playlist, {
-      startIndex: index,
-      autoplay: true,
-      load: true,
-    });
-  });
-}
+          this.loadPlaylist(this.playlist, {
+            startIndex: index,
+            autoplay: true,
+            load: true,
+          });
+        });
+      }
 
-if (this.els.queue) {
-  this.els.queue.addEventListener("dragstart", (event) => {
-    const target = event.target instanceof Element ? event.target : null;
-    if (!target) return;
+      if (this.els.queue) {
+        this.els.queue.addEventListener("dragstart", (event) => {
+          const target = event.target instanceof Element ? event.target : null;
+          if (!target) return;
 
-    const handle = target.closest("[data-sv-queue-drag-index]");
-    if (!handle) return;
+          const handle = target.closest("[data-sv-queue-drag-index]");
+          if (!handle) return;
 
-    const index = parseInt(
-      handle.getAttribute("data-sv-queue-drag-index") || "-1",
-      10
-    );
+          const index = parseInt(
+            handle.getAttribute("data-sv-queue-drag-index") || "-1",
+            10,
+          );
 
-    if (!Number.isFinite(index) || index < 0) return;
+          if (!Number.isFinite(index) || index < 0) return;
 
-    this.queueDragIndex = index;
+          this.queueDragIndex = index;
 
-    const item = handle.closest("[data-sv-queue-item-index]");
-    if (item) {
-      item.classList.add("is-dragging");
-    }
+          const item = handle.closest("[data-sv-queue-item-index]");
+          if (item) {
+            item.classList.add("is-dragging");
+          }
 
-    if (event.dataTransfer) {
-      event.dataTransfer.effectAllowed = "move";
-      event.dataTransfer.setData("text/plain", String(index));
-    }
-  });
+          if (event.dataTransfer) {
+            event.dataTransfer.effectAllowed = "move";
+            event.dataTransfer.setData("text/plain", String(index));
+          }
+        });
 
-  this.els.queue.addEventListener("dragover", (event) => {
-    if (this.queueDragIndex === null) return;
+        this.els.queue.addEventListener("dragover", (event) => {
+          if (this.queueDragIndex === null) return;
 
-    const target = event.target instanceof Element ? event.target : null;
-    if (!target) return;
+          const target = event.target instanceof Element ? event.target : null;
+          if (!target) return;
 
-    const item = target.closest("[data-sv-queue-item-index]");
-    if (!item) return;
+          const item = target.closest("[data-sv-queue-item-index]");
+          if (!item) return;
 
-    event.preventDefault();
+          event.preventDefault();
 
-    item.classList.add("is-drop-target");
+          item.classList.add("is-drop-target");
 
-    if (event.dataTransfer) {
-      event.dataTransfer.dropEffect = "move";
-    }
-  });
+          if (event.dataTransfer) {
+            event.dataTransfer.dropEffect = "move";
+          }
+        });
 
-  this.els.queue.addEventListener("dragleave", (event) => {
-    const target = event.target instanceof Element ? event.target : null;
-    if (!target) return;
+        this.els.queue.addEventListener("dragleave", (event) => {
+          const target = event.target instanceof Element ? event.target : null;
+          if (!target) return;
 
-    const item = target.closest("[data-sv-queue-item-index]");
-    if (!item) return;
+          const item = target.closest("[data-sv-queue-item-index]");
+          if (!item) return;
 
-    item.classList.remove("is-drop-target");
-  });
+          item.classList.remove("is-drop-target");
+        });
 
-  this.els.queue.addEventListener("drop", (event) => {
-    if (this.queueDragIndex === null) return;
+        this.els.queue.addEventListener("drop", (event) => {
+          if (this.queueDragIndex === null) return;
 
-    const target = event.target instanceof Element ? event.target : null;
-    if (!target) return;
+          const target = event.target instanceof Element ? event.target : null;
+          if (!target) return;
 
-    const item = target.closest("[data-sv-queue-item-index]");
-    if (!item) return;
+          const item = target.closest("[data-sv-queue-item-index]");
+          if (!item) return;
 
-    event.preventDefault();
+          event.preventDefault();
 
-    const toIndex = parseInt(
-      item.getAttribute("data-sv-queue-item-index") || "-1",
-      10
-    );
+          const toIndex = parseInt(
+            item.getAttribute("data-sv-queue-item-index") || "-1",
+            10,
+          );
 
-    const fromIndex = this.queueDragIndex;
+          const fromIndex = this.queueDragIndex;
 
-    this.queueDragIndex = null;
-    this.clearQueueDragClasses();
+          this.queueDragIndex = null;
+          this.clearQueueDragClasses();
 
-    this.moveQueueTrack(fromIndex, toIndex);
-  });
+          this.moveQueueTrack(fromIndex, toIndex);
+        });
 
-  this.els.queue.addEventListener("dragend", () => {
-    this.queueDragIndex = null;
-    this.clearQueueDragClasses();
-  });
-}
+        this.els.queue.addEventListener("dragend", () => {
+          this.queueDragIndex = null;
+          this.clearQueueDragClasses();
+        });
+      }
 
       if (this.els.clearQueue) {
         this.els.clearQueue.addEventListener("click", (event) => {
-            event.preventDefault();
-            this.clearQueue();
+          event.preventDefault();
+          this.clearQueue();
         });
-        }
+      }
 
       document.addEventListener("keydown", (event) => {
         if (event.key === "Escape" && this.drawerOpen) {
@@ -643,26 +646,54 @@ if (this.els.queue) {
       });
     },
 
-
     bindTrackQueueButtons() {
-  const buttons = document.querySelectorAll('[data-sv-track-queue-button="true"]');
+      const buttons = document.querySelectorAll(
+        '[data-sv-track-queue-button="true"]',
+      );
 
-  buttons.forEach((button) => {
-    if (button.__svTrackQueueButtonBound) {
-      return;
-    }
+      buttons.forEach((button) => {
+        if (button.__svTrackQueueButtonBound) {
+          return;
+        }
 
-    button.__svTrackQueueButtonBound = true;
+        button.__svTrackQueueButtonBound = true;
 
-    button.addEventListener("click", (event) => {
-      event.preventDefault();
-      event.stopPropagation();
+        button.addEventListener("click", (event) => {
+          event.preventDefault();
+          event.stopPropagation();
 
-      const indexSource = button.closest("[data-sv-track-index]") || button;
-      const rawIndex = indexSource.getAttribute("data-sv-track-index");
-      const index = parseInt(rawIndex || "-1", 10);
+          const indexSource = button.closest("[data-sv-track-index]") || button;
+          const rawIndex = indexSource.getAttribute("data-sv-track-index");
+          const index = parseInt(rawIndex || "-1", 10);
 
-      if (!Number.isFinite(index) || index < 0) {
+          if (!Number.isFinite(index) || index < 0) {
+            return;
+          }
+
+          const tracks = this.albumTracklist.length
+            ? this.albumTracklist
+            : this.playlist;
+
+          const track = tracks[index];
+
+          if (!track || !track.audioUrl) {
+            return;
+          }
+
+          this.appendTrackToQueue(track);
+          this.syncTrackQueueButtons();
+        });
+      });
+
+      this.syncTrackQueueButtons();
+    },
+
+    syncTrackQueueButtons() {
+      const buttons = document.querySelectorAll(
+        '[data-sv-track-queue-button="true"]',
+      );
+
+      if (!buttons.length) {
         return;
       }
 
@@ -670,180 +701,174 @@ if (this.els.queue) {
         ? this.albumTracklist
         : this.playlist;
 
-      const track = tracks[index];
+      buttons.forEach((button) => {
+        const indexSource = button.closest("[data-sv-track-index]") || button;
+        const rawIndex = indexSource.getAttribute("data-sv-track-index");
+        const index = parseInt(rawIndex || "-1", 10);
 
-      if (!track || !track.audioUrl) {
-        return;
-      }
+        const track =
+          Number.isFinite(index) && index >= 0 ? tracks[index] : null;
 
-      this.appendTrackToQueue(track);
-      this.syncTrackQueueButtons();
-    });
-  });
+        const hasAudio = !!(track && track.audioUrl);
+        const isQueued = hasAudio && this.isTrackInQueue(track);
 
-  this.syncTrackQueueButtons();
-},
+        button.disabled = !hasAudio || isQueued;
+        button.classList.toggle("is-disabled", !hasAudio || isQueued);
+        button.classList.toggle("is-queued", !!isQueued);
 
-syncTrackQueueButtons() {
-  const buttons = document.querySelectorAll('[data-sv-track-queue-button="true"]');
+        if (!hasAudio) {
+          button.textContent = "No Audio";
+          button.setAttribute("aria-label", "No audio available");
+          return;
+        }
 
-  if (!buttons.length) {
-    return;
-  }
+        if (isQueued) {
+          button.textContent = "In Queue";
+          button.setAttribute(
+            "aria-label",
+            "This track is already in the queue",
+          );
+          return;
+        }
 
-  const tracks = this.albumTracklist.length
-    ? this.albumTracklist
-    : this.playlist;
+        button.textContent = "Add to Queue";
+        button.setAttribute(
+          "aria-label",
+          `Add ${track.title || "track"} to queue`,
+        );
+      });
+    },
 
-  buttons.forEach((button) => {
-    const indexSource = button.closest("[data-sv-track-index]") || button;
-    const rawIndex = indexSource.getAttribute("data-sv-track-index");
-    const index = parseInt(rawIndex || "-1", 10);
-
-    const track = Number.isFinite(index) && index >= 0
-      ? tracks[index]
-      : null;
-
-    const hasAudio = !!(track && track.audioUrl);
-    const isQueued = hasAudio && this.isTrackInQueue(track);
-
-    button.disabled = !hasAudio || isQueued;
-    button.classList.toggle("is-disabled", !hasAudio || isQueued);
-    button.classList.toggle("is-queued", !!isQueued);
-
-    if (!hasAudio) {
-      button.textContent = "No Audio";
-      button.setAttribute("aria-label", "No audio available");
-      return;
-    }
-
-    if (isQueued) {
-      button.textContent = "In Queue";
-      button.setAttribute("aria-label", "This track is already in the queue");
-      return;
-    }
-
-    button.textContent = "Add to Queue";
-    button.setAttribute("aria-label", `Add ${track.title || "track"} to queue`);
-  });
-},
-    
-
- bindPageQueueButtons() {
-  const buttons = document.querySelectorAll('[data-sv-page-queue-button="true"]');
-
-  buttons.forEach((button) => {
-    if (button.__svPageQueueButtonBound) {
-      return;
-    }
-
-    button.__svPageQueueButtonBound = true;
-
-    button.addEventListener("click", (event) => {
-      event.preventDefault();
-
-      const action = button.getAttribute("data-sv-page-queue-action") || "play";
-
-      const pageQueue = this.albumTracklist.length
-        ? this.albumTracklist
-        : [];
-
-      if (!pageQueue.length) {
-        return;
-      }
-
-      if (action === "append") {
-        this.appendTracksToQueue(pageQueue);
-        this.syncPageQueueButtons();
-        return;
-      }
-
-      const rawStartIndex = button.getAttribute("data-sv-page-queue-start-index");
-      const preferredIndex = parseInt(rawStartIndex || "0", 10);
-
-      const playableIndex = this.getFirstPlayableIndex(
-        pageQueue,
-        Number.isFinite(preferredIndex) ? preferredIndex : 0
+    bindPageQueueButtons() {
+      const buttons = document.querySelectorAll(
+        '[data-sv-page-queue-button="true"]',
       );
 
-      if (playableIndex < 0) {
-        return;
-      }
+      buttons.forEach((button) => {
+        if (button.__svPageQueueButtonBound) {
+          return;
+        }
 
-      this.loadPlaylist(pageQueue, {
-        startIndex: playableIndex,
-        autoplay: true,
-        load: true,
+        button.__svPageQueueButtonBound = true;
+
+        button.addEventListener("click", (event) => {
+          event.preventDefault();
+
+          const action =
+            button.getAttribute("data-sv-page-queue-action") || "play";
+
+          const pageQueue = this.albumTracklist.length
+            ? this.albumTracklist
+            : [];
+
+          if (!pageQueue.length) {
+            return;
+          }
+
+          if (action === "append") {
+            this.appendTracksToQueue(pageQueue);
+            this.syncPageQueueButtons();
+            return;
+          }
+
+          const rawStartIndex = button.getAttribute(
+            "data-sv-page-queue-start-index",
+          );
+          const preferredIndex = parseInt(rawStartIndex || "0", 10);
+
+          const playableIndex = this.getFirstPlayableIndex(
+            pageQueue,
+            Number.isFinite(preferredIndex) ? preferredIndex : 0,
+          );
+
+          if (playableIndex < 0) {
+            return;
+          }
+
+          this.loadPlaylist(pageQueue, {
+            startIndex: playableIndex,
+            autoplay: true,
+            load: true,
+          });
+
+          this.syncPageQueueButtons();
+        });
       });
 
       this.syncPageQueueButtons();
-    });
-  });
+    },
 
-  this.syncPageQueueButtons();
-},
+    syncPageQueueButtons() {
+      const buttons = document.querySelectorAll(
+        '[data-sv-page-queue-button="true"]',
+      );
 
-syncPageQueueButtons() {
-  const buttons = document.querySelectorAll('[data-sv-page-queue-button="true"]');
-
-  if (!buttons.length) {
-    return;
-  }
-
-  const pageQueue = this.albumTracklist.length
-    ? this.albumTracklist
-    : [];
-
-  const playablePageTracks = pageQueue.filter((track) => {
-    return !!(track && track.audioUrl);
-  });
-
-  const hasPlayableTrack = playablePageTracks.length > 0;
-  const activeQueueMatchesPage = this.isSameQueue(this.playlist, pageQueue);
-
-  const allPlayableTracksAlreadyQueued =
-    hasPlayableTrack &&
-    playablePageTracks.every((track) => {
-      return this.isTrackInQueue(track);
-    });
-
-  buttons.forEach((button) => {
-    const action = button.getAttribute("data-sv-page-queue-action") || "play";
-
-    button.disabled = !hasPlayableTrack;
-    button.classList.toggle("is-disabled", !hasPlayableTrack);
-
-    if (!hasPlayableTrack) {
-      button.textContent = "No Audio Available";
-      button.setAttribute("aria-label", "No audio available for this release");
-      return;
-    }
-
-    if (action === "append") {
-      button.disabled = allPlayableTracksAlreadyQueued;
-      button.classList.toggle("is-disabled", allPlayableTracksAlreadyQueued);
-
-      if (allPlayableTracksAlreadyQueued) {
-        button.textContent = "Already in Queue";
-        button.setAttribute("aria-label", "This release is already in the queue");
+      if (!buttons.length) {
         return;
       }
 
-      button.textContent = "Add This Release to Queue";
-      button.setAttribute("aria-label", "Add this release to the queue");
-      return;
-    }
+      const pageQueue = this.albumTracklist.length ? this.albumTracklist : [];
 
-    if (activeQueueMatchesPage) {
-      button.textContent = "Restart Release";
-      button.setAttribute("aria-label", "Restart this release");
-      return;
-    }
+      const playablePageTracks = pageQueue.filter((track) => {
+        return !!(track && track.audioUrl);
+      });
 
-    button.textContent = "Play This Release";
-    button.setAttribute("aria-label", "Play this release");
-  });
-},
+      const hasPlayableTrack = playablePageTracks.length > 0;
+      const activeQueueMatchesPage = this.isSameQueue(this.playlist, pageQueue);
+
+      const allPlayableTracksAlreadyQueued =
+        hasPlayableTrack &&
+        playablePageTracks.every((track) => {
+          return this.isTrackInQueue(track);
+        });
+
+      buttons.forEach((button) => {
+        const action =
+          button.getAttribute("data-sv-page-queue-action") || "play";
+
+        button.disabled = !hasPlayableTrack;
+        button.classList.toggle("is-disabled", !hasPlayableTrack);
+
+        if (!hasPlayableTrack) {
+          button.textContent = "No Audio Available";
+          button.setAttribute(
+            "aria-label",
+            "No audio available for this release",
+          );
+          return;
+        }
+
+        if (action === "append") {
+          button.disabled = allPlayableTracksAlreadyQueued;
+          button.classList.toggle(
+            "is-disabled",
+            allPlayableTracksAlreadyQueued,
+          );
+
+          if (allPlayableTracksAlreadyQueued) {
+            button.textContent = "Already in Queue";
+            button.setAttribute(
+              "aria-label",
+              "This release is already in the queue",
+            );
+            return;
+          }
+
+          button.textContent = "Add This Release to Queue";
+          button.setAttribute("aria-label", "Add this release to the queue");
+          return;
+        }
+
+        if (activeQueueMatchesPage) {
+          button.textContent = "Restart Release";
+          button.setAttribute("aria-label", "Restart this release");
+          return;
+        }
+
+        button.textContent = "Play This Release";
+        button.setAttribute("aria-label", "Play this release");
+      });
+    },
 
     getFirstPlayableIndex(tracks, preferredIndex = 0) {
       if (!Array.isArray(tracks) || !tracks.length) {
@@ -938,132 +963,136 @@ syncPageQueueButtons() {
       return this.appendTracksToQueue([track]);
     },
 
-removeTrackFromQueue(index) {
-  if (!Array.isArray(this.playlist) || !this.playlist.length) {
-    return false;
-  }
+    removeTrackFromQueue(index) {
+      if (!Array.isArray(this.playlist) || !this.playlist.length) {
+        return false;
+      }
 
-  if (!Number.isFinite(index) || index < 0 || index >= this.playlist.length) {
-    return false;
-  }
+      if (
+        !Number.isFinite(index) ||
+        index < 0 ||
+        index >= this.playlist.length
+      ) {
+        return false;
+      }
 
-  /*
-   * Do not remove the currently playing track.
-   * That keeps queue editing from abruptly stopping audio.
-   */
-  if (index === this.currentIndex && this.hasActiveAudio()) {
-    return false;
-  }
+      /*
+       * Do not remove the currently playing track.
+       * That keeps queue editing from abruptly stopping audio.
+       */
+      if (index === this.currentIndex && this.hasActiveAudio()) {
+        return false;
+      }
 
-  this.playlist.splice(index, 1);
+      this.playlist.splice(index, 1);
 
-  if (!this.playlist.length) {
-    this.currentIndex = -1;
-    this.currentTrack = null;
-  } else if (index < this.currentIndex) {
-    this.currentIndex -= 1;
-  } else if (this.currentIndex >= this.playlist.length) {
-    this.currentIndex = this.playlist.length - 1;
-  }
+      if (!this.playlist.length) {
+        this.currentIndex = -1;
+        this.currentTrack = null;
+      } else if (index < this.currentIndex) {
+        this.currentIndex -= 1;
+      } else if (this.currentIndex >= this.playlist.length) {
+        this.currentIndex = this.playlist.length - 1;
+      }
 
-  this.syncNowPlayingUi();
-  this.syncPlayButtonState();
-  this.renderDrawer();
-  this.scheduleSaveState();
+      this.syncNowPlayingUi();
+      this.syncPlayButtonState();
+      this.renderDrawer();
+      this.scheduleSaveState();
 
-  return true;
-},
+      return true;
+    },
 
-clearQueue() {
-  if (!Array.isArray(this.playlist) || !this.playlist.length) {
-    return false;
-  }
+    clearQueue() {
+      if (!Array.isArray(this.playlist) || !this.playlist.length) {
+        return false;
+      }
 
-  const currentTrack = this.getCurrentTrack();
+      const currentTrack = this.getCurrentTrack();
 
-  /*
-   * If something is currently loaded/playing, keep only that track.
-   * This clears upcoming/extra queued tracks without stopping playback.
-   */
-  if (currentTrack && this.hasActiveAudio()) {
-    this.playlist = [currentTrack];
-    this.currentIndex = 0;
-    this.currentTrack = currentTrack;
-  } else {
-    this.playlist = [];
-    this.currentIndex = -1;
-    this.currentTrack = null;
-  }
+      /*
+       * If something is currently loaded/playing, keep only that track.
+       * This clears upcoming/extra queued tracks without stopping playback.
+       */
+      if (currentTrack && this.hasActiveAudio()) {
+        this.playlist = [currentTrack];
+        this.currentIndex = 0;
+        this.currentTrack = currentTrack;
+      } else {
+        this.playlist = [];
+        this.currentIndex = -1;
+        this.currentTrack = null;
+      }
 
-  this.syncNowPlayingUi();
-  this.syncPlayButtonState();
-  this.renderDrawer();
-  this.scheduleSaveState();
+      this.syncNowPlayingUi();
+      this.syncPlayButtonState();
+      this.renderDrawer();
+      this.scheduleSaveState();
 
-  return true;
-},
+      return true;
+    },
 
-moveQueueTrack(fromIndex, toIndex) {
-  if (!Array.isArray(this.playlist) || this.playlist.length < 2) {
-    return false;
-  }
+    moveQueueTrack(fromIndex, toIndex) {
+      if (!Array.isArray(this.playlist) || this.playlist.length < 2) {
+        return false;
+      }
 
-  if (
-    !Number.isFinite(fromIndex) ||
-    !Number.isFinite(toIndex) ||
-    fromIndex < 0 ||
-    toIndex < 0 ||
-    fromIndex >= this.playlist.length ||
-    toIndex >= this.playlist.length ||
-    fromIndex === toIndex
-  ) {
-    return false;
-  }
+      if (
+        !Number.isFinite(fromIndex) ||
+        !Number.isFinite(toIndex) ||
+        fromIndex < 0 ||
+        toIndex < 0 ||
+        fromIndex >= this.playlist.length ||
+        toIndex >= this.playlist.length ||
+        fromIndex === toIndex
+      ) {
+        return false;
+      }
 
-  const currentTrack = this.getCurrentTrack();
+      const currentTrack = this.getCurrentTrack();
 
-  const movedItems = this.playlist.splice(fromIndex, 1);
-  const movedTrack = movedItems[0];
+      const movedItems = this.playlist.splice(fromIndex, 1);
+      const movedTrack = movedItems[0];
 
-  if (!movedTrack) {
-    return false;
-  }
+      if (!movedTrack) {
+        return false;
+      }
 
-  this.playlist.splice(toIndex, 0, movedTrack);
+      this.playlist.splice(toIndex, 0, movedTrack);
 
-  if (currentTrack && currentTrack.id) {
-    const nextCurrentIndex = this.playlist.findIndex((track) => {
-      return track && String(track.id) === String(currentTrack.id);
-    });
+      if (currentTrack && currentTrack.id) {
+        const nextCurrentIndex = this.playlist.findIndex((track) => {
+          return track && String(track.id) === String(currentTrack.id);
+        });
 
-    this.currentIndex = nextCurrentIndex >= 0 ? nextCurrentIndex : 0;
-    this.currentTrack = currentTrack;
-  } else {
-    this.currentIndex = Math.max(
-      0,
-      Math.min(this.currentIndex, this.playlist.length - 1)
-    );
-  }
+        this.currentIndex = nextCurrentIndex >= 0 ? nextCurrentIndex : 0;
+        this.currentTrack = currentTrack;
+      } else {
+        this.currentIndex = Math.max(
+          0,
+          Math.min(this.currentIndex, this.playlist.length - 1),
+        );
+      }
 
-  this.syncNowPlayingUi();
-  this.syncPlayButtonState();
-  this.renderDrawer();
-  this.scheduleSaveState();
+      this.syncNowPlayingUi();
+      this.syncPlayButtonState();
+      this.renderDrawer();
+      this.scheduleSaveState();
 
-  return true;
-},
+      return true;
+    },
 
-clearQueueDragClasses() {
-  if (!this.els.queue) {
-    return;
-  }
+    clearQueueDragClasses() {
+      if (!this.els.queue) {
+        return;
+      }
 
-  this.els.queue
-    .querySelectorAll(".is-dragging, .is-drop-target")
-    .forEach((item) => {
-      item.classList.remove("is-dragging", "is-drop-target");
-    });
-},
+      this.els.queue
+        .querySelectorAll(".is-dragging, .is-drop-target")
+        .forEach((item) => {
+          item.classList.remove("is-dragging", "is-drop-target");
+        });
+    },
 
     loadPlaylist(tracks, options = {}) {
       if (!Array.isArray(tracks) || !tracks.length) return;
@@ -1406,10 +1435,10 @@ clearQueueDragClasses() {
           this.currentIndex >= this.playlist.length - 1;
       }
 
-    this.syncTrackPlayButtons(this.getCurrentTrack());
-    this.syncTrackQueueButtons();
-    this.syncPageQueueButtons();
-    this.renderDrawer();
+      this.syncTrackPlayButtons(this.getCurrentTrack());
+      this.syncTrackQueueButtons();
+      this.syncPageQueueButtons();
+      this.renderDrawer();
     },
 
     updateProgressUi() {
@@ -1598,14 +1627,14 @@ clearQueueDragClasses() {
       const tracks = this.playlist.length ? this.playlist : this.albumTracklist;
 
       if (this.els.clearQueue) {
-  const hasActiveAudio = this.hasActiveAudio();
-  const canClear =
-    this.playlist.length > 1 ||
-    (!hasActiveAudio && this.playlist.length > 0);
+        const hasActiveAudio = this.hasActiveAudio();
+        const canClear =
+          this.playlist.length > 1 ||
+          (!hasActiveAudio && this.playlist.length > 0);
 
-  this.els.clearQueue.hidden = !canClear;
-  this.els.clearQueue.disabled = !canClear;
-}
+        this.els.clearQueue.hidden = !canClear;
+        this.els.clearQueue.disabled = !canClear;
+      }
 
       if (this.els.queueCount) {
         if (tracks.length) {
@@ -1633,8 +1662,8 @@ clearQueueDragClasses() {
       tracks.forEach((track, index) => {
         const item = document.createElement("li");
         item.className = "sv-player__queue-item";
-item.draggable = false;
-item.setAttribute("data-sv-queue-item-index", String(index));
+        item.draggable = false;
+        item.setAttribute("data-sv-queue-item-index", String(index));
 
         const isCurrent =
           currentTrack && String(currentTrack.id) === String(track.id);
@@ -1646,12 +1675,12 @@ item.setAttribute("data-sv-queue-item-index", String(index));
           !currentTrack && index === this.currentIndex,
         );
 
-const dragHandle = document.createElement("span");
-dragHandle.className = "sv-player__queue-drag";
-dragHandle.setAttribute("aria-hidden", "true");
-dragHandle.setAttribute("draggable", "true");
-dragHandle.setAttribute("data-sv-queue-drag-index", String(index));
-dragHandle.textContent = "☰";
+        const dragHandle = document.createElement("span");
+        dragHandle.className = "sv-player__queue-drag";
+        dragHandle.setAttribute("aria-hidden", "true");
+        dragHandle.setAttribute("draggable", "true");
+        dragHandle.setAttribute("data-sv-queue-drag-index", String(index));
+        dragHandle.textContent = "☰";
 
         const button = document.createElement("button");
         button.type = "button";
@@ -1723,35 +1752,42 @@ dragHandle.textContent = "☰";
         body.appendChild(title);
         body.appendChild(meta);
 
-button.appendChild(art);
-button.appendChild(body);
-button.appendChild(status);
+        button.appendChild(art);
+        button.appendChild(body);
+        button.appendChild(status);
 
-item.appendChild(dragHandle);
-item.appendChild(button);
+        item.appendChild(dragHandle);
+        item.appendChild(button);
 
-const canRemove =
-  !isCurrent || !this.hasActiveAudio();
+        const canRemove = !isCurrent || !this.hasActiveAudio();
 
-if (canRemove) {
-  const removeButton = document.createElement("button");
-  removeButton.type = "button";
-  removeButton.className = "sv-player__queue-remove";
-  removeButton.setAttribute("data-sv-remove-queue-index", String(index));
-  removeButton.setAttribute(
-    "aria-label",
-    `Remove ${track.title || "track"} from queue`
-  );
-  removeButton.textContent = "Remove";
+        if (canRemove) {
+          const removeButton = document.createElement("button");
+          removeButton.type = "button";
+          removeButton.className = "sv-player__queue-remove";
+          removeButton.setAttribute(
+            "data-sv-remove-queue-index",
+            String(index),
+          );
+          removeButton.setAttribute(
+            "aria-label",
+            `Remove ${track.title || "track"} from queue`,
+          );
+          removeButton.textContent = "Remove";
 
-  item.appendChild(removeButton);
-}
+          item.appendChild(removeButton);
+        }
 
-this.els.queue.appendChild(item);
+        this.els.queue.appendChild(item);
       });
     },
 
     initVisualizer() {
+      if (!this.isVisualizerEnabled()) {
+        this.markVisualizerUnavailable();
+        return;
+      }
+
       if (this.visualizer.initialized || this.visualizer.failed) {
         return;
       }
@@ -1798,6 +1834,10 @@ this.els.queue.appendChild(item);
     },
 
     startVisualizer() {
+      if (!this.isVisualizerEnabled()) {
+        return;
+      }
+
       if (!this.els.visualizerCanvas) {
         return;
       }
@@ -1891,6 +1931,10 @@ this.els.queue.appendChild(item);
     },
 
     drawVisualizerIdle() {
+      if (!this.isVisualizerEnabled()) {
+        return;
+      }
+
       const canvas = this.els.visualizerCanvas;
 
       if (!canvas) {
@@ -1964,43 +2008,60 @@ this.els.queue.appendChild(item);
       ctx.closePath();
     },
 
+    isDebugEnabled() {
+      return !!(window.SVConfig && window.SVConfig.debug);
+    },
+
+    isPersistenceEnabled() {
+      return !(window.SVConfig && window.SVConfig.persistence === false);
+    },
+
+    isVisualizerEnabled() {
+      return !(window.SVConfig && window.SVConfig.visualizer === false);
+    },
+
     getDebugSnapshot() {
-  const track = this.getCurrentTrack();
+      const track = this.getCurrentTrack();
 
-  return {
-    playerMounted: !!this.root,
-    audioMounted: !!this.audio,
-    pageContentCount: document.querySelectorAll("[data-sv-page-content]").length,
-    playerCount: document.querySelectorAll("[data-sv-player]").length,
+      return {
+        playerMounted: !!this.root,
+        audioMounted: !!this.audio,
+        pageContentCount: document.querySelectorAll("[data-sv-page-content]")
+          .length,
+        playerCount: document.querySelectorAll("[data-sv-player]").length,
 
-    hasActiveAudio: this.hasActiveAudio(),
-    isPlaying: !!this.audio && !this.audio.paused && !this.audio.ended,
+        hasActiveAudio: this.hasActiveAudio(),
+        isPlaying: !!this.audio && !this.audio.paused && !this.audio.ended,
 
-    currentTrack: track
-      ? {
-          id: track.id,
-          title: track.title,
-          audioUrl: track.audioUrl,
-        }
-      : null,
+        currentTrack: track
+          ? {
+              id: track.id,
+              title: track.title,
+              audioUrl: track.audioUrl,
+            }
+          : null,
 
-    currentIndex: this.currentIndex,
-    playlistLength: this.playlist.length,
-    albumTracklistLength: this.albumTracklist.length,
+        currentIndex: this.currentIndex,
+        playlistLength: this.playlist.length,
+        albumTracklistLength: this.albumTracklist.length,
 
-    playlistIds: this.playlist.map((item) => item && item.id),
-    albumTracklistIds: this.albumTracklist.map((item) => item && item.id),
+        playlistIds: this.playlist.map((item) => item && item.id),
+        albumTracklistIds: this.albumTracklist.map((item) => item && item.id),
 
-    drawerOpen: this.drawerOpen,
-    pendingRestoreTime: this.pendingRestoreTime,
+        drawerOpen: this.drawerOpen,
+        pendingRestoreTime: this.pendingRestoreTime,
 
-    queueButtonCount: document.querySelectorAll("[data-sv-track-queue-button='true']").length,
-    playButtonCount: document.querySelectorAll("[data-sv-play-button='true']").length,
+        queueButtonCount: document.querySelectorAll(
+          "[data-sv-track-queue-button='true']",
+        ).length,
+        playButtonCount: document.querySelectorAll(
+          "[data-sv-play-button='true']",
+        ).length,
 
-    storageKey: this.storageKey,
-    savedStateExists: !!window.localStorage.getItem(this.storageKey),
-  };
-},
+        storageKey: this.storageKey,
+        savedStateExists: !!window.localStorage.getItem(this.storageKey),
+      };
+    },
 
     formatTime(seconds) {
       if (!Number.isFinite(seconds) || seconds < 0) return "0:00";
@@ -2012,6 +2073,10 @@ this.els.queue.appendChild(item);
     },
 
     restoreState() {
+      if (!this.isPersistenceEnabled()) {
+        return false;
+      }
+
       if (!window.localStorage) {
         return false;
       }
@@ -2120,6 +2185,10 @@ this.els.queue.appendChild(item);
     },
 
     clearSavedState() {
+      if (!this.isPersistenceEnabled()) {
+        return;
+      }
+
       if (!window.localStorage) {
         return;
       }
@@ -2132,6 +2201,10 @@ this.els.queue.appendChild(item);
     },
 
     scheduleSaveState() {
+      if (!this.isPersistenceEnabled()) {
+        return;
+      }
+
       if (this.saveStateTimer) {
         window.clearTimeout(this.saveStateTimer);
       }
@@ -2142,6 +2215,10 @@ this.els.queue.appendChild(item);
     },
 
     saveState() {
+      if (!this.isPersistenceEnabled()) {
+        return;
+      }
+
       if (!window.localStorage) {
         return;
       }
