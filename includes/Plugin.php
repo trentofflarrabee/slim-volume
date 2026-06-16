@@ -18,6 +18,7 @@ require_once SLIM_VOLUME_PATH . 'includes/Admin/ReleaseMetaBoxes.php';
 require_once SLIM_VOLUME_PATH . 'includes/Admin/TrackMetaBoxes.php';
 require_once SLIM_VOLUME_PATH . 'includes/Admin/AdminColumns.php';
 require_once SLIM_VOLUME_PATH . 'includes/Admin/ReleaseTrackManager.php';
+require_once SLIM_VOLUME_PATH . 'includes/Admin/Settings.php';
 
 final class Plugin
 {
@@ -49,6 +50,8 @@ final class Plugin
         add_action('save_post_' . PostTypes::TRACK, [Admin\TrackMetaBoxes::class, 'save']);
 
         add_action('admin_init', [Admin\AdminColumns::class, 'register']);
+        
+        Admin\Settings::init();
 
         add_filter('query_vars', [Rewrite::class, 'add_query_vars']);
         add_action('pre_get_posts', [Rewrite::class, 'resolve_nested_track_query']);

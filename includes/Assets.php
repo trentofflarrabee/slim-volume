@@ -30,6 +30,12 @@ final class Assets
                 [],
                 self::asset_version($css_path)
             );
+
+            $appearance_css = Admin\Settings::get_appearance_css();
+
+            if ($appearance_css !== '') {
+                wp_add_inline_style('slim-volume', $appearance_css);
+            }
         }
 
         if (file_exists($js_path)) {
@@ -43,15 +49,17 @@ final class Assets
         }
 
 
+        $settings = Admin\Settings::get_settings();
+
         wp_add_inline_script(
             'slim-volume-player',
             'window.SVConfig = ' . wp_json_encode(
                 [
                     'version'          => defined('SLIM_VOLUME_VERSION') ? SLIM_VOLUME_VERSION : '0.1.0',
-                    'ajaxNavigation'   => true,
-                    'persistence'      => true,
-                    'visualizer'       => true,
-                    'debug'            => defined('SCRIPT_DEBUG') && SCRIPT_DEBUG,
+                    'ajaxNavigation'   => ! empty($settings['ajax_navigation']),
+                    'persistence'      => ! empty($settings['persistence']),
+                    'visualizer'       => ! empty($settings['visualizer']),
+                    'debug'            => ! empty($settings['debug']) || (defined('SCRIPT_DEBUG') && SCRIPT_DEBUG),
                     'contentSelector'  => '[data-sv-page-content]',
                     'musicBaseUrl'     => home_url('/music/'),
                 ]

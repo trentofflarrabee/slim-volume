@@ -5,13 +5,38 @@
 /* ==========================================================================
    Variables
    ========================================================================== */
-:root {
+/* :root {
   --sv-player-bg: #111;
   --sv-player-text: #fff;
   --sv-player-muted: rgba(255, 255, 255, 0.68);
   --sv-player-border: rgba(255, 255, 255, 0.14);
   --sv-player-accent: currentColor;
   --sv-card-border: rgba(0, 0, 0, 0.12);
+} */
+
+:root {
+  --sv-player-bg: #111;
+  --sv-player-text: #fff;
+  --sv-player-muted: rgba(255, 255, 255, 0.68);
+  --sv-player-border: rgba(255, 255, 255, 0.14);
+  --sv-player-accent: currentColor;
+
+  --sv-card-border: rgba(0, 0, 0, 0.12);
+
+  --sv-button-bg: #111;
+  --sv-button-text: #fff;
+  --sv-button-border: #111;
+
+  --sv-radius-card: 16px;
+  --sv-radius-art: 18px;
+  --sv-radius-control: 12px;
+  --sv-radius-small: 8px;
+  --sv-radius-pill: 999px;
+
+  --sv-transition-fast: 160ms ease;
+
+  --sv-player-bar-height: 76px;
+  --sv-player-mobile-bar-height: 104px;
 }
 
 /* ==========================================================================
@@ -45,7 +70,7 @@ body.sv-player-ready {
 
 .sv-release-card {
   border: 1px solid var(--sv-card-border);
-  border-radius: 16px;
+  border-radius: var(--sv-radius-card);
   overflow: hidden;
 }
 
@@ -93,7 +118,7 @@ body.sv-player-ready {
   display: block;
   width: 100%;
   height: auto;
-  border-radius: 18px;
+  border-radius: var(--sv-radius-art);
 }
 
 .sv-release-tracklist,
@@ -169,7 +194,7 @@ body.sv-player-ready {
 
 .sv-player__bar {
   display: grid;
-  grid-template-columns: 52px minmax(120px, 1fr) auto minmax(120px, 260px) auto;
+  grid-template-columns: 52px minmax(120px, 1fr) auto minmax(120px, 260px) auto auto;
   gap: 16px;
   align-items: center;
   width: min(1180px, calc(100% - 24px));
@@ -181,7 +206,7 @@ body.sv-player-ready {
 .sv-player__art {
   width: 52px;
   height: 52px;
-  border-radius: 8px;
+  border-radius: var(--sv-radius-small);
   overflow: hidden;
   background: rgba(255, 255, 255, 0.08);
 }
@@ -224,7 +249,7 @@ body.sv-player-ready {
   color: inherit;
   background: transparent;
   border: 1px solid var(--sv-player-border);
-  border-radius: 999px;
+  border-radius: var(--sv-radius-pill);
   padding: 8px 12px;
 }
 
@@ -316,7 +341,7 @@ body.sv-player-ready {
   min-height: 38px;
   padding: 8px 14px;
   border: 1px solid var(--sv-card-border);
-  border-radius: 999px;
+  border-radius: var(--sv-radius-pill);
   color: inherit;
   text-decoration: none;
   line-height: 1;
@@ -358,7 +383,7 @@ body.sv-player-ready {
   display: block;
   padding: 18px;
   border: 1px solid var(--sv-card-border);
-  border-radius: 16px;
+  border-radius: var(--sv-radius-card);
   color: inherit;
   text-decoration: none;
 }
@@ -403,13 +428,6 @@ body.sv-player-ready {
 
 body.sv-player-drawer-open {
   padding-bottom: 480px;
-}
-
-.sv-player__bar {
-  grid-template-columns: 52px minmax(120px, 1fr) auto minmax(
-      120px,
-      260px
-    ) auto auto;
 }
 
 .sv-player__drawer[hidden] {
@@ -460,7 +478,7 @@ body.sv-player-drawer-open {
 .sv-player__drawer-art {
   width: 96px;
   height: 96px;
-  border-radius: 14px;
+  border-radius: var(--sv-radius-control);
   overflow: hidden;
   background: rgba(255, 255, 255, 0.08);
 }
@@ -541,7 +559,7 @@ body.sv-player-drawer-open {
   display: block;
   width: 44px;
   height: 44px;
-  border-radius: 8px;
+  border-radius: var(--sv-radius-small);
   overflow: hidden;
   background: rgba(255, 255, 255, 0.08);
 }
@@ -669,7 +687,7 @@ body.sv-player-drawer-open {
   min-width: 22px;
   height: 22px;
   padding: 0 6px;
-  border-radius: 999px;
+  border-radius: var(--sv-radius-pill);
   color: var(--sv-player-bg);
   background: var(--sv-player-text);
   font-size: 0.78rem;
@@ -730,21 +748,7 @@ body.sv-player-drawer-open {
   margin-top: 18px;
   padding: 14px;
   border: 1px solid var(--sv-player-border);
-  border-radius: 16px;
-  background:
-    radial-gradient(
-      circle at 20% 20%,
-      rgba(255, 255, 255, 0.08),
-      transparent 28%
-    ),
-    rgba(255, 255, 255, 0.04);
-}
-.sv-player__visualizer {
-  grid-column: 1 / -1;
-  margin-top: 18px;
-  padding: 14px;
-  border: 1px solid var(--sv-player-border);
-  border-radius: 16px;
+  border-radius: var(--sv-radius-card);
   background:
     radial-gradient(
       circle at 20% 20%,
@@ -804,10 +808,6 @@ body.sv-ajax-loading [data-sv-page-content] {
    Buttons
    ========================================================================== */
 .sv-button {
-  --sv-button-bg: #111;
-  --sv-button-text: #fff;
-  --sv-button-border: #111;
-
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -817,7 +817,7 @@ body.sv-ajax-loading [data-sv-page-content] {
   color: var(--sv-button-text);
   background: var(--sv-button-bg);
   border: 1px solid var(--sv-button-border);
-  border-radius: 999px;
+  border-radius: var(--sv-radius-pill);
   font: inherit;
   font-weight: 700;
   line-height: 1;
@@ -868,7 +868,7 @@ body.sv-ajax-loading [data-sv-page-content] {
   color: inherit;
   background: transparent;
   border: 1px solid var(--sv-card-border);
-  border-radius: 999px;
+  border-radius: var(--sv-radius-pill);
   padding: 6px 10px;
   font: inherit;
   font-size: 0.88rem;
@@ -922,7 +922,7 @@ body.sv-ajax-loading [data-sv-page-content] {
   color: inherit;
   background: transparent;
   border: 1px solid var(--sv-player-border);
-  border-radius: 999px;
+  border-radius: var(--sv-radius-pill);
   font: inherit;
   font-size: 0.82rem;
   line-height: 1;
@@ -936,20 +936,6 @@ body.sv-ajax-loading [data-sv-page-content] {
 .sv-player__queue-remove:focus-visible {
   outline: 2px solid currentColor;
   outline-offset: 3px;
-}
-
-/* ==========================================================================
-   Responsive: Queue Actions
-   ========================================================================== */
-@media (max-width: 760px) {
-  .sv-player__queue-item {
-    grid-template-columns: 1fr;
-  }
-
-  .sv-player__queue-remove {
-    justify-self: start;
-    margin-left: 52px;
-  }
 }
 
 /* ==========================================================================
@@ -989,6 +975,7 @@ body.sv-ajax-loading [data-sv-page-content] {
 
   .sv-player__queue-remove {
     grid-column: 2;
+    justify-self: start;
     margin-left: 0;
   }
 }
