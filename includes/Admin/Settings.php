@@ -228,6 +228,12 @@ final class Settings
             $preset_key = 'custom';
         }
 
+        $reset_appearance = ! empty($input['reset_appearance']);
+
+        if ($reset_appearance) {
+            $preset_key = 'custom';
+        }
+
         $appearance = [
             'appearance_preset' => $preset_key,
 
@@ -250,7 +256,17 @@ final class Settings
             'radius_pill'    => self::sanitize_css_value($input['radius_pill'] ?? $defaults['radius_pill'], $defaults['radius_pill']),
         ];
 
-        if ($preset_key !== 'custom' && ! empty($presets[$preset_key]['values']) && is_array($presets[$preset_key]['values'])) {
+        if ($reset_appearance) {
+            foreach ($appearance as $key => $value) {
+                if ($key === 'appearance_preset') {
+                    continue;
+                }
+
+                if (isset($defaults[$key]) && is_string($defaults[$key])) {
+                    $appearance[$key] = $defaults[$key];
+                }
+            }
+        } elseif ($preset_key !== 'custom' && ! empty($presets[$preset_key]['values']) && is_array($presets[$preset_key]['values'])) {
             foreach ($presets[$preset_key]['values'] as $key => $value) {
                 if (array_key_exists($key, $appearance)) {
                     $appearance[$key] = self::sanitize_css_value($value, (string) ($defaults[$key] ?? ''));
@@ -444,7 +460,24 @@ final class Settings
                     </tbody>
                 </table>
 
-                <?php submit_button(__('Save Settings', 'slim-volume')); ?>
+                <p class="submit">
+                    <?php submit_button(__('Save Settings', 'slim-volume'), 'primary', 'submit', false); ?>
+
+                    <?php
+                    submit_button(
+                        __('Reset Appearance Defaults', 'slim-volume'),
+                        'secondary',
+                        self::OPTION_NAME . '[reset_appearance]',
+                        false,
+                        [
+                            'onclick' => sprintf(
+                                "return confirm('%s');",
+                                esc_js(__('Reset appearance fields to the plugin defaults? Frontend feature toggles will not be reset.', 'slim-volume'))
+                            ),
+                        ]
+                    );
+                    ?>
+                </p>
             </form>
         </div>
         <?php
