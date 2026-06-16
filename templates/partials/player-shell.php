@@ -70,13 +70,24 @@ if (! defined('ABSPATH')) {
 
                 </section>
 
-                <section class="sv-player__drawer-queue" aria-label="<?php esc_attr_e('Queue', 'slim-volume'); ?>">
+            <section class="sv-player__drawer-queue" aria-label="<?php esc_attr_e('Queue', 'slim-volume'); ?>">
+                <div class="sv-player__drawer-queue-header">
                     <h3 class="sv-player__drawer-subheading">
                         <?php esc_html_e('Queue', 'slim-volume'); ?>
                     </h3>
 
-                    <ol class="sv-player__queue" data-sv-queue></ol>
-                </section>
+                    <button
+                        type="button"
+                        class="sv-player__button sv-player__clear-queue"
+                        data-sv-clear-queue
+                        hidden
+                    >
+                        <?php esc_html_e('Clear Queue', 'slim-volume'); ?>
+                    </button>
+                </div>
+
+                <ol class="sv-player__queue" data-sv-queue></ol>
+            </section>
             </div>
         </div>
     </section>

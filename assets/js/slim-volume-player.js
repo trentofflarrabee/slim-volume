@@ -100,6 +100,7 @@
       );
       this.els.drawerLinks = this.root.querySelector("[data-sv-drawer-links]");
       this.els.queue = this.root.querySelector("[data-sv-queue]");
+      this.els.clearQueue = this.root.querySelector("[data-sv-clear-queue]");
 
       this.els.visualizer = this.root.querySelector("[data-sv-visualizer]");
       this.els.visualizerCanvas = this.root.querySelector(
@@ -381,32 +382,54 @@
         });
       }
 
-      if (this.els.queue) {
-        this.els.queue.addEventListener("click", (event) => {
-          const target = event.target instanceof Element ? event.target : null;
+if (this.els.queue) {
+  this.els.queue.addEventListener("click", (event) => {
+    const target = event.target instanceof Element ? event.target : null;
 
-          if (!target) return;
+    if (!target) return;
 
-          const button = target.closest("[data-sv-queue-index]");
-          if (!button) return;
+    const removeButton = target.closest("[data-sv-remove-queue-index]");
 
-          event.preventDefault();
+    if (removeButton) {
+      event.preventDefault();
+      event.stopPropagation();
 
-          const index = parseInt(
-            button.getAttribute("data-sv-queue-index") || "-1",
-            10,
-          );
+      const removeIndex = parseInt(
+        removeButton.getAttribute("data-sv-remove-queue-index") || "-1",
+        10
+      );
 
-          if (!Number.isFinite(index) || index < 0) return;
-          if (!this.playlist[index]) return;
+      this.removeTrackFromQueue(removeIndex);
+      return;
+    }
 
-          this.loadPlaylist(this.playlist, {
-            startIndex: index,
-            autoplay: true,
-            load: true,
-          });
+    const button = target.closest("[data-sv-queue-index]");
+    if (!button) return;
+
+    event.preventDefault();
+
+    const index = parseInt(
+      button.getAttribute("data-sv-queue-index") || "-1",
+      10
+    );
+
+    if (!Number.isFinite(index) || index < 0) return;
+    if (!this.playlist[index]) return;
+
+    this.loadPlaylist(this.playlist, {
+      startIndex: index,
+      autoplay: true,
+      load: true,
+    });
+  });
+}
+
+      if (this.els.clearQueue) {
+        this.els.clearQueue.addEventListener("click", (event) => {
+            event.preventDefault();
+            this.clearQueue();
         });
-      }
+        }
 
       document.addEventListener("keydown", (event) => {
         if (event.key === "Escape" && this.drawerOpen) {
@@ -822,7 +845,70 @@ syncPageQueueButtons() {
       return this.appendTracksToQueue([track]);
     },
 
-// 
+removeTrackFromQueue(index) {
+  if (!Array.isArray(this.playlist) || !this.playlist.length) {
+    return false;
+  }
+
+  if (!Number.isFinite(index) || index < 0 || index >= this.playlist.length) {
+    return false;
+  }
+
+  /*
+   * Do not remove the currently playing track.
+   * That keeps queue editing from abruptly stopping audio.
+   */
+  if (index === this.currentIndex && this.hasActiveAudio()) {
+    return false;
+  }
+
+  this.playlist.splice(index, 1);
+
+  if (!this.playlist.length) {
+    this.currentIndex = -1;
+    this.currentTrack = null;
+  } else if (index < this.currentIndex) {
+    this.currentIndex -= 1;
+  } else if (this.currentIndex >= this.playlist.length) {
+    this.currentIndex = this.playlist.length - 1;
+  }
+
+  this.syncNowPlayingUi();
+  this.syncPlayButtonState();
+  this.renderDrawer();
+  this.scheduleSaveState();
+
+  return true;
+},
+
+clearQueue() {
+  if (!Array.isArray(this.playlist) || !this.playlist.length) {
+    return false;
+  }
+
+  const currentTrack = this.getCurrentTrack();
+
+  /*
+   * If something is currently loaded/playing, keep only that track.
+   * This clears upcoming/extra queued tracks without stopping playback.
+   */
+  if (currentTrack && this.hasActiveAudio()) {
+    this.playlist = [currentTrack];
+    this.currentIndex = 0;
+    this.currentTrack = currentTrack;
+  } else {
+    this.playlist = [];
+    this.currentIndex = -1;
+    this.currentTrack = null;
+  }
+
+  this.syncNowPlayingUi();
+  this.syncPlayButtonState();
+  this.renderDrawer();
+  this.scheduleSaveState();
+
+  return true;
+},
 
     loadPlaylist(tracks, options = {}) {
       if (!Array.isArray(tracks) || !tracks.length) return;
@@ -1356,6 +1442,16 @@ syncPageQueueButtons() {
 
       const tracks = this.playlist.length ? this.playlist : this.albumTracklist;
 
+      if (this.els.clearQueue) {
+  const hasActiveAudio = this.hasActiveAudio();
+  const canClear =
+    this.playlist.length > 1 ||
+    (!hasActiveAudio && this.playlist.length > 0);
+
+  this.els.clearQueue.hidden = !canClear;
+  this.els.clearQueue.disabled = !canClear;
+}
+
       if (this.els.queueCount) {
         if (tracks.length) {
           this.els.queueCount.hidden = false;
@@ -1463,12 +1559,30 @@ syncPageQueueButtons() {
         body.appendChild(title);
         body.appendChild(meta);
 
-        button.appendChild(art);
-        button.appendChild(body);
-        button.appendChild(status);
+button.appendChild(art);
+button.appendChild(body);
+button.appendChild(status);
 
-        item.appendChild(button);
-        this.els.queue.appendChild(item);
+item.appendChild(button);
+
+const canRemove =
+  !isCurrent || !this.hasActiveAudio();
+
+if (canRemove) {
+  const removeButton = document.createElement("button");
+  removeButton.type = "button";
+  removeButton.className = "sv-player__queue-remove";
+  removeButton.setAttribute("data-sv-remove-queue-index", String(index));
+  removeButton.setAttribute(
+    "aria-label",
+    `Remove ${track.title || "track"} from queue`
+  );
+  removeButton.textContent = "Remove";
+
+  item.appendChild(removeButton);
+}
+
+this.els.queue.appendChild(item);
       });
     },
 
