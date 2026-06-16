@@ -17,18 +17,20 @@
 
     queueDragIndex: null,
 
-    visualizer: {
-      context: null,
-      analyser: null,
-      source: null,
-      data: null,
-      frame: null,
-      canvasContext: null,
-      initialized: false,
-      failed: false,
-    },
+visualizer: {
+  context: null,
+  analyser: null,
+  source: null,
+  data: null,
+  frame: null,
+  canvasContext: null,
+  initialized: false,
+  failed: false,
+},
 
-    els: {},
+visualizerController: null,
+
+els: {},
 
     init() {
       this.root = document.querySelector("[data-sv-player]");
@@ -41,6 +43,7 @@
       if (!this.audio) return;
 
       this.cacheEls();
+      this.setupVisualizerController();
       this.bindCoreControls();
       this.bindAudioEvents();
 
@@ -1782,6 +1785,64 @@
       });
     },
 
+setupVisualizerController() {
+  if (this.visualizerController) {
+    return;
+  }
+
+  this.visualizerController = {
+    mode: "bars",
+
+    start: () => {
+      this.startBarsVisualizer();
+    },
+
+    stop: () => {
+      this.stopBarsVisualizer();
+    },
+
+    resize: () => {
+      this.drawBarsVisualizerIdle();
+    },
+
+    destroy: () => {
+      this.stopBarsVisualizer();
+
+      this.visualizer.context = null;
+      this.visualizer.analyser = null;
+      this.visualizer.source = null;
+      this.visualizer.data = null;
+      this.visualizer.canvasContext = null;
+      this.visualizer.initialized = false;
+      this.visualizer.failed = false;
+
+      if (this.root) {
+        this.root.classList.remove("sv-player--visualizer-ready");
+      }
+
+      if (this.els.visualizer) {
+        this.els.visualizer.classList.remove("is-unavailable");
+      }
+    },
+
+    drawIdle: () => {
+      this.drawBarsVisualizerIdle();
+    },
+
+    markUnavailable: () => {
+      this.markBarsVisualizerUnavailable();
+    },
+  };
+},
+
+getVisualizerController() {
+  if (!this.visualizerController) {
+    this.setupVisualizerController();
+  }
+
+  return this.visualizerController;
+},
+
 initVisualizer() {
   if (!this.isVisualizerEnabled()) {
     this.markVisualizerUnavailable();
@@ -1877,159 +1938,211 @@ getAudioGraph() {
   }
 },
 
-    startVisualizer() {
-      if (!this.isVisualizerEnabled()) {
-        return;
-      }
+startVisualizer() {
+  const controller = this.getVisualizerController();
 
-      if (!this.els.visualizerCanvas) {
-        return;
-      }
+  if (controller) {
+    controller.start();
+  }
+},
 
-      this.initVisualizer();
+stopVisualizer() {
+  const controller = this.getVisualizerController();
 
-      if (this.visualizer.failed || !this.visualizer.initialized) {
-        this.drawVisualizerIdle();
-        return;
-      }
+  if (controller) {
+    controller.stop();
+  }
+},
 
-      const context = this.visualizer.context;
+resizeVisualizer() {
+  const controller = this.getVisualizerController();
 
-      if (context && context.state === "suspended") {
-        context.resume().catch((err) => {
-          console.warn("[SVPlayer] Could not resume AudioContext.", err);
-        });
-      }
+  if (controller) {
+    controller.resize();
+  }
+},
 
-      if (this.visualizer.frame) {
-        cancelAnimationFrame(this.visualizer.frame);
-        this.visualizer.frame = null;
-      }
+destroyVisualizer() {
+  const controller = this.getVisualizerController();
 
-      const draw = () => {
-        this.drawVisualizerFrame();
-        this.visualizer.frame = requestAnimationFrame(draw);
-      };
+  if (controller) {
+    controller.destroy();
+  }
+},
 
-      draw();
-    },
+drawVisualizerFrame() {
+  this.drawBarsVisualizerFrame();
+},
 
-    stopVisualizer() {
-      if (this.visualizer.frame) {
-        cancelAnimationFrame(this.visualizer.frame);
-        this.visualizer.frame = null;
-      }
-    },
+drawVisualizerIdle() {
+  const controller = this.getVisualizerController();
 
-    drawVisualizerFrame() {
-      const canvas = this.els.visualizerCanvas;
-      const ctx = this.visualizer.canvasContext;
-      const analyser = this.visualizer.analyser;
-      const data = this.visualizer.data;
+  if (controller) {
+    controller.drawIdle();
+  }
+},
 
-      if (!canvas || !ctx || !analyser || !data) {
-        return;
-      }
+markVisualizerUnavailable() {
+  const controller = this.getVisualizerController();
 
-      const width = canvas.width;
-      const height = canvas.height;
+  if (controller) {
+    controller.markUnavailable();
+  }
+},
 
-      analyser.getByteFrequencyData(data);
+startBarsVisualizer() {
+  if (!this.isVisualizerEnabled()) {
+    return;
+  }
 
-      ctx.clearRect(0, 0, width, height);
+  if (!this.els.visualizerCanvas) {
+    return;
+  }
 
-      const bars = 36;
-      const gap = 4;
-      const barWidth = Math.max(
-        3,
-        Math.floor((width - gap * (bars - 1)) / bars),
-      );
-      const step = Math.max(1, Math.floor(data.length / bars));
+  this.initVisualizer();
 
-      for (let i = 0; i < bars; i += 1) {
-        let sum = 0;
+  if (this.visualizer.failed || !this.visualizer.initialized) {
+    this.drawBarsVisualizerIdle();
+    return;
+  }
 
-        for (let j = 0; j < step; j += 1) {
-          sum += data[i * step + j] || 0;
-        }
+  const context = this.visualizer.context;
 
-        const value = sum / step;
-        const normalized = value / 255;
-        const eased = Math.pow(normalized, 0.72);
+  if (context && context.state === "suspended") {
+    context.resume().catch((err) => {
+      console.warn("[SVPlayer] Could not resume AudioContext.", err);
+    });
+  }
 
-        const barHeight = Math.max(4, eased * height);
-        const x = i * (barWidth + gap);
-        const y = height - barHeight;
+  if (this.visualizer.frame) {
+    cancelAnimationFrame(this.visualizer.frame);
+    this.visualizer.frame = null;
+  }
 
-        ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
-        this.roundRect(
-          ctx,
-          x,
-          y,
-          barWidth,
-          barHeight,
-          Math.min(8, barWidth / 2),
-        );
-        ctx.fill();
-      }
-    },
+  const draw = () => {
+    this.drawBarsVisualizerFrame();
+    this.visualizer.frame = requestAnimationFrame(draw);
+  };
 
-    drawVisualizerIdle() {
-      if (!this.isVisualizerEnabled()) {
-        return;
-      }
+  draw();
+},
 
-      const canvas = this.els.visualizerCanvas;
+stopBarsVisualizer() {
+  if (this.visualizer.frame) {
+    cancelAnimationFrame(this.visualizer.frame);
+    this.visualizer.frame = null;
+  }
+},
 
-      if (!canvas) {
-        return;
-      }
+drawBarsVisualizerFrame() {
+  const canvas = this.els.visualizerCanvas;
+  const ctx = this.visualizer.canvasContext;
+  const analyser = this.visualizer.analyser;
+  const data = this.visualizer.data;
 
-      const ctx = this.visualizer.canvasContext || canvas.getContext("2d");
+  if (!canvas || !ctx || !analyser || !data) {
+    return;
+  }
 
-      if (!ctx) {
-        return;
-      }
+  const width = canvas.width;
+  const height = canvas.height;
 
-      this.visualizer.canvasContext = ctx;
+  analyser.getByteFrequencyData(data);
 
-      const width = canvas.width;
-      const height = canvas.height;
-      const bars = 36;
-      const gap = 4;
-      const barWidth = Math.max(
-        3,
-        Math.floor((width - gap * (bars - 1)) / bars),
-      );
+  ctx.clearRect(0, 0, width, height);
 
-      ctx.clearRect(0, 0, width, height);
+  const bars = 36;
+  const gap = 4;
+  const barWidth = Math.max(
+    3,
+    Math.floor((width - gap * (bars - 1)) / bars),
+  );
+  const step = Math.max(1, Math.floor(data.length / bars));
 
-      for (let i = 0; i < bars; i += 1) {
-        const wave = Math.sin(i * 0.72) * 0.5 + 0.5;
-        const barHeight = 8 + wave * 22;
-        const x = i * (barWidth + gap);
-        const y = height - barHeight;
+  for (let i = 0; i < bars; i += 1) {
+    let sum = 0;
 
-        ctx.fillStyle = "rgba(255, 255, 255, 0.22)";
-        this.roundRect(
-          ctx,
-          x,
-          y,
-          barWidth,
-          barHeight,
-          Math.min(8, barWidth / 2),
-        );
-        ctx.fill();
-      }
-    },
+    for (let j = 0; j < step; j += 1) {
+      sum += data[i * step + j] || 0;
+    }
 
-    markVisualizerUnavailable() {
-      if (this.els.visualizer) {
-        this.els.visualizer.classList.add("is-unavailable");
-      }
+    const value = sum / step;
+    const normalized = value / 255;
+    const eased = Math.pow(normalized, 0.72);
 
-      this.drawVisualizerIdle();
-    },
+    const barHeight = Math.max(4, eased * height);
+    const x = i * (barWidth + gap);
+    const y = height - barHeight;
+
+    ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
+    this.roundRect(
+      ctx,
+      x,
+      y,
+      barWidth,
+      barHeight,
+      Math.min(8, barWidth / 2),
+    );
+    ctx.fill();
+  }
+},
+
+drawBarsVisualizerIdle() {
+  if (!this.isVisualizerEnabled()) {
+    return;
+  }
+
+  const canvas = this.els.visualizerCanvas;
+
+  if (!canvas) {
+    return;
+  }
+
+  const ctx = this.visualizer.canvasContext || canvas.getContext("2d");
+
+  if (!ctx) {
+    return;
+  }
+
+  this.visualizer.canvasContext = ctx;
+
+  const width = canvas.width;
+  const height = canvas.height;
+  const bars = 36;
+  const gap = 4;
+  const barWidth = Math.max(
+    3,
+    Math.floor((width - gap * (bars - 1)) / bars),
+  );
+
+  ctx.clearRect(0, 0, width, height);
+
+  for (let i = 0; i < bars; i += 1) {
+    const wave = Math.sin(i * 0.72) * 0.5 + 0.5;
+    const barHeight = 8 + wave * 22;
+    const x = i * (barWidth + gap);
+    const y = height - barHeight;
+
+    ctx.fillStyle = "rgba(255, 255, 255, 0.22)";
+    this.roundRect(
+      ctx,
+      x,
+      y,
+      barWidth,
+      barHeight,
+      Math.min(8, barWidth / 2),
+    );
+    ctx.fill();
+  }
+},
+
+markBarsVisualizerUnavailable() {
+  if (this.els.visualizer) {
+    this.els.visualizer.classList.add("is-unavailable");
+  }
+
+  this.drawBarsVisualizerIdle();
+},
 
     roundRect(ctx, x, y, width, height, radius) {
       const safeRadius = Math.min(radius, width / 2, height / 2);
