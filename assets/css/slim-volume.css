@@ -864,3 +864,38 @@ body.sv-ajax-loading [data-sv-page-content] {
     margin-left: 52px;
   }
 }
+
+.sv-player__queue-item {
+  grid-template-columns: auto minmax(0, 1fr) auto;
+}
+
+.sv-player__queue-drag {
+  display: inline-grid;
+  place-items: center;
+  align-self: center;
+  width: 30px;
+  height: 36px;
+  cursor: grab;
+  color: var(--sv-player-muted);
+  user-select: none;
+}
+
+.sv-player__queue-item.is-dragging {
+  opacity: 0.45;
+}
+
+.sv-player__queue-item.is-drop-target .sv-player__queue-button {
+  border-color: currentColor;
+  border-style: dashed;
+}
+
+@media (max-width: 760px) {
+  .sv-player__queue-item {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .sv-player__queue-remove {
+    grid-column: 2;
+    margin-left: 0;
+  }
+}

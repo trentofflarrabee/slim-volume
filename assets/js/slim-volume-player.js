@@ -15,6 +15,8 @@
     saveStateTimer: null,
     pendingRestoreTime: null,
 
+    queueDragIndex: null,
+
     visualizer: {
       context: null,
       analyser: null,
@@ -201,6 +203,11 @@
         stopVisualizer() {
           app.stopVisualizer();
         },
+
+        debugSnapshot() {
+  return app.getDebugSnapshot();
+},
+
       };
     },
 
@@ -421,6 +428,92 @@ if (this.els.queue) {
       autoplay: true,
       load: true,
     });
+  });
+}
+
+if (this.els.queue) {
+  this.els.queue.addEventListener("dragstart", (event) => {
+    const target = event.target instanceof Element ? event.target : null;
+    if (!target) return;
+
+    const handle = target.closest("[data-sv-queue-drag-index]");
+    if (!handle) return;
+
+    const index = parseInt(
+      handle.getAttribute("data-sv-queue-drag-index") || "-1",
+      10
+    );
+
+    if (!Number.isFinite(index) || index < 0) return;
+
+    this.queueDragIndex = index;
+
+    const item = handle.closest("[data-sv-queue-item-index]");
+    if (item) {
+      item.classList.add("is-dragging");
+    }
+
+    if (event.dataTransfer) {
+      event.dataTransfer.effectAllowed = "move";
+      event.dataTransfer.setData("text/plain", String(index));
+    }
+  });
+
+  this.els.queue.addEventListener("dragover", (event) => {
+    if (this.queueDragIndex === null) return;
+
+    const target = event.target instanceof Element ? event.target : null;
+    if (!target) return;
+
+    const item = target.closest("[data-sv-queue-item-index]");
+    if (!item) return;
+
+    event.preventDefault();
+
+    item.classList.add("is-drop-target");
+
+    if (event.dataTransfer) {
+      event.dataTransfer.dropEffect = "move";
+    }
+  });
+
+  this.els.queue.addEventListener("dragleave", (event) => {
+    const target = event.target instanceof Element ? event.target : null;
+    if (!target) return;
+
+    const item = target.closest("[data-sv-queue-item-index]");
+    if (!item) return;
+
+    item.classList.remove("is-drop-target");
+  });
+
+  this.els.queue.addEventListener("drop", (event) => {
+    if (this.queueDragIndex === null) return;
+
+    const target = event.target instanceof Element ? event.target : null;
+    if (!target) return;
+
+    const item = target.closest("[data-sv-queue-item-index]");
+    if (!item) return;
+
+    event.preventDefault();
+
+    const toIndex = parseInt(
+      item.getAttribute("data-sv-queue-item-index") || "-1",
+      10
+    );
+
+    const fromIndex = this.queueDragIndex;
+
+    this.queueDragIndex = null;
+    this.clearQueueDragClasses();
+
+    this.moveQueueTrack(fromIndex, toIndex);
+  });
+
+  this.els.queue.addEventListener("dragend", () => {
+    this.queueDragIndex = null;
+    this.clearQueueDragClasses();
   });
 }
 
@@ -908,6 +1001,68 @@ clearQueue() {
   this.scheduleSaveState();
 
   return true;
+},
+
+moveQueueTrack(fromIndex, toIndex) {
+  if (!Array.isArray(this.playlist) || this.playlist.length < 2) {
+    return false;
+  }
+
+  if (
+    !Number.isFinite(fromIndex) ||
+    !Number.isFinite(toIndex) ||
+    fromIndex < 0 ||
+    toIndex < 0 ||
+    fromIndex >= this.playlist.length ||
+    toIndex >= this.playlist.length ||
+    fromIndex === toIndex
+  ) {
+    return false;
+  }
+
+  const currentTrack = this.getCurrentTrack();
+
+  const movedItems = this.playlist.splice(fromIndex, 1);
+  const movedTrack = movedItems[0];
+
+  if (!movedTrack) {
+    return false;
+  }
+
+  this.playlist.splice(toIndex, 0, movedTrack);
+
+  if (currentTrack && currentTrack.id) {
+    const nextCurrentIndex = this.playlist.findIndex((track) => {
+      return track && String(track.id) === String(currentTrack.id);
+    });
+
+    this.currentIndex = nextCurrentIndex >= 0 ? nextCurrentIndex : 0;
+    this.currentTrack = currentTrack;
+  } else {
+    this.currentIndex = Math.max(
+      0,
+      Math.min(this.currentIndex, this.playlist.length - 1)
+    );
+  }
+
+  this.syncNowPlayingUi();
+  this.syncPlayButtonState();
+  this.renderDrawer();
+  this.scheduleSaveState();
+
+  return true;
+},
+
+clearQueueDragClasses() {
+  if (!this.els.queue) {
+    return;
+  }
+
+  this.els.queue
+    .querySelectorAll(".is-dragging, .is-drop-target")
+    .forEach((item) => {
+      item.classList.remove("is-dragging", "is-drop-target");
+    });
 },
 
     loadPlaylist(tracks, options = {}) {
@@ -1478,6 +1633,8 @@ clearQueue() {
       tracks.forEach((track, index) => {
         const item = document.createElement("li");
         item.className = "sv-player__queue-item";
+item.draggable = false;
+item.setAttribute("data-sv-queue-item-index", String(index));
 
         const isCurrent =
           currentTrack && String(currentTrack.id) === String(track.id);
@@ -1488,6 +1645,13 @@ clearQueue() {
           "is-queued",
           !currentTrack && index === this.currentIndex,
         );
+
+const dragHandle = document.createElement("span");
+dragHandle.className = "sv-player__queue-drag";
+dragHandle.setAttribute("aria-hidden", "true");
+dragHandle.setAttribute("draggable", "true");
+dragHandle.setAttribute("data-sv-queue-drag-index", String(index));
+dragHandle.textContent = "☰";
 
         const button = document.createElement("button");
         button.type = "button";
@@ -1563,6 +1727,7 @@ button.appendChild(art);
 button.appendChild(body);
 button.appendChild(status);
 
+item.appendChild(dragHandle);
 item.appendChild(button);
 
 const canRemove =
@@ -1798,6 +1963,44 @@ this.els.queue.appendChild(item);
       ctx.quadraticCurveTo(x, y, x + safeRadius, y);
       ctx.closePath();
     },
+
+    getDebugSnapshot() {
+  const track = this.getCurrentTrack();
+
+  return {
+    playerMounted: !!this.root,
+    audioMounted: !!this.audio,
+    pageContentCount: document.querySelectorAll("[data-sv-page-content]").length,
+    playerCount: document.querySelectorAll("[data-sv-player]").length,
+
+    hasActiveAudio: this.hasActiveAudio(),
+    isPlaying: !!this.audio && !this.audio.paused && !this.audio.ended,
+
+    currentTrack: track
+      ? {
+          id: track.id,
+          title: track.title,
+          audioUrl: track.audioUrl,
+        }
+      : null,
+
+    currentIndex: this.currentIndex,
+    playlistLength: this.playlist.length,
+    albumTracklistLength: this.albumTracklist.length,
+
+    playlistIds: this.playlist.map((item) => item && item.id),
+    albumTracklistIds: this.albumTracklist.map((item) => item && item.id),
+
+    drawerOpen: this.drawerOpen,
+    pendingRestoreTime: this.pendingRestoreTime,
+
+    queueButtonCount: document.querySelectorAll("[data-sv-track-queue-button='true']").length,
+    playButtonCount: document.querySelectorAll("[data-sv-play-button='true']").length,
+
+    storageKey: this.storageKey,
+    savedStateExists: !!window.localStorage.getItem(this.storageKey),
+  };
+},
 
     formatTime(seconds) {
       if (!Number.isFinite(seconds) || seconds < 0) return "0:00";
