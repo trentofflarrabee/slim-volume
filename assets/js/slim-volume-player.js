@@ -1782,56 +1782,100 @@
       });
     },
 
-    initVisualizer() {
-      if (!this.isVisualizerEnabled()) {
-        this.markVisualizerUnavailable();
-        return;
-      }
+initVisualizer() {
+  if (!this.isVisualizerEnabled()) {
+    this.markVisualizerUnavailable();
+    return;
+  }
 
-      if (this.visualizer.initialized || this.visualizer.failed) {
-        return;
-      }
+  if (this.visualizer.initialized || this.visualizer.failed) {
+    return;
+  }
 
-      if (!this.audio || !this.els.visualizerCanvas) {
-        return;
-      }
+  if (!this.audio || !this.els.visualizerCanvas) {
+    return;
+  }
 
-      const AudioContext = window.AudioContext || window.webkitAudioContext;
+  const graph = this.getAudioGraph();
 
-      if (!AudioContext) {
-        this.visualizer.failed = true;
-        this.markVisualizerUnavailable();
-        return;
-      }
+  if (!graph || !graph.context || !graph.analyser || !graph.source) {
+    this.visualizer.failed = true;
+    this.markVisualizerUnavailable();
+    return;
+  }
 
-      try {
-        const context = new AudioContext();
-        const analyser = context.createAnalyser();
+  try {
+    this.visualizer.context = graph.context;
+    this.visualizer.analyser = graph.analyser;
+    this.visualizer.source = graph.source;
+    this.visualizer.data = new Uint8Array(graph.analyser.frequencyBinCount);
+    this.visualizer.canvasContext =
+      this.els.visualizerCanvas.getContext("2d");
+    this.visualizer.initialized = true;
 
-        analyser.fftSize = 128;
-        analyser.smoothingTimeConstant = 0.82;
+    this.root.classList.add("sv-player--visualizer-ready");
+  } catch (err) {
+    console.warn("[SVPlayer] Visualizer unavailable.", err);
 
-        const source = context.createMediaElementSource(this.audio);
+    this.visualizer.failed = true;
+    this.markVisualizerUnavailable();
+  }
+},
 
-        source.connect(analyser);
-        analyser.connect(context.destination);
+getAudioGraph() {
+  if (!this.audio) {
+    return null;
+  }
 
-        this.visualizer.context = context;
-        this.visualizer.analyser = analyser;
-        this.visualizer.source = source;
-        this.visualizer.data = new Uint8Array(analyser.frequencyBinCount);
-        this.visualizer.canvasContext =
-          this.els.visualizerCanvas.getContext("2d");
-        this.visualizer.initialized = true;
+  if (this.audio.__svAudioGraph && !this.audio.__svAudioGraph.failed) {
+    return this.audio.__svAudioGraph;
+  }
 
-        this.root.classList.add("sv-player--visualizer-ready");
-      } catch (err) {
-        console.warn("[SVPlayer] Visualizer unavailable.", err);
+  const AudioContext = window.AudioContext || window.webkitAudioContext;
 
-        this.visualizer.failed = true;
-        this.markVisualizerUnavailable();
-      }
-    },
+  if (!AudioContext) {
+    this.audio.__svAudioGraph = {
+      failed: true,
+      reason: "web-audio-unavailable",
+    };
+
+    return null;
+  }
+
+  try {
+    const context = new AudioContext();
+    const analyser = context.createAnalyser();
+
+    analyser.fftSize = 128;
+    analyser.smoothingTimeConstant = 0.82;
+
+    const source = context.createMediaElementSource(this.audio);
+
+    source.connect(analyser);
+    analyser.connect(context.destination);
+
+    const graph = {
+      context,
+      analyser,
+      source,
+      failed: false,
+    };
+
+    this.audio.__svAudioGraph = graph;
+
+    return graph;
+  } catch (err) {
+    console.warn("[SVPlayer] Audio graph unavailable.", err);
+
+    this.audio.__svAudioGraph = {
+      failed: true,
+      reason: "audio-graph-unavailable",
+      error: err,
+    };
+
+    return null;
+  }
+},
 
     startVisualizer() {
       if (!this.isVisualizerEnabled()) {
