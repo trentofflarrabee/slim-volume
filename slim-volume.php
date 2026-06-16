@@ -29,6 +29,7 @@ if (! defined('SLIM_VOLUME_URL')) {
     define('SLIM_VOLUME_URL', plugin_dir_url(__FILE__));
 }
 
+require_once SLIM_VOLUME_PATH . 'includes/Functions.php';
 require_once SLIM_VOLUME_PATH . 'includes/Plugin.php';
 
 register_activation_hook(__FILE__, ['SlimVolume\\Plugin', 'activate']);

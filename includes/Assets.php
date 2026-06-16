@@ -70,16 +70,7 @@ final class Assets
                 true
             );
 
-            wp_add_inline_script(
-                'slim-volume-navigation',
-                'window.SVNavigationConfig = ' . wp_json_encode(
-                    [
-                        'musicBaseUrl'    => home_url('/music/'),
-                        'contentSelector' => '[data-sv-page-content]',
-                    ]
-                ) . ';',
-                'before'
-            );
+
         }
     }
 

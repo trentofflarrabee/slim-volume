@@ -182,7 +182,7 @@ $track_links = array_filter($track_links);
     <?php endwhile; ?>
 </main>
 
-<?php require SLIM_VOLUME_PATH . 'templates/partials/player-shell.php'; ?>
+<?php slim_volume_render_player_shell(); ?>
 
 <?php
 get_footer();
