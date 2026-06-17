@@ -758,6 +758,37 @@ body.sv-player-drawer-open {
     rgba(255, 255, 255, 0.04);
 }
 
+.sv-player__visualizer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.sv-player__visualizer-label {
+  color: var(--sv-player-muted);
+  font-size: 0.88rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.sv-player__visualizer-toggle {
+  min-height: 32px;
+  padding: 6px 10px;
+  font-size: 0.82rem;
+}
+
+.sv-player__visualizer.is-hidden .sv-player__visualizer-canvas,
+.sv-player__visualizer.is-hidden .sv-player__visualizer-canvas--butterchurn {
+  display: none !important;
+}
+
+.sv-player__visualizer.is-hidden {
+  padding-bottom: 10px;
+}
+
 .sv-player__visualizer-canvas {
   display: block;
   width: 100%;

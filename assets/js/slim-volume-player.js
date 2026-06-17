@@ -32,6 +32,8 @@
     },
 
     visualizerController: null,
+    visualizerVisible: true,
+    visualizerVisibilityStorageKey: "slimVolumeVisualizerVisible:v1",
 
     els: {},
 
@@ -47,6 +49,7 @@
 
       this.cacheEls();
       this.setupVisualizerController();
+      this.restoreVisualizerVisibility();
       this.bindCoreControls();
       this.bindAudioEvents();
 
@@ -121,6 +124,9 @@
       this.els.visualizer = this.root.querySelector("[data-sv-visualizer]");
       this.els.visualizerCanvas = this.root.querySelector(
         "[data-sv-visualizer-canvas]",
+      );
+      this.els.visualizerToggle = this.root.querySelector(
+        "[data-sv-visualizer-toggle]",
       );
     },
 
@@ -395,6 +401,13 @@
       if (this.els.drawerClose) {
         this.els.drawerClose.addEventListener("click", () => {
           this.setDrawerOpen(false);
+        });
+      }
+
+      //visualizerToggle
+      if (this.els.visualizerToggle) {
+        this.els.visualizerToggle.addEventListener("click", () => {
+          this.setVisualizerVisible(!this.visualizerVisible);
         });
       }
 
@@ -1788,6 +1801,93 @@
       });
     },
 
+    restoreVisualizerVisibility() {
+  let visible = true;
+
+  try {
+    const saved = window.localStorage.getItem(
+      this.visualizerVisibilityStorageKey,
+    );
+
+    if (saved === "hidden") {
+      visible = false;
+    }
+  } catch (err) {
+    visible = true;
+  }
+
+  this.setVisualizerVisible(visible, { persist: false });
+},
+
+saveVisualizerVisibility() {
+  try {
+    window.localStorage.setItem(
+      this.visualizerVisibilityStorageKey,
+      this.visualizerVisible ? "visible" : "hidden",
+    );
+  } catch (err) {
+    // Ignore storage failures.
+  }
+},
+
+setVisualizerVisible(visible, options = {}) {
+  const shouldPersist = options.persist !== false;
+
+  this.visualizerVisible = !!visible;
+
+  if (this.els.visualizer) {
+    this.els.visualizer.classList.toggle(
+      "is-hidden",
+      !this.visualizerVisible,
+    );
+  }
+
+  this.updateVisualizerToggle();
+
+  if (shouldPersist) {
+    this.saveVisualizerVisibility();
+  }
+
+  if (!this.visualizerVisible) {
+    this.stopVisualizer();
+    return;
+  }
+
+  if (this.audio && !this.audio.paused && !this.audio.ended) {
+    this.startVisualizer();
+  } else {
+    this.drawVisualizerIdle();
+  }
+},
+
+updateVisualizerToggle() {
+  if (!this.els.visualizerToggle) {
+    return;
+  }
+
+  const isEnabled = this.isVisualizerEnabled();
+
+  this.els.visualizerToggle.disabled = !isEnabled;
+  this.els.visualizerToggle.classList.toggle("is-disabled", !isEnabled);
+  this.els.visualizerToggle.setAttribute(
+    "aria-pressed",
+    this.visualizerVisible ? "true" : "false",
+  );
+
+  if (!isEnabled) {
+    this.els.visualizerToggle.textContent = "Viz Off";
+    return;
+  }
+
+  this.els.visualizerToggle.textContent = this.visualizerVisible
+    ? "Hide Viz"
+    : "Show Viz";
+},
+
+isVisualizerVisible() {
+  return this.visualizerVisible && this.isVisualizerEnabled();
+},
+
     normalizeVisualizerMode(mode) {
       const allowedModes = ["bars", "butterchurn"];
       const normalized =
@@ -2047,6 +2147,11 @@
     },
 
     startVisualizer() {
+      if (!this.isVisualizerVisible()) {
+        this.stopVisualizer();
+        return;
+      }
+
       const controller = this.getVisualizerController();
 
       if (controller) {
@@ -2083,6 +2188,10 @@
     },
 
     drawVisualizerIdle() {
+
+      if (!this.isVisualizerVisible()) {
+        return;
+      }
       const controller = this.getVisualizerController();
 
       if (controller) {

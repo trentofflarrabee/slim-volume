@@ -59,7 +59,22 @@ if (! defined('ABSPATH')) {
                         ></nav>
                     </div>
 
-                    <div class="sv-player__visualizer" data-sv-visualizer aria-hidden="true">
+                    <div class="sv-player__visualizer" data-sv-visualizer>
+                        <div class="sv-player__visualizer-header">
+                            <span class="sv-player__visualizer-label">
+                                <?php echo esc_html__('Visualizer', 'slim-volume'); ?>
+                            </span>
+
+                            <button
+                                class="sv-player__button sv-player__visualizer-toggle"
+                                type="button"
+                                data-sv-visualizer-toggle
+                                aria-pressed="true"
+                            >
+                                <?php echo esc_html__('Hide Viz', 'slim-volume'); ?>
+                            </button>
+                        </div>
+
                         <canvas
                             class="sv-player__visualizer-canvas"
                             data-sv-visualizer-canvas
