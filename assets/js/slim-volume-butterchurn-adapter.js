@@ -45,142 +45,208 @@
       }
     },
 
-getRandomPresetName(presets, excludeName = "") {
-  const names = Object.keys(presets || {}).filter((name) => {
-    return name && name !== excludeName;
-  });
+    getRandomPresetName(presets, excludeName = "") {
+      const names = Object.keys(presets || {}).filter((name) => {
+        return name && name !== excludeName;
+      });
 
-  if (!names.length) {
-    return "";
-  }
+      if (!names.length) {
+        return "";
+      }
 
-  return names[Math.floor(Math.random() * names.length)];
-},
+      return names[Math.floor(Math.random() * names.length)];
+    },
 
-create({ canvas, audioGraph }) {
-  if (!this.isAvailable()) {
-    throw new Error("Butterchurn vendor scripts are unavailable.");
-  }
+    create({ canvas, audioGraph }) {
+      if (!this.isAvailable()) {
+        throw new Error("Butterchurn vendor scripts are unavailable.");
+      }
 
-  if (!canvas) {
-    throw new Error("Butterchurn canvas is missing.");
-  }
+      if (!canvas) {
+        throw new Error("Butterchurn canvas is missing.");
+      }
 
-  if (!audioGraph || !audioGraph.context || (!audioGraph.analyser && !audioGraph.source)) {
-    throw new Error("Butterchurn audio graph is missing.");
-  }
+      if (
+        !audioGraph ||
+        !audioGraph.context ||
+        (!audioGraph.analyser && !audioGraph.source)
+      ) {
+        throw new Error("Butterchurn audio graph is missing.");
+      }
 
-  const context = audioGraph.context;
-  const audioNode = audioGraph.source || audioGraph.analyser;
-  const presets = this.getPresets();
-let presetName = this.getRandomPresetName(presets);
-let preset = presetName ? presets[presetName] : null;
+      const context = audioGraph.context;
+      const audioNode = audioGraph.source || audioGraph.analyser;
+      const presets = this.getPresets();
+      const presetNames = Object.keys(presets || {});
+      const recentPresetNames = [];
+      const recentPresetLimit = Math.min(
+        10,
+        Math.max(3, Math.floor(presetNames.length * 0.12)),
+      );
 
-  const butterchurn = this.getButterchurnLibrary();
+      const rememberPresetName = (name) => {
+        if (!name) {
+          return;
+        }
 
-  if (!butterchurn) {
-    throw new Error("Butterchurn visualizer library is unavailable.");
-  }
+        const existingIndex = recentPresetNames.indexOf(name);
 
-  /**
-   * Butterchurn needs a WebGL canvas.
-   * The existing Slim Volume bars canvas may already have a 2D context,
-   * and a canvas cannot switch from 2D to WebGL after that.
-   */
-  const originalCanvas = canvas;
-  const rendererCanvas = document.createElement("canvas");
-  const pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
+        if (existingIndex !== -1) {
+          recentPresetNames.splice(existingIndex, 1);
+        }
 
-  rendererCanvas.className = `${originalCanvas.className || ""} sv-player__visualizer-canvas--butterchurn`.trim();
-  rendererCanvas.setAttribute("aria-hidden", "true");
+        recentPresetNames.unshift(name);
 
-  rendererCanvas.style.display = "block";
-  rendererCanvas.style.width = "100%";
-  rendererCanvas.style.height = `${originalCanvas.clientHeight || originalCanvas.height || 120}px`;
+        if (recentPresetNames.length > recentPresetLimit) {
+          recentPresetNames.length = recentPresetLimit;
+        }
+      };
 
-  originalCanvas.style.display = "none";
-  originalCanvas.insertAdjacentElement("afterend", rendererCanvas);
+      const pickPresetName = (excludeName = "") => {
+        let candidates = presetNames.filter((name) => {
+          return (
+            name && name !== excludeName && !recentPresetNames.includes(name)
+          );
+        });
 
-  const getRendererSize = () => {
-    const rect = rendererCanvas.getBoundingClientRect();
+        if (!candidates.length) {
+          candidates = presetNames.filter((name) => {
+            return name && name !== excludeName;
+          });
+        }
 
-    const width = Math.max(
-      1,
-      Math.floor(rect.width || originalCanvas.clientWidth || originalCanvas.width || 640),
-    );
+        if (!candidates.length) {
+          candidates = presetNames.slice();
+        }
 
-    const height = Math.max(
-      1,
-      Math.floor(rect.height || originalCanvas.clientHeight || originalCanvas.height || 360),
-    );
+        if (!candidates.length) {
+          return "";
+        }
 
-    return {
-      cssWidth: width,
-      cssHeight: height,
-      renderWidth: Math.max(1, Math.round(width * pixelRatio)),
-      renderHeight: Math.max(1, Math.round(height * pixelRatio)),
-    };
-  };
+        return candidates[Math.floor(Math.random() * candidates.length)];
+      };
 
-  const applyRendererSize = () => {
-    const size = getRendererSize();
+      let presetName = pickPresetName();
+      let preset = presetName ? presets[presetName] : null;
 
-    rendererCanvas.width = size.renderWidth;
-    rendererCanvas.height = size.renderHeight;
+      rememberPresetName(presetName);
 
-    return size;
-  };
+      const butterchurn = this.getButterchurnLibrary();
 
-  const initialSize = applyRendererSize();
+      if (!butterchurn) {
+        throw new Error("Butterchurn visualizer library is unavailable.");
+      }
 
-  const visualizer = butterchurn.createVisualizer(context, rendererCanvas, {
-    width: initialSize.renderWidth,
-    height: initialSize.renderHeight,
-    pixelRatio: 1,
-    textureRatio: 1,
-  });
+      /**
+       * Butterchurn needs a WebGL canvas.
+       * The existing Slim Volume bars canvas may already have a 2D context,
+       * and a canvas cannot switch from 2D to WebGL after that.
+       */
+      const originalCanvas = canvas;
+      const rendererCanvas = document.createElement("canvas");
+      const pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
 
-  visualizer.connectAudio(audioNode);
+      rendererCanvas.className =
+        `${originalCanvas.className || ""} sv-player__visualizer-canvas--butterchurn`.trim();
+      rendererCanvas.setAttribute("aria-hidden", "true");
 
-  if (preset) {
-    visualizer.loadPreset(preset, 0.0);
-  }
+      rendererCanvas.style.display = "block";
+      rendererCanvas.style.width = "100%";
+      rendererCanvas.style.height = `${originalCanvas.clientHeight || originalCanvas.height || 120}px`;
 
-  if (typeof visualizer.setRendererSize === "function") {
-    visualizer.setRendererSize(initialSize.renderWidth, initialSize.renderHeight);
-  }
+      originalCanvas.style.display = "none";
+      originalCanvas.insertAdjacentElement("afterend", rendererCanvas);
 
-  try {
-    visualizer.render();
-  } catch (err) {
-    console.warn("[SVButterchurn] Initial render failed.", err);
-  }
+      const getRendererSize = () => {
+        const rect = rendererCanvas.getBoundingClientRect();
 
-  let frame = null;
-  let running = false;
+        const width = Math.max(
+          1,
+          Math.floor(
+            rect.width ||
+              originalCanvas.clientWidth ||
+              originalCanvas.width ||
+              640,
+          ),
+        );
 
-  const render = () => {
-    if (!running) {
-      return;
-    }
+        const height = Math.max(
+          1,
+          Math.floor(
+            rect.height ||
+              originalCanvas.clientHeight ||
+              originalCanvas.height ||
+              360,
+          ),
+        );
 
-    visualizer.render();
-    frame = window.requestAnimationFrame(render);
-  };
+        return {
+          cssWidth: width,
+          cssHeight: height,
+          renderWidth: Math.max(1, Math.round(width * pixelRatio)),
+          renderHeight: Math.max(1, Math.round(height * pixelRatio)),
+        };
+      };
 
-  return {
-type: "butterchurn",
-visualizer,
+      const applyRendererSize = () => {
+        const size = getRendererSize();
 
-getPresetName() {
-  return presetName || "";
-},
+        rendererCanvas.width = size.renderWidth;
+        rendererCanvas.height = size.renderHeight;
+
+        return size;
+      };
+
+      const initialSize = applyRendererSize();
+
+      const visualizer = butterchurn.createVisualizer(context, rendererCanvas, {
+        width: initialSize.renderWidth,
+        height: initialSize.renderHeight,
+        pixelRatio: 1,
+        textureRatio: 1,
+      });
+
+      visualizer.connectAudio(audioNode);
+
+      if (preset) {
+        visualizer.loadPreset(preset, 0.0);
+      }
+
+      if (typeof visualizer.setRendererSize === "function") {
+        visualizer.setRendererSize(
+          initialSize.renderWidth,
+          initialSize.renderHeight,
+        );
+      }
+
+      try {
+        visualizer.render();
+      } catch (err) {
+        console.warn("[SVButterchurn] Initial render failed.", err);
+      }
+
+      let frame = null;
+      let running = false;
+
+      const render = () => {
+        if (!running) {
+          return;
+        }
+
+        visualizer.render();
+        frame = window.requestAnimationFrame(render);
+      };
+
+      return {
+        type: "butterchurn",
+        visualizer,
+
+        getPresetName() {
+          return presetName || "";
+        },
 
 loadRandomPreset(blendTime = 2.7) {
-  const nextPresetName = SVButterchurn.getRandomPresetName(
-    presets,
-    presetName,
-  );
+  const nextPresetName = pickPresetName(presetName);
 
   if (!nextPresetName || !presets[nextPresetName]) {
     return presetName || "";
@@ -190,66 +256,70 @@ loadRandomPreset(blendTime = 2.7) {
   preset = presets[presetName];
 
   visualizer.loadPreset(preset, blendTime);
+  rememberPresetName(presetName);
 
   return presetName;
 },
 
-    start() {
-      running = true;
+        start() {
+          running = true;
 
-      if (context.state === "suspended") {
-        context.resume().catch((err) => {
-          console.warn("[SVButterchurn] Could not resume AudioContext.", err);
-        });
-      }
+          if (context.state === "suspended") {
+            context.resume().catch((err) => {
+              console.warn(
+                "[SVButterchurn] Could not resume AudioContext.",
+                err,
+              );
+            });
+          }
 
-      if (!frame) {
-        render();
-      }
+          if (!frame) {
+            render();
+          }
+        },
+
+        stop() {
+          running = false;
+
+          if (frame) {
+            window.cancelAnimationFrame(frame);
+            frame = null;
+          }
+        },
+
+        resize() {
+          const size = applyRendererSize();
+
+          if (typeof visualizer.setRendererSize === "function") {
+            visualizer.setRendererSize(size.renderWidth, size.renderHeight);
+          }
+
+          try {
+            visualizer.render();
+          } catch (err) {
+            console.warn("[SVButterchurn] Render after resize failed.", err);
+          }
+        },
+
+        destroy() {
+          this.stop();
+
+          if (typeof visualizer.disconnectAudio === "function") {
+            try {
+              visualizer.disconnectAudio(audioNode);
+            } catch (err) {
+              // Some builds may not support disconnecting the exact node.
+            }
+          }
+
+          if (rendererCanvas.parentNode) {
+            rendererCanvas.parentNode.removeChild(rendererCanvas);
+          }
+
+          originalCanvas.style.display = "";
+        },
+      };
     },
-
-    stop() {
-      running = false;
-
-      if (frame) {
-        window.cancelAnimationFrame(frame);
-        frame = null;
-      }
-    },
-
-    resize() {
-      const size = applyRendererSize();
-
-      if (typeof visualizer.setRendererSize === "function") {
-        visualizer.setRendererSize(size.renderWidth, size.renderHeight);
-      }
-
-      try {
-        visualizer.render();
-      } catch (err) {
-        console.warn("[SVButterchurn] Render after resize failed.", err);
-      }
-    },
-
-    destroy() {
-      this.stop();
-
-      if (typeof visualizer.disconnectAudio === "function") {
-        try {
-          visualizer.disconnectAudio(audioNode);
-        } catch (err) {
-          // Some builds may not support disconnecting the exact node.
-        }
-      }
-
-      if (rendererCanvas.parentNode) {
-        rendererCanvas.parentNode.removeChild(rendererCanvas);
-      }
-
-      originalCanvas.style.display = "";
-    },
-  };
-},
   };
 
   window.SVButterchurn = SVButterchurn;
