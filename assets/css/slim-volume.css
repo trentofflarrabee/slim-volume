@@ -759,10 +759,7 @@ body.sv-player-drawer-open {
 }
 
 .sv-player__visualizer-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
+  display: block;
   margin-bottom: 10px;
 }
 
@@ -786,9 +783,11 @@ body.sv-player-drawer-open {
   flex-wrap: wrap;
   gap: 8px;
   justify-content: flex-end;
+  margin-top: 10px;
 }
 
-.sv-player__visualizer-next-preset {
+.sv-player__visualizer-next-preset,
+.sv-player__visualizer-toggle {
   min-height: 32px;
   padding: 6px 10px;
   font-size: 0.82rem;

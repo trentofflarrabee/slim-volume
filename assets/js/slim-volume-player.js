@@ -2343,20 +2343,44 @@
       );
     },
 
+    formatVisualizerPresetName(name) {
+  if (!name || typeof name !== "string") {
+    return "";
+  }
+
+  let formatted = name
+    .replace(/\s+/g, " ")
+    .replace(/\s+-\s+/g, " — ")
+    .replace(/\s*\[\s*/g, " [")
+    .replace(/\s*\]\s*/g, "]")
+    .trim();
+
+  const maxLength = 72;
+
+  if (formatted.length > maxLength) {
+    formatted = `${formatted.slice(0, maxLength - 1).trim()}…`;
+  }
+
+  return formatted;
+},
+
     updateVisualizerPresetUI(presetName = "") {
       this.refreshVisualizerEls();
 
-      if (this.els.visualizerPresetName) {
-        const mode = this.getVisualizerMode();
+if (this.els.visualizerPresetName) {
+  const mode = this.getVisualizerMode();
 
-        let label = presetName;
+  let label = presetName;
 
-        if (!label) {
-          label = mode === "butterchurn" ? "Butterchurn" : "Bars";
-        }
+  if (!label) {
+    label = mode === "butterchurn" ? "Butterchurn" : "Bars";
+  }
 
-        this.els.visualizerPresetName.textContent = label;
-      }
+  const displayLabel = this.formatVisualizerPresetName(label);
+
+  this.els.visualizerPresetName.textContent = displayLabel;
+  this.els.visualizerPresetName.title = label;
+}
 
       if (this.els.visualizerNextPreset) {
         const canChangePreset = !!(

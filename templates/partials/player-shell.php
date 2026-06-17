@@ -73,26 +73,6 @@ if (! defined('ABSPATH')) {
                                     <?php echo esc_html__('Bars', 'slim-volume'); ?>
                                 </span>
                             </div>
-
-                            <div class="sv-player__visualizer-actions">
-                                <button
-                                    class="sv-player__button sv-player__visualizer-next-preset"
-                                    type="button"
-                                    data-sv-visualizer-next-preset
-                                    hidden
-                                >
-                                    <?php echo esc_html__('Next Preset', 'slim-volume'); ?>
-                                </button>
-
-                                <button
-                                    class="sv-player__button sv-player__visualizer-toggle"
-                                    type="button"
-                                    data-sv-visualizer-toggle
-                                    aria-pressed="true"
-                                >
-                                    <?php echo esc_html__('Hide Viz', 'slim-volume'); ?>
-                                </button>
-                            </div>
                         </div>
 
                         <canvas
@@ -101,6 +81,26 @@ if (! defined('ABSPATH')) {
                             width="640"
                             height="160"
                         ></canvas>
+
+                        <div class="sv-player__visualizer-actions">
+                            <button
+                                class="sv-player__button sv-player__visualizer-next-preset"
+                                type="button"
+                                data-sv-visualizer-next-preset
+                                hidden
+                            >
+                                <?php echo esc_html__('Random Preset', 'slim-volume'); ?>
+                            </button>
+
+                            <button
+                                class="sv-player__button sv-player__visualizer-toggle"
+                                type="button"
+                                data-sv-visualizer-toggle
+                                aria-pressed="true"
+                            >
+                                <?php echo esc_html__('Hide Viz', 'slim-volume'); ?>
+                            </button>
+                        </div>
                     </div>
 
                 </section>
