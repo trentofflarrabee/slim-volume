@@ -207,6 +207,61 @@ body.sv-player-ready {
   }
 }
 
+.sv-release-archive-controls {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) minmax(150px, 220px) auto auto;
+  gap: 12px;
+  align-items: center;
+  margin-top: 24px;
+}
+
+.sv-release-archive-controls__search,
+.sv-release-archive-controls__sort {
+  width: 100%;
+  min-height: 44px;
+  padding: 8px 14px;
+  color: inherit;
+  background: transparent;
+  border: 1px solid var(--sv-card-border);
+  border-radius: var(--sv-radius-pill);
+  font: inherit;
+}
+
+.sv-release-archive-controls__search::placeholder {
+  color: currentColor;
+  opacity: 0.5;
+}
+
+.sv-release-archive-controls__submit {
+  min-height: 44px;
+  white-space: nowrap;
+}
+
+.sv-release-archive-controls__clear {
+  color: inherit;
+  font-size: 0.92rem;
+  font-weight: 800;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  white-space: nowrap;
+}
+
+.sv-release-archive-empty {
+  margin-top: 32px;
+  opacity: 0.74;
+}
+
+@media (max-width: 720px) {
+  .sv-release-archive-controls {
+    grid-template-columns: 1fr;
+  }
+
+  .sv-release-archive-controls__submit {
+    justify-content: center;
+    width: 100%;
+  }
+}
+
 /* ==========================================================================
    Release + Track Layout
    ========================================================================== */
