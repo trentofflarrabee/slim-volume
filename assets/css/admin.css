@@ -220,3 +220,27 @@
 #sv-release-filter {
   max-width: 260px;
 }
+
+.sv-admin-badge--good {
+  background: #d1e7dd;
+}
+
+.sv-admin-badge--warning {
+  background: #fff3cd;
+}
+
+.sv-admin-badge--missing {
+  background: #f8d7da;
+}
+
+.post-type-sv_track .wp-list-table.fixed {
+  table-layout: auto;
+}
+
+.post-type-sv_track .column-title {
+  min-width: 220px;
+}
+
+.post-type-sv_track .column-date {
+  width: 150px;
+}
