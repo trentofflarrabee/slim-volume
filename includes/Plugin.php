@@ -20,6 +20,7 @@ require_once SLIM_VOLUME_PATH . 'includes/Admin/AdminColumns.php';
 require_once SLIM_VOLUME_PATH . 'includes/Admin/ReleaseTrackManager.php';
 require_once SLIM_VOLUME_PATH . 'includes/Admin/Settings.php';
 require_once SLIM_VOLUME_PATH . 'includes/Admin/ReleaseDashboardMetaBox.php';
+require_once SLIM_VOLUME_PATH . 'includes/Admin/TrackReleasePrefill.php';
 
 final class Plugin
 {
@@ -46,6 +47,7 @@ final class Plugin
         add_action('add_meta_boxes', [Admin\TrackMetaBoxes::class, 'register']);
         add_action('add_meta_boxes', [Admin\ReleaseTrackManager::class, 'register']);
         add_action('add_meta_boxes', [Admin\ReleaseDashboardMetaBox::class, 'register']);
+        add_action('add_meta_boxes', [Admin\TrackReleasePrefill::class, 'register']);
 
         add_action('save_post_' . PostTypes::RELEASE, [Admin\ReleaseMetaBoxes::class, 'save']);
         add_action('save_post_' . PostTypes::RELEASE, [Admin\ReleaseTrackManager::class, 'save_order']);
