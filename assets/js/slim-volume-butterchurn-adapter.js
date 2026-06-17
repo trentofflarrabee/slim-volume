@@ -45,15 +45,17 @@
       }
     },
 
-    getRandomPresetName(presets) {
-      const names = Object.keys(presets || {});
+getRandomPresetName(presets, excludeName = "") {
+  const names = Object.keys(presets || {}).filter((name) => {
+    return name && name !== excludeName;
+  });
 
-      if (!names.length) {
-        return "";
-      }
+  if (!names.length) {
+    return "";
+  }
 
-      return names[Math.floor(Math.random() * names.length)];
-    },
+  return names[Math.floor(Math.random() * names.length)];
+},
 
 create({ canvas, audioGraph }) {
   if (!this.isAvailable()) {
@@ -71,8 +73,8 @@ create({ canvas, audioGraph }) {
   const context = audioGraph.context;
   const audioNode = audioGraph.source || audioGraph.analyser;
   const presets = this.getPresets();
-  const presetName = this.getRandomPresetName(presets);
-  const preset = presetName ? presets[presetName] : null;
+let presetName = this.getRandomPresetName(presets);
+let preset = presetName ? presets[presetName] : null;
 
   const butterchurn = this.getButterchurnLibrary();
 
@@ -167,9 +169,30 @@ create({ canvas, audioGraph }) {
   };
 
   return {
-    type: "butterchurn",
+type: "butterchurn",
+visualizer,
+
+getPresetName() {
+  return presetName || "";
+},
+
+loadRandomPreset(blendTime = 2.7) {
+  const nextPresetName = SVButterchurn.getRandomPresetName(
+    presets,
     presetName,
-    visualizer,
+  );
+
+  if (!nextPresetName || !presets[nextPresetName]) {
+    return presetName || "";
+  }
+
+  presetName = nextPresetName;
+  preset = presets[presetName];
+
+  visualizer.loadPreset(preset, blendTime);
+
+  return presetName;
+},
 
     start() {
       running = true;

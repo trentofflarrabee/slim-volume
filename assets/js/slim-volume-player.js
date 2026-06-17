@@ -80,6 +80,26 @@
       window.SVPlayer = publicApi;
     },
 
+    refreshVisualizerEls() {
+  if (!this.root) {
+    return;
+  }
+
+  this.els.visualizer = this.root.querySelector("[data-sv-visualizer]");
+  this.els.visualizerCanvas = this.root.querySelector(
+    "[data-sv-visualizer-canvas]",
+  );
+  this.els.visualizerToggle = this.root.querySelector(
+    "[data-sv-visualizer-toggle]",
+  );
+  this.els.visualizerPresetName = this.root.querySelector(
+    "[data-sv-visualizer-preset-name]",
+  );
+  this.els.visualizerNextPreset = this.root.querySelector(
+    "[data-sv-visualizer-next-preset]",
+  );
+},
+
     cacheEls() {
       this.els.title = this.root.querySelector("[data-sv-player-title]");
       this.els.release = this.root.querySelector("[data-sv-player-release]");
@@ -121,13 +141,15 @@
       this.els.queue = this.root.querySelector("[data-sv-queue]");
       this.els.clearQueue = this.root.querySelector("[data-sv-clear-queue]");
 
-      this.els.visualizer = this.root.querySelector("[data-sv-visualizer]");
-      this.els.visualizerCanvas = this.root.querySelector(
-        "[data-sv-visualizer-canvas]",
+      this.els.visualizerPresetName = this.root.querySelector(
+        "[data-sv-visualizer-preset-name]",
       );
-      this.els.visualizerToggle = this.root.querySelector(
-        "[data-sv-visualizer-toggle]",
+      this.els.visualizerNextPreset = this.root.querySelector(
+        "[data-sv-visualizer-next-preset]",
       );
+
+      this.refreshVisualizerEls();
+
     },
 
     publicApi() {
@@ -405,11 +427,26 @@
       }
 
       //visualizerToggle
-      if (this.els.visualizerToggle) {
-        this.els.visualizerToggle.addEventListener("click", () => {
-          this.setVisualizerVisible(!this.visualizerVisible);
-        });
-      }
+this.root.addEventListener("click", (event) => {
+  const toggleButton = event.target.closest("[data-sv-visualizer-toggle]");
+
+  if (toggleButton && this.root.contains(toggleButton)) {
+    event.preventDefault();
+    this.refreshVisualizerEls();
+    this.setVisualizerVisible(!this.visualizerVisible);
+    return;
+  }
+
+  const nextPresetButton = event.target.closest(
+    "[data-sv-visualizer-next-preset]",
+  );
+
+  if (nextPresetButton && this.root.contains(nextPresetButton)) {
+    event.preventDefault();
+    this.refreshVisualizerEls();
+    this.nextButterchurnPreset();
+  }
+});
 
       if (this.els.queue) {
         this.els.queue.addEventListener("click", (event) => {
@@ -1802,91 +1839,115 @@
     },
 
     restoreVisualizerVisibility() {
-  let visible = true;
+      let visible = true;
 
-  try {
-    const saved = window.localStorage.getItem(
-      this.visualizerVisibilityStorageKey,
-    );
+      try {
+        const saved = window.localStorage.getItem(
+          this.visualizerVisibilityStorageKey,
+        );
 
-    if (saved === "hidden") {
-      visible = false;
-    }
-  } catch (err) {
-    visible = true;
-  }
+        if (saved === "hidden") {
+          visible = false;
+        }
+      } catch (err) {
+        visible = true;
+      }
 
-  this.setVisualizerVisible(visible, { persist: false });
-},
+      this.setVisualizerVisible(visible, { persist: false });
+    },
 
-saveVisualizerVisibility() {
-  try {
-    window.localStorage.setItem(
-      this.visualizerVisibilityStorageKey,
-      this.visualizerVisible ? "visible" : "hidden",
-    );
-  } catch (err) {
-    // Ignore storage failures.
-  }
-},
+    saveVisualizerVisibility() {
+      try {
+        window.localStorage.setItem(
+          this.visualizerVisibilityStorageKey,
+          this.visualizerVisible ? "visible" : "hidden",
+        );
+      } catch (err) {
+        // Ignore storage failures.
+      }
+    },
 
-setVisualizerVisible(visible, options = {}) {
-  const shouldPersist = options.persist !== false;
+    setVisualizerVisible(visible, options = {}) {
+      this.refreshVisualizerEls();
 
-  this.visualizerVisible = !!visible;
+      const shouldPersist = options.persist !== false;
 
-  if (this.els.visualizer) {
-    this.els.visualizer.classList.toggle(
-      "is-hidden",
-      !this.visualizerVisible,
-    );
-  }
+      this.visualizerVisible = !!visible;
 
-  this.updateVisualizerToggle();
+      if (this.els.visualizer) {
+        this.els.visualizer.classList.toggle(
+          "is-hidden",
+          !this.visualizerVisible,
+        );
+      }
 
-  if (shouldPersist) {
-    this.saveVisualizerVisibility();
-  }
+      this.updateVisualizerToggle();
 
-  if (!this.visualizerVisible) {
-    this.stopVisualizer();
-    return;
-  }
+      if (shouldPersist) {
+        this.saveVisualizerVisibility();
+      }
 
-  if (this.audio && !this.audio.paused && !this.audio.ended) {
-    this.startVisualizer();
-  } else {
-    this.drawVisualizerIdle();
-  }
-},
+      if (!this.visualizerVisible) {
+        this.stopVisualizer();
+        return;
+      }
 
-updateVisualizerToggle() {
-  if (!this.els.visualizerToggle) {
-    return;
-  }
+      if (this.audio && !this.audio.paused && !this.audio.ended) {
+        this.startVisualizer();
+      } else {
+        this.drawVisualizerIdle();
+      }
+    },
 
-  const isEnabled = this.isVisualizerEnabled();
+    updateVisualizerToggle() {
+      if (!this.els.visualizerToggle) {
+        return;
+      }
 
-  this.els.visualizerToggle.disabled = !isEnabled;
-  this.els.visualizerToggle.classList.toggle("is-disabled", !isEnabled);
-  this.els.visualizerToggle.setAttribute(
-    "aria-pressed",
-    this.visualizerVisible ? "true" : "false",
-  );
+      const isEnabled = this.isVisualizerEnabled();
 
-  if (!isEnabled) {
-    this.els.visualizerToggle.textContent = "Viz Off";
-    return;
-  }
+      this.els.visualizerToggle.disabled = !isEnabled;
+      this.els.visualizerToggle.classList.toggle("is-disabled", !isEnabled);
+      this.els.visualizerToggle.setAttribute(
+        "aria-pressed",
+        this.visualizerVisible ? "true" : "false",
+      );
 
-  this.els.visualizerToggle.textContent = this.visualizerVisible
-    ? "Hide Viz"
-    : "Show Viz";
-},
+      if (!isEnabled) {
+        this.els.visualizerToggle.textContent = "Viz Off";
+        return;
+      }
 
-isVisualizerVisible() {
-  return this.visualizerVisible && this.isVisualizerEnabled();
-},
+      this.els.visualizerToggle.textContent = this.visualizerVisible
+        ? "Hide Viz"
+        : "Show Viz";
+    },
+
+    isVisualizerVisible() {
+      return this.visualizerVisible && this.isVisualizerEnabled();
+    },
+
+    //DEBUG
+    debugVisualizer(message, data = {}) {
+      console.log(`[SV Viz Debug] ${message}`, {
+        configuredMode: window.SVConfig?.visualizerMode,
+        controllerMode: this.visualizerController?.mode,
+        visualizerEnabled: this.isVisualizerEnabled?.(),
+        visualizerVisible: this.visualizerVisible,
+        hasSVButterchurn: !!window.SVButterchurn,
+        adapterAvailable:
+          !!window.SVButterchurn &&
+          typeof window.SVButterchurn.isAvailable === "function"
+            ? window.SVButterchurn.isAvailable()
+            : false,
+        hasButterchurnInstance: !!this.visualizer.butterchurnInstance,
+        butterchurnFailed: this.visualizer.butterchurnFailed,
+        hasCanvas: !!this.els.visualizerCanvas,
+        hasAudio: !!this.audio,
+        audioPaused: this.audio ? this.audio.paused : null,
+        ...data,
+      });
+    },
 
     normalizeVisualizerMode(mode) {
       const allowedModes = ["bars", "butterchurn"];
@@ -1910,8 +1971,26 @@ isVisualizerVisible() {
       return this.normalizeVisualizerMode(configuredMode);
     },
 
+    // startVisualizerMode(mode) {
+    //   const normalizedMode = this.normalizeVisualizerMode(mode);
+
+    //   switch (normalizedMode) {
+    //DEBUG
     startVisualizerMode(mode) {
-      const normalizedMode = this.normalizeVisualizerMode(mode);
+const normalizedMode = this.normalizeVisualizerMode(mode);
+      console.log("[SV Viz Debug] startVisualizerMode hit", {
+  requestedMode: mode,
+  normalizedMode: this.normalizeVisualizerMode(mode),
+  configMode: window.SVConfig?.visualizerMode,
+});
+
+
+      
+
+      this.debugVisualizer("startVisualizerMode()", {
+        requestedMode: mode,
+        normalizedMode,
+      });
 
       switch (normalizedMode) {
         case "butterchurn":
@@ -2147,6 +2226,12 @@ isVisualizerVisible() {
     },
 
     startVisualizer() {
+      console.log("[SV Viz Debug] startVisualizer()", {
+  configMode: window.SVConfig?.visualizerMode,
+  controllerMode: this.visualizerController?.mode,
+  visible: this.visualizerVisible,
+  enabled: this.isVisualizerEnabled?.(),
+});
       if (!this.isVisualizerVisible()) {
         this.stopVisualizer();
         return;
@@ -2188,7 +2273,6 @@ isVisualizerVisible() {
     },
 
     drawVisualizerIdle() {
-
       if (!this.isVisualizerVisible()) {
         return;
       }
@@ -2207,94 +2291,229 @@ isVisualizerVisible() {
       }
     },
 
-isButterchurnAdapterAvailable() {
-  return !!(
-    window.SVButterchurn &&
-    typeof window.SVButterchurn.create === "function" &&
-    typeof window.SVButterchurn.isAvailable === "function" &&
-    window.SVButterchurn.isAvailable()
+    isButterchurnAdapterAvailable() {
+      return !!(
+        window.SVButterchurn &&
+        typeof window.SVButterchurn.create === "function" &&
+        typeof window.SVButterchurn.isAvailable === "function" &&
+        window.SVButterchurn.isAvailable()
+      );
+    },
+
+    updateVisualizerPresetUI(presetName = "") {
+      this.refreshVisualizerEls();
+
+      if (this.els.visualizerPresetName) {
+        const mode = this.getVisualizerMode();
+
+        let label = presetName;
+
+        if (!label) {
+          label = mode === "butterchurn" ? "Butterchurn" : "Bars";
+        }
+
+        this.els.visualizerPresetName.textContent = label;
+      }
+
+      if (this.els.visualizerNextPreset) {
+        const canChangePreset = !!(
+          this.getVisualizerMode() === "butterchurn" &&
+          this.visualizer.butterchurnInstance &&
+          typeof this.visualizer.butterchurnInstance.loadRandomPreset ===
+            "function"
+        );
+
+        this.els.visualizerNextPreset.hidden = !canChangePreset;
+        this.els.visualizerNextPreset.disabled = !canChangePreset;
+        this.els.visualizerNextPreset.classList.toggle(
+          "is-disabled",
+          !canChangePreset,
+        );
+      }
+    },
+
+    nextButterchurnPreset() {
+      const instance = this.visualizer.butterchurnInstance;
+
+      if (!instance || typeof instance.loadRandomPreset !== "function") {
+        return;
+      }
+
+      try {
+        const presetName = instance.loadRandomPreset(2.7);
+        this.updateVisualizerPresetUI(presetName);
+      } catch (err) {
+        console.warn("[SVPlayer] Could not load next Butterchurn preset.", err);
+      }
+    },
+
+    createButterchurnVisualizer() {
+      //DEBUG
+      console.log("[SV Viz Debug] createButterchurnVisualizer()", {
+  adapterAvailable: this.isButterchurnAdapterAvailable(),
+  hasCanvas: !!this.els.visualizerCanvas,
+  hasAudio: !!this.audio,
+  failed: this.visualizer.butterchurnFailed,
+});
+      console.log("[SV Viz Debug] createButterchurnVisualizer hit");
+      this.debugVisualizer("createButterchurnVisualizer() entered");
+      if (this.visualizer.butterchurnInstance) {
+        return this.visualizer.butterchurnInstance;
+      }
+
+      if (this.visualizer.butterchurnFailed) {
+        return null;
+      }
+
+      if (!this.isVisualizerEnabled()) {
+        return null;
+      }
+
+      if (!this.isButterchurnAdapterAvailable()) {
+        this.visualizer.butterchurnFailed = true;
+        return null;
+      }
+
+if (!this.els.visualizerCanvas && this.root) {
+  this.els.visualizerCanvas = this.root.querySelector(
+    "[data-sv-visualizer-canvas]",
   );
-},
+}
 
-createButterchurnVisualizer() {
-  if (this.visualizer.butterchurnInstance) {
-    return this.visualizer.butterchurnInstance;
-  }
+if (!this.els.visualizer && this.root) {
+  this.els.visualizer = this.root.querySelector("[data-sv-visualizer]");
+}
 
-  if (this.visualizer.butterchurnFailed) {
-    return null;
-  }
+if (!this.audio || !this.els.visualizerCanvas) {
+  this.debugVisualizer("Butterchurn stopped: missing audio or canvas", {
+    hasAudio: !!this.audio,
+    hasCanvas: !!this.els.visualizerCanvas,
+  });
+
+  return null;
+}
+
+      const graph = this.getAudioGraph();
+
+      if (!graph || !graph.context || !graph.source) {
+        this.visualizer.butterchurnFailed = true;
+        return null;
+      }
+
+      try {
+        this.stopBarsVisualizer();
+
+        const instance = window.SVButterchurn.create({
+          canvas: this.els.visualizerCanvas,
+          audio: this.audio,
+          audioGraph: graph,
+        });
+
+        this.visualizer.butterchurnInstance = instance;
+        this.refreshVisualizerEls();
+        this.updateVisualizerPresetUI(
+          typeof instance.getPresetName === "function"
+            ? instance.getPresetName()
+            : "",
+        );
+        this.visualizer.butterchurnFailed = false;
+
+        if (this.root) {
+          this.root.classList.add("sv-player--visualizer-ready");
+          this.root.classList.add("sv-player--butterchurn-ready");
+        }
+
+        if (this.els.visualizer) {
+          this.els.visualizer.classList.remove("is-unavailable");
+        }
+
+        this.resizeButterchurnVisualizer();
+
+        return instance;
+      // } catch (err) {
+      //   console.warn(
+      //     "[SVPlayer] Butterchurn unavailable. Falling back to bars.",
+      //     err,
+      //   );
+
+      //   this.visualizer.butterchurnFailed = true;
+      //   this.visualizer.butterchurnInstance = null;
+      //   this.updateVisualizerPresetUI();
+
+      //   return null;
+      // }
+      //DEBUG
+      } catch (err) {
+  console.warn("[SVPlayer] Butterchurn unavailable. Falling back to bars.", err);
+
+  this.debugVisualizer("Butterchurn create threw", {
+    error: err,
+    message: err && err.message ? err.message : "",
+    stack: err && err.stack ? err.stack : "",
+  });
+
+  this.visualizer.butterchurnFailed = true;
+  this.visualizer.butterchurnInstance = null;
+
+  return null;
+}
+    },
+
+    //DEBUG
+    // startButterchurnVisualizer() {
+    //   if (!this.isVisualizerEnabled()) {
+    //     return;
+    //   }
+
+    //   const instance = this.createButterchurnVisualizer();
+
+    //   if (!instance) {
+    //     this.startBarsVisualizer();
+    //     return;
+    //   }
+
+    //   try {
+    //     instance.start();
+    //   } catch (err) {
+    //     console.warn(
+    //       "[SVPlayer] Could not start Butterchurn. Falling back to bars.",
+    //       err,
+    //     );
+
+    //     this.visualizer.butterchurnFailed = true;
+    //     this.destroyButterchurnVisualizer();
+    //     this.startBarsVisualizer();
+    //   }
+    // },
+    startButterchurnVisualizer() {
+  this.debugVisualizer("startButterchurnVisualizer() entered");
 
   if (!this.isVisualizerEnabled()) {
-    return null;
-  }
-
-  if (!this.isButterchurnAdapterAvailable()) {
-    this.visualizer.butterchurnFailed = true;
-    return null;
-  }
-
-  if (!this.audio || !this.els.visualizerCanvas) {
-    return null;
-  }
-
-  const graph = this.getAudioGraph();
-
-  if (!graph || !graph.context || !graph.source) {
-    this.visualizer.butterchurnFailed = true;
-    return null;
-  }
-
-  try {
-    this.stopBarsVisualizer();
-
-    const instance = window.SVButterchurn.create({
-      canvas: this.els.visualizerCanvas,
-      audio: this.audio,
-      audioGraph: graph,
-    });
-
-    this.visualizer.butterchurnInstance = instance;
-    this.visualizer.butterchurnFailed = false;
-
-    if (this.root) {
-      this.root.classList.add("sv-player--visualizer-ready");
-      this.root.classList.add("sv-player--butterchurn-ready");
-    }
-
-    if (this.els.visualizer) {
-      this.els.visualizer.classList.remove("is-unavailable");
-    }
-
-    this.resizeButterchurnVisualizer();
-
-    return instance;
-  } catch (err) {
-    console.warn("[SVPlayer] Butterchurn unavailable. Falling back to bars.", err);
-
-    this.visualizer.butterchurnFailed = true;
-    this.visualizer.butterchurnInstance = null;
-
-    return null;
-  }
-},
-
-startButterchurnVisualizer() {
-  if (!this.isVisualizerEnabled()) {
+    this.debugVisualizer("Butterchurn stopped: visualizer disabled");
     return;
   }
 
   const instance = this.createButterchurnVisualizer();
 
+  this.debugVisualizer("Butterchurn create result", {
+    hasInstance: !!instance,
+  });
+
   if (!instance) {
+    this.debugVisualizer("Butterchurn missing instance, falling back to bars");
     this.startBarsVisualizer();
     return;
   }
 
   try {
     instance.start();
+    this.debugVisualizer("Butterchurn started");
   } catch (err) {
     console.warn("[SVPlayer] Could not start Butterchurn. Falling back to bars.", err);
+
+    this.debugVisualizer("Butterchurn start threw", {
+      error: err,
+    });
 
     this.visualizer.butterchurnFailed = true;
     this.destroyButterchurnVisualizer();
@@ -2302,63 +2521,67 @@ startButterchurnVisualizer() {
   }
 },
 
-stopButterchurnVisualizer() {
-  if (this.visualizer.butterchurnInstance) {
-    try {
-      this.visualizer.butterchurnInstance.stop();
-    } catch (err) {
-      console.warn("[SVPlayer] Could not stop Butterchurn.", err);
-    }
-  }
-},
+    stopButterchurnVisualizer() {
+      if (this.visualizer.butterchurnInstance) {
+        try {
+          this.visualizer.butterchurnInstance.stop();
+        } catch (err) {
+          console.warn("[SVPlayer] Could not stop Butterchurn.", err);
+        }
+      }
+    },
 
-resizeButterchurnVisualizer() {
-  if (!this.visualizer.butterchurnInstance) {
-    this.drawBarsVisualizerIdle();
-    return;
-  }
+    resizeButterchurnVisualizer() {
+      if (!this.visualizer.butterchurnInstance) {
+        this.drawBarsVisualizerIdle();
+        return;
+      }
 
-  try {
-    this.visualizer.butterchurnInstance.resize();
-  } catch (err) {
-    console.warn("[SVPlayer] Could not resize Butterchurn.", err);
-  }
-},
+      try {
+        this.visualizer.butterchurnInstance.resize();
+      } catch (err) {
+        console.warn("[SVPlayer] Could not resize Butterchurn.", err);
+      }
+    },
 
-destroyButterchurnVisualizer() {
-  if (!this.visualizer.butterchurnInstance) {
-    return;
-  }
+    destroyButterchurnVisualizer() {
+      if (!this.visualizer.butterchurnInstance) {
+        return;
+      }
 
-  try {
-    this.visualizer.butterchurnInstance.destroy();
-  } catch (err) {
-    console.warn("[SVPlayer] Could not destroy Butterchurn.", err);
-  }
+      try {
+        this.visualizer.butterchurnInstance.destroy();
+      } catch (err) {
+        console.warn("[SVPlayer] Could not destroy Butterchurn.", err);
+      }
 
-  this.visualizer.butterchurnInstance = null;
+      this.visualizer.butterchurnInstance = null;
 
-  if (this.root) {
-    this.root.classList.remove("sv-player--butterchurn-ready");
-  }
-},
+      if (this.root) {
+        this.root.classList.remove("sv-player--butterchurn-ready");
+      }
+    },
 
-drawButterchurnVisualizerIdle() {
-  if (this.visualizer.butterchurnInstance) {
-    this.resizeButterchurnVisualizer();
-    return;
-  }
+    drawButterchurnVisualizerIdle() {
+      if (this.visualizer.butterchurnInstance) {
+        this.resizeButterchurnVisualizer();
+        return;
+      }
 
-  this.drawBarsVisualizerIdle();
-},
+      this.drawBarsVisualizerIdle();
+    },
 
-markButterchurnVisualizerUnavailable() {
-  this.visualizer.butterchurnFailed = true;
-  this.destroyButterchurnVisualizer();
-  this.markBarsVisualizerUnavailable();
-},
+    markButterchurnVisualizerUnavailable() {
+      this.visualizer.butterchurnFailed = true;
+      this.destroyButterchurnVisualizer();
+      this.markBarsVisualizerUnavailable();
+    },
 
     startBarsVisualizer() {
+      console.log("[SV Viz Debug] startBarsVisualizer()");
+      //DEBUG
+      this.debugVisualizer("startBarsVisualizer() entered");
+
       if (!this.isVisualizerEnabled()) {
         return;
       }
@@ -2366,6 +2589,10 @@ markButterchurnVisualizerUnavailable() {
       if (!this.els.visualizerCanvas) {
         return;
       }
+
+      this.updateVisualizerPresetUI(
+        this.getVisualizerMode() === "butterchurn" ? "Bars fallback" : "Bars",
+      );
 
       this.initVisualizer();
 
