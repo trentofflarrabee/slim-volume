@@ -84,6 +84,22 @@
         Math.max(3, Math.floor(presetNames.length * 0.12)),
       );
 
+      const preferredPresetPatterns = [
+  "mindblob",
+  "another kind of groove",
+  "songflower",
+  "organic",
+  "cauldron",
+];
+
+const preferredPresetNames = presetNames.filter((name) => {
+  const normalizedName = name.toLowerCase();
+
+  return preferredPresetPatterns.some((pattern) => {
+    return normalizedName.includes(pattern);
+  });
+});
+
       const rememberPresetName = (name) => {
         if (!name) {
           return;
@@ -102,29 +118,49 @@
         }
       };
 
-      const pickPresetName = (excludeName = "") => {
-        let candidates = presetNames.filter((name) => {
-          return (
-            name && name !== excludeName && !recentPresetNames.includes(name)
-          );
-        });
+const getPresetCandidates = (names, excludeName = "", avoidRecent = true) => {
+  return names.filter((name) => {
+    if (!name || name === excludeName) {
+      return false;
+    }
 
-        if (!candidates.length) {
-          candidates = presetNames.filter((name) => {
-            return name && name !== excludeName;
-          });
-        }
+    if (avoidRecent && recentPresetNames.includes(name)) {
+      return false;
+    }
 
-        if (!candidates.length) {
-          candidates = presetNames.slice();
-        }
+    return true;
+  });
+};
 
-        if (!candidates.length) {
-          return "";
-        }
+const pickPresetName = (excludeName = "") => {
+  let candidates = [];
 
-        return candidates[Math.floor(Math.random() * candidates.length)];
-      };
+  if (preferredPresetNames.length) {
+    candidates = getPresetCandidates(preferredPresetNames, excludeName, true);
+  }
+
+  if (!candidates.length && preferredPresetNames.length) {
+    candidates = getPresetCandidates(preferredPresetNames, excludeName, false);
+  }
+
+  if (!candidates.length) {
+    candidates = getPresetCandidates(presetNames, excludeName, true);
+  }
+
+  if (!candidates.length) {
+    candidates = getPresetCandidates(presetNames, excludeName, false);
+  }
+
+  if (!candidates.length) {
+    candidates = presetNames.slice();
+  }
+
+  if (!candidates.length) {
+    return "";
+  }
+
+  return candidates[Math.floor(Math.random() * candidates.length)];
+};
 
       let presetName = pickPresetName();
       let preset = presetName ? presets[presetName] : null;
