@@ -216,3 +216,7 @@
   justify-content: center;
   text-align: center;
 }
+
+#sv-release-filter {
+  max-width: 260px;
+}
