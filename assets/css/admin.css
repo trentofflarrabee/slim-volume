@@ -129,3 +129,61 @@
   background: #fff;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.16);
 }
+
+.sv-admin-release-dashboard__header {
+  align-items: flex-start;
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.sv-admin-release-dashboard__header p {
+  margin: 4px 0 0;
+}
+
+.sv-admin-release-dashboard__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.sv-admin-release-dashboard__empty {
+  border: 1px dashed #c3c4c7;
+  padding: 16px;
+}
+
+.sv-admin-release-dashboard__table th:first-child,
+.sv-admin-release-dashboard__table td:first-child {
+  width: 48px;
+}
+
+.sv-admin-status {
+  background: #f0f0f1;
+  border-radius: 999px;
+  display: inline-block;
+  font-size: 12px;
+  line-height: 1;
+  padding: 5px 8px;
+}
+
+.sv-admin-status--publish {
+  background: #d1e7dd;
+}
+
+.sv-admin-status--draft,
+.sv-admin-status--pending {
+  background: #fff3cd;
+}
+
+@media (max-width: 782px) {
+  .sv-admin-release-dashboard__header {
+    display: block;
+  }
+
+  .sv-admin-release-dashboard__actions {
+    justify-content: flex-start;
+    margin-top: 12px;
+  }
+}
