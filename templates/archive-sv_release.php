@@ -20,8 +20,11 @@ get_header();
             <span>Music</span>
         </p>
 
-        <h1><?php esc_html_e('Discography', 'slim-volume'); ?></h1>
-    </header>
+<h1><?php esc_html_e('Discography', 'slim-volume'); ?></h1>
+
+<p class="sv-page-header__intro">
+    <?php esc_html_e('Browse releases, singles, and track-by-track deep dives.', 'slim-volume'); ?>
+</p>    </header>
 
     <?php if (have_posts()) : ?>
         <div class="sv-release-grid">
@@ -68,6 +71,10 @@ get_header();
                                     <?php echo esc_html(implode(' · ', $release_meta)); ?>
                                 </p>
                             <?php endif; ?>
+
+                            <span class="sv-release-card__cta">
+                                <?php esc_html_e('View Release', 'slim-volume'); ?>
+                            </span>
                         </div>
                     </a>
                 </article>

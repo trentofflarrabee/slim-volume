@@ -102,6 +102,112 @@ body.sv-player-ready {
 }
 
 /* ==========================================================================
+   Music Archive UX
+   ========================================================================== */
+.sv-music-archive {
+  width: min(1040px, calc(100% - 32px));
+}
+
+.sv-page-header {
+  margin-bottom: 34px;
+}
+
+.sv-page-header h1 {
+  margin: 12px 0 0;
+  font-size: clamp(2.6rem, 7vw, 5rem);
+  line-height: 0.95;
+}
+
+.sv-page-header__intro {
+  max-width: 620px;
+  margin: 16px 0 0;
+  opacity: 0.72;
+  font-size: clamp(1rem, 2vw, 1.15rem);
+  line-height: 1.55;
+}
+
+.sv-release-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 180px));
+  gap: clamp(24px, 4vw, 42px);
+  align-items: start;
+}
+
+.sv-release-card {
+  border: 0;
+  border-radius: 0;
+  overflow: visible;
+  background: transparent;
+}
+
+.sv-release-card__link {
+  display: grid;
+  gap: 8px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.sv-release-card__art {
+  overflow: hidden;
+  border: 1px solid var(--sv-card-border);
+  border-radius: var(--sv-radius-small);
+  background: rgba(127, 127, 127, 0.08);
+  aspect-ratio: 1;
+}
+
+.sv-release-card__art img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  transition: transform 260ms ease;
+}
+
+.sv-release-card:hover .sv-release-card__art img,
+.sv-release-card:focus-within .sv-release-card__art img {
+  transform: scale(1.025);
+}
+
+.sv-release-card__body {
+  display: grid;
+  gap: 3px;
+  padding: 0;
+}
+
+.sv-release-card__title {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.15;
+}
+
+.sv-release-card__link:hover .sv-release-card__title,
+.sv-release-card__link:focus .sv-release-card__title {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.sv-release-card__meta {
+  margin: 0;
+  opacity: 0.72;
+  font-size: 0.86rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  text-transform: none;
+}
+
+.sv-release-card__cta {
+  display: none;
+}
+
+@media (max-width: 560px) {
+  .sv-release-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 24px 18px;
+  }
+}
+
+/* ==========================================================================
    Release + Track Layout
    ========================================================================== */
 .sv-release-hero,
