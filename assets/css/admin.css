@@ -98,6 +98,50 @@
   text-align: center;
 }
 
+.post-type-sv_track .wp-list-table.fixed {
+  table-layout: auto;
+}
+
+.post-type-sv_track .column-title {
+  min-width: 240px;
+}
+
+.post-type-sv_track .column-release,
+.post-type-sv_track .column-sv_release {
+  min-width: 130px;
+}
+
+.post-type-sv_track .column-art,
+.post-type-sv_track .column-sv_art {
+  width: 72px;
+}
+
+.post-type-sv_track .column-track_number,
+.post-type-sv_track .column-number,
+.post-type-sv_track .column-sv_order {
+  width: 48px;
+  text-align: center;
+}
+
+.post-type-sv_track .column-duration,
+.post-type-sv_track .column-sv_duration {
+  width: 78px;
+}
+
+.post-type-sv_track .column-lyrics,
+.post-type-sv_track .column-sv_lyrics {
+  width: 80px;
+}
+
+.post-type-sv_track .column-download,
+.post-type-sv_track .column-sv_download {
+  width: 100px;
+}
+
+.post-type-sv_track .column-date {
+  width: 150px;
+}
+
 .sv-track-sort-handle {
   display: inline-grid;
   place-items: center;
