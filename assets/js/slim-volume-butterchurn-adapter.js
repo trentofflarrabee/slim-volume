@@ -135,17 +135,20 @@ const getPresetCandidates = (names, excludeName = "", avoidRecent = true) => {
 const pickPresetName = (excludeName = "") => {
   let candidates = [];
 
-  if (preferredPresetNames.length) {
-    candidates = getPresetCandidates(preferredPresetNames, excludeName, true);
-  }
+const shouldPreferCurated =
+  preferredPresetNames.length && Math.random() < 0.65;
 
-  if (!candidates.length && preferredPresetNames.length) {
-    candidates = getPresetCandidates(preferredPresetNames, excludeName, false);
-  }
+if (shouldPreferCurated) {
+  candidates = getPresetCandidates(preferredPresetNames, excludeName, true);
+}
 
-  if (!candidates.length) {
-    candidates = getPresetCandidates(presetNames, excludeName, true);
-  }
+if (!candidates.length) {
+  candidates = getPresetCandidates(presetNames, excludeName, true);
+}
+
+if (!candidates.length && preferredPresetNames.length) {
+  candidates = getPresetCandidates(preferredPresetNames, excludeName, false);
+}
 
   if (!candidates.length) {
     candidates = getPresetCandidates(presetNames, excludeName, false);
