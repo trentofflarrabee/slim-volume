@@ -69,7 +69,7 @@ create({ canvas, audioGraph }) {
   }
 
   const context = audioGraph.context;
-  const audioNode = audioGraph.analyser || audioGraph.source;
+  const audioNode = audioGraph.source || audioGraph.analyser;
   const presets = this.getPresets();
   const presetName = this.getRandomPresetName(presets);
   const preset = presetName ? presets[presetName] : null;
