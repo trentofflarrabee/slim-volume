@@ -34,6 +34,9 @@
     visualizerController: null,
     visualizerVisible: true,
     visualizerVisibilityStorageKey: "slimVolumeVisualizerVisible:v1",
+    visualizerResizeObserver: null,
+    visualizerResizeFrame: null,
+    visualizerResizeTimer: null,
 
     els: {},
 
@@ -50,6 +53,7 @@
       this.cacheEls();
       this.setupVisualizerController();
       this.restoreVisualizerVisibility();
+      this.setupVisualizerResizeHandling();
       this.bindCoreControls();
       this.bindAudioEvents();
 
@@ -81,24 +85,24 @@
     },
 
     refreshVisualizerEls() {
-  if (!this.root) {
-    return;
-  }
+      if (!this.root) {
+        return;
+      }
 
-  this.els.visualizer = this.root.querySelector("[data-sv-visualizer]");
-  this.els.visualizerCanvas = this.root.querySelector(
-    "[data-sv-visualizer-canvas]",
-  );
-  this.els.visualizerToggle = this.root.querySelector(
-    "[data-sv-visualizer-toggle]",
-  );
-  this.els.visualizerPresetName = this.root.querySelector(
-    "[data-sv-visualizer-preset-name]",
-  );
-  this.els.visualizerNextPreset = this.root.querySelector(
-    "[data-sv-visualizer-next-preset]",
-  );
-},
+      this.els.visualizer = this.root.querySelector("[data-sv-visualizer]");
+      this.els.visualizerCanvas = this.root.querySelector(
+        "[data-sv-visualizer-canvas]",
+      );
+      this.els.visualizerToggle = this.root.querySelector(
+        "[data-sv-visualizer-toggle]",
+      );
+      this.els.visualizerPresetName = this.root.querySelector(
+        "[data-sv-visualizer-preset-name]",
+      );
+      this.els.visualizerNextPreset = this.root.querySelector(
+        "[data-sv-visualizer-next-preset]",
+      );
+    },
 
     cacheEls() {
       this.els.title = this.root.querySelector("[data-sv-player-title]");
@@ -149,7 +153,6 @@
       );
 
       this.refreshVisualizerEls();
-
     },
 
     publicApi() {
@@ -328,6 +331,10 @@
       if (!this.hasActiveAudio()) {
         this.drawVisualizerIdle();
       }
+
+      if (this.drawerOpen) {
+        this.scheduleVisualizerResize(80);
+      }
     },
 
     bindCoreControls() {
@@ -427,26 +434,28 @@
       }
 
       //visualizerToggle
-this.root.addEventListener("click", (event) => {
-  const toggleButton = event.target.closest("[data-sv-visualizer-toggle]");
+      this.root.addEventListener("click", (event) => {
+        const toggleButton = event.target.closest(
+          "[data-sv-visualizer-toggle]",
+        );
 
-  if (toggleButton && this.root.contains(toggleButton)) {
-    event.preventDefault();
-    this.refreshVisualizerEls();
-    this.setVisualizerVisible(!this.visualizerVisible);
-    return;
-  }
+        if (toggleButton && this.root.contains(toggleButton)) {
+          event.preventDefault();
+          this.refreshVisualizerEls();
+          this.setVisualizerVisible(!this.visualizerVisible);
+          return;
+        }
 
-  const nextPresetButton = event.target.closest(
-    "[data-sv-visualizer-next-preset]",
-  );
+        const nextPresetButton = event.target.closest(
+          "[data-sv-visualizer-next-preset]",
+        );
 
-  if (nextPresetButton && this.root.contains(nextPresetButton)) {
-    event.preventDefault();
-    this.refreshVisualizerEls();
-    this.nextButterchurnPreset();
-  }
-});
+        if (nextPresetButton && this.root.contains(nextPresetButton)) {
+          event.preventDefault();
+          this.refreshVisualizerEls();
+          this.nextButterchurnPreset();
+        }
+      });
 
       if (this.els.queue) {
         this.els.queue.addEventListener("click", (event) => {
@@ -1556,6 +1565,14 @@ this.root.addEventListener("click", (event) => {
         );
       }
 
+      if (this.drawerOpen) {
+        this.scheduleVisualizerResize(60);
+
+        window.setTimeout(() => {
+          this.scheduleVisualizerResize();
+        }, 260);
+      }
+
       if (this.els.drawerToggleLabel) {
         this.els.drawerToggleLabel.textContent = this.drawerOpen
           ? "Close"
@@ -1892,6 +1909,8 @@ this.root.addEventListener("click", (event) => {
         return;
       }
 
+      this.scheduleVisualizerResize(60);
+
       if (this.audio && !this.audio.paused && !this.audio.ended) {
         this.startVisualizer();
       } else {
@@ -1927,7 +1946,75 @@ this.root.addEventListener("click", (event) => {
       return this.visualizerVisible && this.isVisualizerEnabled();
     },
 
+    setupVisualizerResizeHandling() {
+      window.addEventListener("resize", () => {
+        this.scheduleVisualizerResize(120);
+      });
 
+      window.addEventListener("orientationchange", () => {
+        this.scheduleVisualizerResize(220);
+      });
+
+      if (window.ResizeObserver) {
+        const observerTarget =
+          this.els.visualizer || this.els.visualizerCanvas || this.root;
+
+        if (observerTarget) {
+          this.visualizerResizeObserver = new ResizeObserver(() => {
+            this.scheduleVisualizerResize(80);
+          });
+
+          this.visualizerResizeObserver.observe(observerTarget);
+        }
+      }
+    },
+
+    scheduleVisualizerResize(delay = 0) {
+      if (this.visualizerResizeTimer) {
+        window.clearTimeout(this.visualizerResizeTimer);
+        this.visualizerResizeTimer = null;
+      }
+
+      if (this.visualizerResizeFrame) {
+        window.cancelAnimationFrame(this.visualizerResizeFrame);
+        this.visualizerResizeFrame = null;
+      }
+
+      const run = () => {
+        this.visualizerResizeFrame = window.requestAnimationFrame(() => {
+          this.visualizerResizeFrame = null;
+          this.runVisualizerResize();
+        });
+      };
+
+      if (delay > 0) {
+        this.visualizerResizeTimer = window.setTimeout(() => {
+          this.visualizerResizeTimer = null;
+          run();
+        }, delay);
+
+        return;
+      }
+
+      run();
+    },
+
+    runVisualizerResize() {
+      this.refreshVisualizerEls();
+
+      if (!this.isVisualizerVisible()) {
+        return;
+      }
+
+      this.resizeVisualizer();
+
+      if (this.audio && !this.audio.paused && !this.audio.ended) {
+        this.startVisualizer();
+        return;
+      }
+
+      this.drawVisualizerIdle();
+    },
 
     normalizeVisualizerMode(mode) {
       const allowedModes = ["bars", "butterchurn"];
@@ -1951,21 +2038,20 @@ this.root.addEventListener("click", (event) => {
       return this.normalizeVisualizerMode(configuredMode);
     },
 
+    startVisualizerMode(mode) {
+      const normalizedMode = this.normalizeVisualizerMode(mode);
 
-startVisualizerMode(mode) {
-  const normalizedMode = this.normalizeVisualizerMode(mode);
+      switch (normalizedMode) {
+        case "butterchurn":
+          this.startButterchurnVisualizer();
+          break;
 
-  switch (normalizedMode) {
-    case "butterchurn":
-      this.startButterchurnVisualizer();
-      break;
-
-    case "bars":
-    default:
-      this.startBarsVisualizer();
-      break;
-  }
-},
+        case "bars":
+        default:
+          this.startBarsVisualizer();
+          break;
+      }
+    },
 
     stopVisualizerMode(mode) {
       const normalizedMode = this.normalizeVisualizerMode(mode);
@@ -2189,7 +2275,6 @@ startVisualizerMode(mode) {
     },
 
     startVisualizer() {
-
       if (!this.isVisualizerVisible()) {
         this.stopVisualizer();
         return;
@@ -2306,7 +2391,6 @@ startVisualizerMode(mode) {
     },
 
     createButterchurnVisualizer() {
-
       if (this.visualizer.butterchurnInstance) {
         return this.visualizer.butterchurnInstance;
       }
@@ -2324,19 +2408,19 @@ startVisualizerMode(mode) {
         return null;
       }
 
-if (!this.els.visualizerCanvas && this.root) {
-  this.els.visualizerCanvas = this.root.querySelector(
-    "[data-sv-visualizer-canvas]",
-  );
-}
+      if (!this.els.visualizerCanvas && this.root) {
+        this.els.visualizerCanvas = this.root.querySelector(
+          "[data-sv-visualizer-canvas]",
+        );
+      }
 
-if (!this.els.visualizer && this.root) {
-  this.els.visualizer = this.root.querySelector("[data-sv-visualizer]");
-}
+      if (!this.els.visualizer && this.root) {
+        this.els.visualizer = this.root.querySelector("[data-sv-visualizer]");
+      }
 
-if (!this.audio || !this.els.visualizerCanvas) {
-  return null;
-}
+      if (!this.audio || !this.els.visualizerCanvas) {
+        return null;
+      }
 
       const graph = this.getAudioGraph();
 
@@ -2376,41 +2460,43 @@ if (!this.audio || !this.els.visualizerCanvas) {
 
         return instance;
       } catch (err) {
-  console.warn("[SVPlayer] Butterchurn unavailable. Falling back to bars.", err);
+        console.warn(
+          "[SVPlayer] Butterchurn unavailable. Falling back to bars.",
+          err,
+        );
 
-  this.visualizer.butterchurnFailed = true;
-  this.visualizer.butterchurnInstance = null;
+        this.visualizer.butterchurnFailed = true;
+        this.visualizer.butterchurnInstance = null;
 
-  return null;
-}
+        return null;
+      }
     },
 
+    startButterchurnVisualizer() {
+      if (!this.isVisualizerEnabled()) {
+        return;
+      }
 
-startButterchurnVisualizer() {
-  if (!this.isVisualizerEnabled()) {
-    return;
-  }
+      const instance = this.createButterchurnVisualizer();
 
-  const instance = this.createButterchurnVisualizer();
+      if (!instance) {
+        this.startBarsVisualizer();
+        return;
+      }
 
-  if (!instance) {
-    this.startBarsVisualizer();
-    return;
-  }
+      try {
+        instance.start();
+      } catch (err) {
+        console.warn(
+          "[SVPlayer] Could not start Butterchurn. Falling back to bars.",
+          err,
+        );
 
-  try {
-    instance.start();
-  } catch (err) {
-    console.warn(
-      "[SVPlayer] Could not start Butterchurn. Falling back to bars.",
-      err,
-    );
-
-    this.visualizer.butterchurnFailed = true;
-    this.destroyButterchurnVisualizer();
-    this.startBarsVisualizer();
-  }
-},
+        this.visualizer.butterchurnFailed = true;
+        this.destroyButterchurnVisualizer();
+        this.startBarsVisualizer();
+      }
+    },
 
     stopButterchurnVisualizer() {
       if (this.visualizer.butterchurnInstance) {
@@ -2469,7 +2555,6 @@ startButterchurnVisualizer() {
     },
 
     startBarsVisualizer() {
-
       if (!this.isVisualizerEnabled()) {
         return;
       }
