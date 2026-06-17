@@ -38,34 +38,73 @@ final class Assets
             }
         }
 
-        if (file_exists($js_path)) {
-            wp_enqueue_script(
-                'slim-volume-player',
-                SLIM_VOLUME_URL . 'assets/js/slim-volume-player.js',
-                [],
-                self::asset_version($js_path),
-                true
-            );
-        }
+$settings = Admin\Settings::get_settings();
 
+$visualizer_mode = isset($settings['visualizer_mode'])
+    ? sanitize_key((string) $settings['visualizer_mode'])
+    : 'bars';
 
-        $settings = Admin\Settings::get_settings();
+$allowed_visualizer_modes = ['bars'];
 
-        wp_add_inline_script(
-            'slim-volume-player',
-            'window.SVConfig = ' . wp_json_encode(
-                [
-                    'version'          => defined('SLIM_VOLUME_VERSION') ? SLIM_VOLUME_VERSION : '0.1.0',
-                    'ajaxNavigation'   => ! empty($settings['ajax_navigation']),
-                    'persistence'      => ! empty($settings['persistence']),
-                    'visualizer'       => ! empty($settings['visualizer']),
-                    'debug'            => ! empty($settings['debug']) || (defined('SCRIPT_DEBUG') && SCRIPT_DEBUG),
-                    'contentSelector'  => '[data-sv-page-content]',
-                    'musicBaseUrl'     => home_url('/music/'),
-                ]
-            ) . ';',
-            'before'
+if (Admin\Settings::is_butterchurn_available()) {
+    $allowed_visualizer_modes[] = 'butterchurn';
+}
+
+if (! in_array($visualizer_mode, $allowed_visualizer_modes, true)) {
+    $visualizer_mode = 'bars';
+}
+
+if (file_exists($js_path)) {
+    $player_dependencies = [];
+
+    if ($visualizer_mode === 'butterchurn' && Admin\Settings::is_butterchurn_available()) {
+        $butterchurn_path         = SLIM_VOLUME_PATH . 'assets/vendor/butterchurn/butterchurn.min.js';
+        $butterchurn_presets_path = SLIM_VOLUME_PATH . 'assets/vendor/butterchurn/butterchurn-presets.min.js';
+
+        wp_enqueue_script(
+            'slim-volume-butterchurn',
+            SLIM_VOLUME_URL . 'assets/vendor/butterchurn/butterchurn.min.js',
+            [],
+            self::asset_version($butterchurn_path),
+            true
         );
+
+        wp_enqueue_script(
+            'slim-volume-butterchurn-presets',
+            SLIM_VOLUME_URL . 'assets/vendor/butterchurn/butterchurn-presets.min.js',
+            ['slim-volume-butterchurn'],
+            self::asset_version($butterchurn_presets_path),
+            true
+        );
+
+        $player_dependencies[] = 'slim-volume-butterchurn-presets';
+    }
+
+    wp_enqueue_script(
+        'slim-volume-player',
+        SLIM_VOLUME_URL . 'assets/js/slim-volume-player.js',
+        $player_dependencies,
+        self::asset_version($js_path),
+        true
+    );
+
+    wp_add_inline_script(
+        'slim-volume-player',
+        'window.SVConfig = ' . wp_json_encode(
+            [
+                'version'          => defined('SLIM_VOLUME_VERSION') ? SLIM_VOLUME_VERSION : '0.1.0',
+                'ajaxNavigation'   => ! empty($settings['ajax_navigation']),
+                'persistence'      => ! empty($settings['persistence']),
+                'visualizer'       => ! empty($settings['visualizer']),
+                'visualizerMode'   => $visualizer_mode,
+                'debug'            => ! empty($settings['debug']) || (defined('SCRIPT_DEBUG') && SCRIPT_DEBUG),
+                'contentSelector'  => '[data-sv-page-content]',
+                'musicBaseUrl'     => home_url('/music/'),
+            ]
+        ) . ';',
+        'before'
+    );
+}
 
         $navigation_js_path = SLIM_VOLUME_PATH . 'assets/js/slim-volume-navigation.js';
 

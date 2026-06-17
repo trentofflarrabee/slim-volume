@@ -17,20 +17,20 @@
 
     queueDragIndex: null,
 
-visualizer: {
-  context: null,
-  analyser: null,
-  source: null,
-  data: null,
-  frame: null,
-  canvasContext: null,
-  initialized: false,
-  failed: false,
-},
+    visualizer: {
+      context: null,
+      analyser: null,
+      source: null,
+      data: null,
+      frame: null,
+      canvasContext: null,
+      initialized: false,
+      failed: false,
+    },
 
-visualizerController: null,
+    visualizerController: null,
 
-els: {},
+    els: {},
 
     init() {
       this.root = document.querySelector("[data-sv-player]");
@@ -1785,364 +1785,502 @@ els: {},
       });
     },
 
-setupVisualizerController() {
-  if (this.visualizerController) {
-    return;
-  }
+    normalizeVisualizerMode(mode) {
+      const allowedModes = ["bars", "butterchurn"];
+      const normalized =
+        typeof mode === "string" ? mode.toLowerCase().trim() : "bars";
 
-  this.visualizerController = {
-    mode: "bars",
+      if (!allowedModes.includes(normalized)) {
+        return "bars";
+      }
 
-    start: () => {
+      return normalized;
+    },
+
+    getVisualizerMode() {
+      const config = window.SVConfig || {};
+      const configuredMode =
+        typeof config.visualizerMode === "string"
+          ? config.visualizerMode
+          : "bars";
+
+      return this.normalizeVisualizerMode(configuredMode);
+    },
+
+startVisualizerMode(mode) {
+  const normalizedMode = this.normalizeVisualizerMode(mode);
+
+  switch (normalizedMode) {
+    case "butterchurn":
+      this.startButterchurnVisualizer();
+      break;
+
+    case "bars":
+    default:
       this.startBarsVisualizer();
-    },
+      break;
+  }
+},
 
-    stop: () => {
+stopVisualizerMode(mode) {
+  const normalizedMode = this.normalizeVisualizerMode(mode);
+
+  switch (normalizedMode) {
+    case "butterchurn":
+      this.stopButterchurnVisualizer();
+      break;
+
+    case "bars":
+    default:
       this.stopBarsVisualizer();
-    },
+      break;
+  }
+},
 
-    resize: () => {
+resizeVisualizerMode(mode) {
+  const normalizedMode = this.normalizeVisualizerMode(mode);
+
+  switch (normalizedMode) {
+    case "butterchurn":
+      this.resizeButterchurnVisualizer();
+      break;
+
+    case "bars":
+    default:
       this.drawBarsVisualizerIdle();
-    },
+      break;
+  }
+},
 
-    destroy: () => {
-      this.stopBarsVisualizer();
+drawVisualizerModeIdle(mode) {
+  const normalizedMode = this.normalizeVisualizerMode(mode);
 
-      this.visualizer.context = null;
-      this.visualizer.analyser = null;
-      this.visualizer.source = null;
-      this.visualizer.data = null;
-      this.visualizer.canvasContext = null;
-      this.visualizer.initialized = false;
-      this.visualizer.failed = false;
+  switch (normalizedMode) {
+    case "butterchurn":
+      this.drawButterchurnVisualizerIdle();
+      break;
 
-      if (this.root) {
-        this.root.classList.remove("sv-player--visualizer-ready");
-      }
-
-      if (this.els.visualizer) {
-        this.els.visualizer.classList.remove("is-unavailable");
-      }
-    },
-
-    drawIdle: () => {
+    case "bars":
+    default:
       this.drawBarsVisualizerIdle();
-    },
+      break;
+  }
+},
 
-    markUnavailable: () => {
+markVisualizerModeUnavailable(mode) {
+  const normalizedMode = this.normalizeVisualizerMode(mode);
+
+  switch (normalizedMode) {
+    case "butterchurn":
+      this.markButterchurnVisualizerUnavailable();
+      break;
+
+    case "bars":
+    default:
       this.markBarsVisualizerUnavailable();
+      break;
+  }
+},
+
+    setupVisualizerController() {
+      if (this.visualizerController) {
+        return;
+      }
+
+      this.visualizerController = {
+        mode: this.getVisualizerMode(),
+
+        setMode: (mode) => {
+          this.visualizerController.mode = this.normalizeVisualizerMode(mode);
+        },
+
+        start: () => {
+          this.startVisualizerMode(this.visualizerController.mode);
+        },
+
+        stop: () => {
+          this.stopVisualizerMode(this.visualizerController.mode);
+        },
+
+        resize: () => {
+          this.resizeVisualizerMode(this.visualizerController.mode);
+        },
+
+        destroy: () => {
+          this.stopVisualizerMode(this.visualizerController.mode);
+
+          this.visualizer.context = null;
+          this.visualizer.analyser = null;
+          this.visualizer.source = null;
+          this.visualizer.data = null;
+          this.visualizer.canvasContext = null;
+          this.visualizer.initialized = false;
+          this.visualizer.failed = false;
+
+          if (this.root) {
+            this.root.classList.remove("sv-player--visualizer-ready");
+          }
+
+          if (this.els.visualizer) {
+            this.els.visualizer.classList.remove("is-unavailable");
+          }
+        },
+
+        drawIdle: () => {
+          this.drawVisualizerModeIdle(this.visualizerController.mode);
+        },
+
+        markUnavailable: () => {
+          this.markVisualizerModeUnavailable(this.visualizerController.mode);
+        },
+      };
     },
-  };
-},
 
-getVisualizerController() {
-  if (!this.visualizerController) {
-    this.setupVisualizerController();
-  }
+    getVisualizerController() {
+      if (!this.visualizerController) {
+        this.setupVisualizerController();
+      }
 
-  return this.visualizerController;
-},
+      return this.visualizerController;
+    },
 
-initVisualizer() {
-  if (!this.isVisualizerEnabled()) {
-    this.markVisualizerUnavailable();
-    return;
-  }
+    initVisualizer() {
+      if (!this.isVisualizerEnabled()) {
+        this.markVisualizerUnavailable();
+        return;
+      }
 
-  if (this.visualizer.initialized || this.visualizer.failed) {
-    return;
-  }
+      if (this.visualizer.initialized || this.visualizer.failed) {
+        return;
+      }
 
-  if (!this.audio || !this.els.visualizerCanvas) {
-    return;
-  }
+      if (!this.audio || !this.els.visualizerCanvas) {
+        return;
+      }
 
-  const graph = this.getAudioGraph();
+      const graph = this.getAudioGraph();
 
-  if (!graph || !graph.context || !graph.analyser || !graph.source) {
-    this.visualizer.failed = true;
-    this.markVisualizerUnavailable();
-    return;
-  }
+      if (!graph || !graph.context || !graph.analyser || !graph.source) {
+        this.visualizer.failed = true;
+        this.markVisualizerUnavailable();
+        return;
+      }
 
-  try {
-    this.visualizer.context = graph.context;
-    this.visualizer.analyser = graph.analyser;
-    this.visualizer.source = graph.source;
-    this.visualizer.data = new Uint8Array(graph.analyser.frequencyBinCount);
-    this.visualizer.canvasContext =
-      this.els.visualizerCanvas.getContext("2d");
-    this.visualizer.initialized = true;
+      try {
+        this.visualizer.context = graph.context;
+        this.visualizer.analyser = graph.analyser;
+        this.visualizer.source = graph.source;
+        this.visualizer.data = new Uint8Array(graph.analyser.frequencyBinCount);
+        this.visualizer.canvasContext =
+          this.els.visualizerCanvas.getContext("2d");
+        this.visualizer.initialized = true;
 
-    this.root.classList.add("sv-player--visualizer-ready");
-  } catch (err) {
-    console.warn("[SVPlayer] Visualizer unavailable.", err);
+        this.root.classList.add("sv-player--visualizer-ready");
+      } catch (err) {
+        console.warn("[SVPlayer] Visualizer unavailable.", err);
 
-    this.visualizer.failed = true;
-    this.markVisualizerUnavailable();
-  }
-},
+        this.visualizer.failed = true;
+        this.markVisualizerUnavailable();
+      }
+    },
 
-getAudioGraph() {
-  if (!this.audio) {
-    return null;
-  }
+    getAudioGraph() {
+      if (!this.audio) {
+        return null;
+      }
 
-  if (this.audio.__svAudioGraph && !this.audio.__svAudioGraph.failed) {
-    return this.audio.__svAudioGraph;
-  }
+      if (this.audio.__svAudioGraph && !this.audio.__svAudioGraph.failed) {
+        return this.audio.__svAudioGraph;
+      }
 
-  const AudioContext = window.AudioContext || window.webkitAudioContext;
+      const AudioContext = window.AudioContext || window.webkitAudioContext;
 
-  if (!AudioContext) {
-    this.audio.__svAudioGraph = {
-      failed: true,
-      reason: "web-audio-unavailable",
-    };
+      if (!AudioContext) {
+        this.audio.__svAudioGraph = {
+          failed: true,
+          reason: "web-audio-unavailable",
+        };
 
-    return null;
-  }
+        return null;
+      }
 
-  try {
-    const context = new AudioContext();
-    const analyser = context.createAnalyser();
+      try {
+        const context = new AudioContext();
+        const analyser = context.createAnalyser();
 
-    analyser.fftSize = 128;
-    analyser.smoothingTimeConstant = 0.82;
+        analyser.fftSize = 128;
+        analyser.smoothingTimeConstant = 0.82;
 
-    const source = context.createMediaElementSource(this.audio);
+        const source = context.createMediaElementSource(this.audio);
 
-    source.connect(analyser);
-    analyser.connect(context.destination);
+        source.connect(analyser);
+        analyser.connect(context.destination);
 
-    const graph = {
-      context,
-      analyser,
-      source,
-      failed: false,
-    };
+        const graph = {
+          context,
+          analyser,
+          source,
+          failed: false,
+        };
 
-    this.audio.__svAudioGraph = graph;
+        this.audio.__svAudioGraph = graph;
 
-    return graph;
-  } catch (err) {
-    console.warn("[SVPlayer] Audio graph unavailable.", err);
+        return graph;
+      } catch (err) {
+        console.warn("[SVPlayer] Audio graph unavailable.", err);
 
-    this.audio.__svAudioGraph = {
-      failed: true,
-      reason: "audio-graph-unavailable",
-      error: err,
-    };
+        this.audio.__svAudioGraph = {
+          failed: true,
+          reason: "audio-graph-unavailable",
+          error: err,
+        };
 
-    return null;
-  }
-},
+        return null;
+      }
+    },
 
-startVisualizer() {
-  const controller = this.getVisualizerController();
+    startVisualizer() {
+      const controller = this.getVisualizerController();
 
-  if (controller) {
-    controller.start();
-  }
-},
+      if (controller) {
+        controller.start();
+      }
+    },
 
-stopVisualizer() {
-  const controller = this.getVisualizerController();
+    stopVisualizer() {
+      const controller = this.getVisualizerController();
 
-  if (controller) {
-    controller.stop();
-  }
-},
+      if (controller) {
+        controller.stop();
+      }
+    },
 
-resizeVisualizer() {
-  const controller = this.getVisualizerController();
+    resizeVisualizer() {
+      const controller = this.getVisualizerController();
 
-  if (controller) {
-    controller.resize();
-  }
-},
+      if (controller) {
+        controller.resize();
+      }
+    },
 
-destroyVisualizer() {
-  const controller = this.getVisualizerController();
+    destroyVisualizer() {
+      const controller = this.getVisualizerController();
 
-  if (controller) {
-    controller.destroy();
-  }
-},
+      if (controller) {
+        controller.destroy();
+      }
+    },
 
-drawVisualizerFrame() {
-  this.drawBarsVisualizerFrame();
-},
+    drawVisualizerFrame() {
+      this.drawBarsVisualizerFrame();
+    },
 
-drawVisualizerIdle() {
-  const controller = this.getVisualizerController();
+    drawVisualizerIdle() {
+      const controller = this.getVisualizerController();
 
-  if (controller) {
-    controller.drawIdle();
-  }
-},
+      if (controller) {
+        controller.drawIdle();
+      }
+    },
 
-markVisualizerUnavailable() {
-  const controller = this.getVisualizerController();
+    markVisualizerUnavailable() {
+      const controller = this.getVisualizerController();
 
-  if (controller) {
-    controller.markUnavailable();
-  }
-},
+      if (controller) {
+        controller.markUnavailable();
+      }
+    },
 
-startBarsVisualizer() {
-  if (!this.isVisualizerEnabled()) {
-    return;
-  }
-
-  if (!this.els.visualizerCanvas) {
-    return;
-  }
-
-  this.initVisualizer();
-
-  if (this.visualizer.failed || !this.visualizer.initialized) {
-    this.drawBarsVisualizerIdle();
-    return;
-  }
-
-  const context = this.visualizer.context;
-
-  if (context && context.state === "suspended") {
-    context.resume().catch((err) => {
-      console.warn("[SVPlayer] Could not resume AudioContext.", err);
-    });
-  }
-
-  if (this.visualizer.frame) {
-    cancelAnimationFrame(this.visualizer.frame);
-    this.visualizer.frame = null;
-  }
-
-  const draw = () => {
-    this.drawBarsVisualizerFrame();
-    this.visualizer.frame = requestAnimationFrame(draw);
-  };
-
-  draw();
-},
-
-stopBarsVisualizer() {
-  if (this.visualizer.frame) {
-    cancelAnimationFrame(this.visualizer.frame);
-    this.visualizer.frame = null;
-  }
-},
-
-drawBarsVisualizerFrame() {
-  const canvas = this.els.visualizerCanvas;
-  const ctx = this.visualizer.canvasContext;
-  const analyser = this.visualizer.analyser;
-  const data = this.visualizer.data;
-
-  if (!canvas || !ctx || !analyser || !data) {
-    return;
-  }
-
-  const width = canvas.width;
-  const height = canvas.height;
-
-  analyser.getByteFrequencyData(data);
-
-  ctx.clearRect(0, 0, width, height);
-
-  const bars = 36;
-  const gap = 4;
-  const barWidth = Math.max(
-    3,
-    Math.floor((width - gap * (bars - 1)) / bars),
+    isButterchurnAdapterAvailable() {
+  return !!(
+    window.SVButterchurn &&
+    typeof window.SVButterchurn.create === "function"
   );
-  const step = Math.max(1, Math.floor(data.length / bars));
-
-  for (let i = 0; i < bars; i += 1) {
-    let sum = 0;
-
-    for (let j = 0; j < step; j += 1) {
-      sum += data[i * step + j] || 0;
-    }
-
-    const value = sum / step;
-    const normalized = value / 255;
-    const eased = Math.pow(normalized, 0.72);
-
-    const barHeight = Math.max(4, eased * height);
-    const x = i * (barWidth + gap);
-    const y = height - barHeight;
-
-    ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
-    this.roundRect(
-      ctx,
-      x,
-      y,
-      barWidth,
-      barHeight,
-      Math.min(8, barWidth / 2),
-    );
-    ctx.fill();
-  }
 },
 
-drawBarsVisualizerIdle() {
-  if (!this.isVisualizerEnabled()) {
+startButterchurnVisualizer() {
+  if (!this.isButterchurnAdapterAvailable()) {
+    this.startBarsVisualizer();
     return;
   }
 
-  const canvas = this.els.visualizerCanvas;
-
-  if (!canvas) {
-    return;
-  }
-
-  const ctx = this.visualizer.canvasContext || canvas.getContext("2d");
-
-  if (!ctx) {
-    return;
-  }
-
-  this.visualizer.canvasContext = ctx;
-
-  const width = canvas.width;
-  const height = canvas.height;
-  const bars = 36;
-  const gap = 4;
-  const barWidth = Math.max(
-    3,
-    Math.floor((width - gap * (bars - 1)) / bars),
-  );
-
-  ctx.clearRect(0, 0, width, height);
-
-  for (let i = 0; i < bars; i += 1) {
-    const wave = Math.sin(i * 0.72) * 0.5 + 0.5;
-    const barHeight = 8 + wave * 22;
-    const x = i * (barWidth + gap);
-    const y = height - barHeight;
-
-    ctx.fillStyle = "rgba(255, 255, 255, 0.22)";
-    this.roundRect(
-      ctx,
-      x,
-      y,
-      barWidth,
-      barHeight,
-      Math.min(8, barWidth / 2),
-    );
-    ctx.fill();
-  }
+  // Butterchurn adapter will be wired here in the next pass.
+  this.startBarsVisualizer();
 },
 
-markBarsVisualizerUnavailable() {
-  if (this.els.visualizer) {
-    this.els.visualizer.classList.add("is-unavailable");
-  }
+stopButterchurnVisualizer() {
+  // Until the Butterchurn adapter exists, stop the bars fallback.
+  this.stopBarsVisualizer();
+},
 
+resizeButterchurnVisualizer() {
+  // Until the Butterchurn adapter exists, resize the bars fallback.
   this.drawBarsVisualizerIdle();
 },
+
+drawButterchurnVisualizerIdle() {
+  // Until the Butterchurn adapter exists, draw the bars fallback.
+  this.drawBarsVisualizerIdle();
+},
+
+markButterchurnVisualizerUnavailable() {
+  // Until the Butterchurn adapter exists, mark the bars fallback unavailable.
+  this.markBarsVisualizerUnavailable();
+},
+
+    startBarsVisualizer() {
+      if (!this.isVisualizerEnabled()) {
+        return;
+      }
+
+      if (!this.els.visualizerCanvas) {
+        return;
+      }
+
+      this.initVisualizer();
+
+      if (this.visualizer.failed || !this.visualizer.initialized) {
+        this.drawBarsVisualizerIdle();
+        return;
+      }
+
+      const context = this.visualizer.context;
+
+      if (context && context.state === "suspended") {
+        context.resume().catch((err) => {
+          console.warn("[SVPlayer] Could not resume AudioContext.", err);
+        });
+      }
+
+      if (this.visualizer.frame) {
+        cancelAnimationFrame(this.visualizer.frame);
+        this.visualizer.frame = null;
+      }
+
+      const draw = () => {
+        this.drawBarsVisualizerFrame();
+        this.visualizer.frame = requestAnimationFrame(draw);
+      };
+
+      draw();
+    },
+
+    stopBarsVisualizer() {
+      if (this.visualizer.frame) {
+        cancelAnimationFrame(this.visualizer.frame);
+        this.visualizer.frame = null;
+      }
+    },
+
+    drawBarsVisualizerFrame() {
+      const canvas = this.els.visualizerCanvas;
+      const ctx = this.visualizer.canvasContext;
+      const analyser = this.visualizer.analyser;
+      const data = this.visualizer.data;
+
+      if (!canvas || !ctx || !analyser || !data) {
+        return;
+      }
+
+      const width = canvas.width;
+      const height = canvas.height;
+
+      analyser.getByteFrequencyData(data);
+
+      ctx.clearRect(0, 0, width, height);
+
+      const bars = 36;
+      const gap = 4;
+      const barWidth = Math.max(
+        3,
+        Math.floor((width - gap * (bars - 1)) / bars),
+      );
+      const step = Math.max(1, Math.floor(data.length / bars));
+
+      for (let i = 0; i < bars; i += 1) {
+        let sum = 0;
+
+        for (let j = 0; j < step; j += 1) {
+          sum += data[i * step + j] || 0;
+        }
+
+        const value = sum / step;
+        const normalized = value / 255;
+        const eased = Math.pow(normalized, 0.72);
+
+        const barHeight = Math.max(4, eased * height);
+        const x = i * (barWidth + gap);
+        const y = height - barHeight;
+
+        ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
+        this.roundRect(
+          ctx,
+          x,
+          y,
+          barWidth,
+          barHeight,
+          Math.min(8, barWidth / 2),
+        );
+        ctx.fill();
+      }
+    },
+
+    drawBarsVisualizerIdle() {
+      if (!this.isVisualizerEnabled()) {
+        return;
+      }
+
+      const canvas = this.els.visualizerCanvas;
+
+      if (!canvas) {
+        return;
+      }
+
+      const ctx = this.visualizer.canvasContext || canvas.getContext("2d");
+
+      if (!ctx) {
+        return;
+      }
+
+      this.visualizer.canvasContext = ctx;
+
+      const width = canvas.width;
+      const height = canvas.height;
+      const bars = 36;
+      const gap = 4;
+      const barWidth = Math.max(
+        3,
+        Math.floor((width - gap * (bars - 1)) / bars),
+      );
+
+      ctx.clearRect(0, 0, width, height);
+
+      for (let i = 0; i < bars; i += 1) {
+        const wave = Math.sin(i * 0.72) * 0.5 + 0.5;
+        const barHeight = 8 + wave * 22;
+        const x = i * (barWidth + gap);
+        const y = height - barHeight;
+
+        ctx.fillStyle = "rgba(255, 255, 255, 0.22)";
+        this.roundRect(
+          ctx,
+          x,
+          y,
+          barWidth,
+          barHeight,
+          Math.min(8, barWidth / 2),
+        );
+        ctx.fill();
+      }
+    },
+
+    markBarsVisualizerUnavailable() {
+      if (this.els.visualizer) {
+        this.els.visualizer.classList.add("is-unavailable");
+      }
+
+      this.drawBarsVisualizerIdle();
+    },
 
     roundRect(ctx, x, y, width, height, radius) {
       const safeRadius = Math.min(radius, width / 2, height / 2);

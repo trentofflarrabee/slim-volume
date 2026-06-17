@@ -28,6 +28,7 @@ final class Settings
             'ajax_navigation' => true,
             'persistence'    => true,
             'visualizer'     => true,
+            'visualizer_mode' => 'bars',
             'debug'          => false,
 
             'appearance_preset' => 'custom',
@@ -51,6 +52,25 @@ final class Settings
             'radius_pill'    => '999px',
         ];
     }
+
+public static function visualizer_modes(): array
+{
+    $modes = [
+        'bars' => __('Bars', 'slim-volume'),
+    ];
+
+    if (self::is_butterchurn_available()) {
+        $modes['butterchurn'] = __('Butterchurn', 'slim-volume');
+    }
+
+    return $modes;
+}
+
+public static function is_butterchurn_available(): bool
+{
+    return file_exists(SLIM_VOLUME_PATH . 'assets/vendor/butterchurn/butterchurn.min.js')
+        && file_exists(SLIM_VOLUME_PATH . 'assets/vendor/butterchurn/butterchurn-presets.min.js');
+}
 
     public static function appearance_presets(): array
     {
@@ -217,8 +237,17 @@ final class Settings
 
     public static function sanitize_settings(array $input): array
     {
-        $defaults = self::defaults();
-        $presets  = self::appearance_presets();
+        $defaults         = self::defaults();
+        $presets          = self::appearance_presets();
+        $visualizer_modes = self::visualizer_modes();
+
+        $visualizer_mode = isset($input['visualizer_mode'])
+            ? sanitize_key((string) $input['visualizer_mode'])
+            : 'bars';
+
+        if (! isset($visualizer_modes[$visualizer_mode])) {
+            $visualizer_mode = 'bars';
+        }
 
         $preset_key = isset($input['appearance_preset'])
             ? sanitize_key((string) $input['appearance_preset'])
@@ -274,15 +303,16 @@ final class Settings
             }
         }
 
-        return array_merge(
-            [
-                'ajax_navigation' => ! empty($input['ajax_navigation']),
-                'persistence'    => ! empty($input['persistence']),
-                'visualizer'     => ! empty($input['visualizer']),
-                'debug'          => ! empty($input['debug']),
-            ],
-            $appearance
-        );
+return array_merge(
+    [
+        'ajax_navigation' => ! empty($input['ajax_navigation']),
+        'persistence'    => ! empty($input['persistence']),
+        'visualizer'     => ! empty($input['visualizer']),
+        'visualizer_mode' => $visualizer_mode,
+        'debug'          => ! empty($input['debug']),
+    ],
+    $appearance
+);
     }
 
     private static function sanitize_css_value($value, string $fallback): string
@@ -378,6 +408,10 @@ final class Settings
                             $settings
                         ); ?>
 
+                        <?php self::render_visualizer_mode_row($settings); ?>
+
+
+                        
                         <?php self::render_checkbox_row(
                             'debug',
                             __('Debug mode', 'slim-volume'),
@@ -694,6 +728,56 @@ final class Settings
         </div>
         <?php
     }
+
+    private static function render_visualizer_mode_row(array $settings): void
+{
+    $modes = self::visualizer_modes();
+    $current = isset($settings['visualizer_mode'])
+        ? sanitize_key((string) $settings['visualizer_mode'])
+        : 'bars';
+
+    if (! isset($modes[$current])) {
+        $current = 'bars';
+    }
+
+    ?>
+    <tr>
+        <th scope="row">
+            <label for="slim-volume-visualizer-mode">
+                <?php echo esc_html__('Visualizer mode', 'slim-volume'); ?>
+            </label>
+        </th>
+        <td>
+            <select
+                id="slim-volume-visualizer-mode"
+                name="<?php echo esc_attr(self::OPTION_NAME); ?>[visualizer_mode]"
+            >
+                <?php foreach ($modes as $key => $label) : ?>
+                    <option value="<?php echo esc_attr($key); ?>" <?php selected($current, $key); ?>>
+                        <?php echo esc_html($label); ?>
+                    </option>
+                <?php endforeach; ?>
+            </select>
+
+            <p class="description">
+                <?php
+                    if (self::is_butterchurn_available()) {
+                        echo esc_html__(
+                            'Choose which visualizer engine Slim Volume should use in the player drawer.',
+                            'slim-volume'
+                        );
+                    } else {
+                        echo esc_html__(
+                            'Bars is currently available. Butterchurn will appear here after the local vendor files are added.',
+                            'slim-volume'
+                        );
+                    }
+                ?>
+            </p>
+        </td>
+    </tr>
+    <?php
+}
 
     private static function render_checkbox_row(
         string $key,
