@@ -1927,27 +1927,7 @@ this.root.addEventListener("click", (event) => {
       return this.visualizerVisible && this.isVisualizerEnabled();
     },
 
-    //DEBUG
-    debugVisualizer(message, data = {}) {
-      console.log(`[SV Viz Debug] ${message}`, {
-        configuredMode: window.SVConfig?.visualizerMode,
-        controllerMode: this.visualizerController?.mode,
-        visualizerEnabled: this.isVisualizerEnabled?.(),
-        visualizerVisible: this.visualizerVisible,
-        hasSVButterchurn: !!window.SVButterchurn,
-        adapterAvailable:
-          !!window.SVButterchurn &&
-          typeof window.SVButterchurn.isAvailable === "function"
-            ? window.SVButterchurn.isAvailable()
-            : false,
-        hasButterchurnInstance: !!this.visualizer.butterchurnInstance,
-        butterchurnFailed: this.visualizer.butterchurnFailed,
-        hasCanvas: !!this.els.visualizerCanvas,
-        hasAudio: !!this.audio,
-        audioPaused: this.audio ? this.audio.paused : null,
-        ...data,
-      });
-    },
+
 
     normalizeVisualizerMode(mode) {
       const allowedModes = ["bars", "butterchurn"];
@@ -1971,38 +1951,21 @@ this.root.addEventListener("click", (event) => {
       return this.normalizeVisualizerMode(configuredMode);
     },
 
-    // startVisualizerMode(mode) {
-    //   const normalizedMode = this.normalizeVisualizerMode(mode);
 
-    //   switch (normalizedMode) {
-    //DEBUG
-    startVisualizerMode(mode) {
-const normalizedMode = this.normalizeVisualizerMode(mode);
-      console.log("[SV Viz Debug] startVisualizerMode hit", {
-  requestedMode: mode,
-  normalizedMode: this.normalizeVisualizerMode(mode),
-  configMode: window.SVConfig?.visualizerMode,
-});
+startVisualizerMode(mode) {
+  const normalizedMode = this.normalizeVisualizerMode(mode);
 
+  switch (normalizedMode) {
+    case "butterchurn":
+      this.startButterchurnVisualizer();
+      break;
 
-      
-
-      this.debugVisualizer("startVisualizerMode()", {
-        requestedMode: mode,
-        normalizedMode,
-      });
-
-      switch (normalizedMode) {
-        case "butterchurn":
-          this.startButterchurnVisualizer();
-          break;
-
-        case "bars":
-        default:
-          this.startBarsVisualizer();
-          break;
-      }
-    },
+    case "bars":
+    default:
+      this.startBarsVisualizer();
+      break;
+  }
+},
 
     stopVisualizerMode(mode) {
       const normalizedMode = this.normalizeVisualizerMode(mode);
@@ -2226,12 +2189,7 @@ const normalizedMode = this.normalizeVisualizerMode(mode);
     },
 
     startVisualizer() {
-      console.log("[SV Viz Debug] startVisualizer()", {
-  configMode: window.SVConfig?.visualizerMode,
-  controllerMode: this.visualizerController?.mode,
-  visible: this.visualizerVisible,
-  enabled: this.isVisualizerEnabled?.(),
-});
+
       if (!this.isVisualizerVisible()) {
         this.stopVisualizer();
         return;
@@ -2348,15 +2306,7 @@ const normalizedMode = this.normalizeVisualizerMode(mode);
     },
 
     createButterchurnVisualizer() {
-      //DEBUG
-      console.log("[SV Viz Debug] createButterchurnVisualizer()", {
-  adapterAvailable: this.isButterchurnAdapterAvailable(),
-  hasCanvas: !!this.els.visualizerCanvas,
-  hasAudio: !!this.audio,
-  failed: this.visualizer.butterchurnFailed,
-});
-      console.log("[SV Viz Debug] createButterchurnVisualizer hit");
-      this.debugVisualizer("createButterchurnVisualizer() entered");
+
       if (this.visualizer.butterchurnInstance) {
         return this.visualizer.butterchurnInstance;
       }
@@ -2385,11 +2335,6 @@ if (!this.els.visualizer && this.root) {
 }
 
 if (!this.audio || !this.els.visualizerCanvas) {
-  this.debugVisualizer("Butterchurn stopped: missing audio or canvas", {
-    hasAudio: !!this.audio,
-    hasCanvas: !!this.els.visualizerCanvas,
-  });
-
   return null;
 }
 
@@ -2430,27 +2375,8 @@ if (!this.audio || !this.els.visualizerCanvas) {
         this.resizeButterchurnVisualizer();
 
         return instance;
-      // } catch (err) {
-      //   console.warn(
-      //     "[SVPlayer] Butterchurn unavailable. Falling back to bars.",
-      //     err,
-      //   );
-
-      //   this.visualizer.butterchurnFailed = true;
-      //   this.visualizer.butterchurnInstance = null;
-      //   this.updateVisualizerPresetUI();
-
-      //   return null;
-      // }
-      //DEBUG
       } catch (err) {
   console.warn("[SVPlayer] Butterchurn unavailable. Falling back to bars.", err);
-
-  this.debugVisualizer("Butterchurn create threw", {
-    error: err,
-    message: err && err.message ? err.message : "",
-    stack: err && err.stack ? err.stack : "",
-  });
 
   this.visualizer.butterchurnFailed = true;
   this.visualizer.butterchurnInstance = null;
@@ -2459,61 +2385,26 @@ if (!this.audio || !this.els.visualizerCanvas) {
 }
     },
 
-    //DEBUG
-    // startButterchurnVisualizer() {
-    //   if (!this.isVisualizerEnabled()) {
-    //     return;
-    //   }
 
-    //   const instance = this.createButterchurnVisualizer();
-
-    //   if (!instance) {
-    //     this.startBarsVisualizer();
-    //     return;
-    //   }
-
-    //   try {
-    //     instance.start();
-    //   } catch (err) {
-    //     console.warn(
-    //       "[SVPlayer] Could not start Butterchurn. Falling back to bars.",
-    //       err,
-    //     );
-
-    //     this.visualizer.butterchurnFailed = true;
-    //     this.destroyButterchurnVisualizer();
-    //     this.startBarsVisualizer();
-    //   }
-    // },
-    startButterchurnVisualizer() {
-  this.debugVisualizer("startButterchurnVisualizer() entered");
-
+startButterchurnVisualizer() {
   if (!this.isVisualizerEnabled()) {
-    this.debugVisualizer("Butterchurn stopped: visualizer disabled");
     return;
   }
 
   const instance = this.createButterchurnVisualizer();
 
-  this.debugVisualizer("Butterchurn create result", {
-    hasInstance: !!instance,
-  });
-
   if (!instance) {
-    this.debugVisualizer("Butterchurn missing instance, falling back to bars");
     this.startBarsVisualizer();
     return;
   }
 
   try {
     instance.start();
-    this.debugVisualizer("Butterchurn started");
   } catch (err) {
-    console.warn("[SVPlayer] Could not start Butterchurn. Falling back to bars.", err);
-
-    this.debugVisualizer("Butterchurn start threw", {
-      error: err,
-    });
+    console.warn(
+      "[SVPlayer] Could not start Butterchurn. Falling back to bars.",
+      err,
+    );
 
     this.visualizer.butterchurnFailed = true;
     this.destroyButterchurnVisualizer();
@@ -2578,9 +2469,6 @@ if (!this.audio || !this.els.visualizerCanvas) {
     },
 
     startBarsVisualizer() {
-      console.log("[SV Viz Debug] startBarsVisualizer()");
-      //DEBUG
-      this.debugVisualizer("startBarsVisualizer() entered");
 
       if (!this.isVisualizerEnabled()) {
         return;
