@@ -935,7 +935,7 @@
             return;
           }
 
-          button.textContent = "Add This Release to Queue";
+          button.textContent = "Queue Release";
           button.setAttribute("aria-label", "Add this release to the queue");
           return;
         }
@@ -946,7 +946,7 @@
           return;
         }
 
-        button.textContent = "Play This Release";
+        button.textContent = "Play Release";
         button.setAttribute("aria-label", "Play this release");
       });
     },

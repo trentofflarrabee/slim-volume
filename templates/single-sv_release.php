@@ -74,76 +74,113 @@ $playlist   = $config['playlist'] ?? [];
         </div>
     </header>
 
-    <?php if ($playlist) : ?>
-    <section class="sv-release-tracklist">
-        <h2><?php esc_html_e('Tracks', 'slim-volume'); ?></h2>
+<?php if ($playlist) : ?>
+    <section class="sv-release-tracklist" aria-labelledby="sv-release-tracklist-heading">
+        <div class="sv-release-tracklist__header">
+            <div>
+                <p class="sv-section-kicker">
+                    <?php esc_html_e('Tracklist', 'slim-volume'); ?>
+                </p>
 
-    <?php if (! empty($playlist)) : ?>
-        <div class="sv-release__queue-actions">
-            <button
-                type="button"
-                class="sv-button sv-release__play-release"
-                data-sv-page-queue-button="true"
-                data-sv-page-queue-action="play"
-                data-sv-page-queue-start-index="0"
-            >
-                <?php esc_html_e('Play This Release', 'slim-volume'); ?>
-            </button>
+                <h2 id="sv-release-tracklist-heading">
+                    <?php esc_html_e('Tracks', 'slim-volume'); ?>
+                </h2>
 
-            <button
-                type="button"
-                class="sv-button sv-button--secondary sv-release__add-release"
-                data-sv-page-queue-button="true"
-                data-sv-page-queue-action="append"
-            >
-                <?php esc_html_e('Add This Release to Queue', 'slim-volume'); ?>
-            </button>
-        </div>
-    <?php endif; ?>
+                <p class="sv-release-tracklist__count">
+                    <?php
+                    printf(
+                        esc_html(
+                            _n(
+                                '%d track',
+                                '%d tracks',
+                                count($playlist),
+                                'slim-volume'
+                            )
+                        ),
+                        count($playlist)
+                    );
+                    ?>
+                </p>
+            </div>
 
-        <ol class="sv-track-list">
-            <?php foreach ($playlist as $index => $track) : ?>
-            <?php
-                        $track_id    = (int) ($track['id'] ?? 0);
-                        $release     = $track['release'] ?? [];
-                        $release_id_from_track = (int) ($release['id'] ?? $release_id);
-                        ?>
-            <li class="sv-track-row" data-sv-track-row data-sv-track-id="<?php echo esc_attr((string) $track_id); ?>"
-                data-sv-release-id="<?php echo esc_attr((string) $release_id_from_track); ?>"
-                data-sv-track-slug="<?php echo esc_attr((string) ($track['slug'] ?? '')); ?>"
-                data-sv-release-slug="<?php echo esc_attr((string) ($release['slug'] ?? '')); ?>"
-                data-sv-track-index="<?php echo esc_attr((string) $index); ?>">
-
-                <button type="button" 
-                class="sv-track-row__play" 
-                data-sv-play-button="true"
-                    aria-label="<?php echo esc_attr(sprintf(__('Play %s', 'slim-volume'), $track['title'] ?? 'track')); ?>">
-                    ▶
+            <div class="sv-release__queue-actions">
+                <button
+                    type="button"
+                    class="sv-button sv-release__play-release"
+                    data-sv-page-queue-button="true"
+                    data-sv-page-queue-action="play"
+                    data-sv-page-queue-start-index="0"
+                >
+                    <?php esc_html_e('Play Release', 'slim-volume'); ?>
                 </button>
 
                 <button
                     type="button"
-                    class="sv-track-row__queue"
-                    data-sv-track-queue-button="true"
-                    data-sv-track-index="<?php echo esc_attr((string) $index); ?>"
+                    class="sv-button sv-button--secondary sv-release__add-release"
+                    data-sv-page-queue-button="true"
+                    data-sv-page-queue-action="append"
                 >
                     <?php esc_html_e('Add to Queue', 'slim-volume'); ?>
                 </button>
+            </div>
+        </div>
 
-                <a class="sv-track-row__title" href="<?php echo esc_url((string) ($track['trackUrl'] ?? '#')); ?>">
-                    <?php echo esc_html((string) ($track['title'] ?? '')); ?>
-                </a>
+        <ol class="sv-track-list sv-release-tracklist__list">
+            <?php foreach ($playlist as $index => $track) : ?>
+                <?php
+                $track_id              = (int) ($track['id'] ?? 0);
+                $release              = $track['release'] ?? [];
+                $release_id_from_track = (int) ($release['id'] ?? $release_id);
+                ?>
 
-                <?php if (! empty($track['duration'])) : ?>
-                <span class="sv-track-row__duration">
-                    <?php echo esc_html((string) $track['duration']); ?>
-                </span>
-                <?php endif; ?>
-            </li>
+                <li
+                    class="sv-track-row"
+                    data-sv-track-row
+                    data-sv-track-id="<?php echo esc_attr((string) $track_id); ?>"
+                    data-sv-release-id="<?php echo esc_attr((string) $release_id_from_track); ?>"
+                    data-sv-track-slug="<?php echo esc_attr((string) ($track['slug'] ?? '')); ?>"
+                    data-sv-release-slug="<?php echo esc_attr((string) ($release['slug'] ?? '')); ?>"
+                    data-sv-track-index="<?php echo esc_attr((string) $index); ?>"
+                >
+                    <span class="sv-track-row__number">
+                        <?php echo esc_html(str_pad((string) ($index + 1), 2, '0', STR_PAD_LEFT)); ?>
+                    </span>
+
+                    <button
+                        type="button"
+                        class="sv-track-row__play"
+                        data-sv-play-button="true"
+                        aria-label="<?php echo esc_attr(sprintf(__('Play %s', 'slim-volume'), $track['title'] ?? 'track')); ?>"
+                    >
+                        <?php esc_html_e('Play', 'slim-volume'); ?>
+                    </button>
+
+                    <div class="sv-track-row__body">
+                        <a class="sv-track-row__title" href="<?php echo esc_url((string) ($track['trackUrl'] ?? '#')); ?>">
+                            <?php echo esc_html((string) ($track['title'] ?? '')); ?>
+                        </a>
+                    </div>
+
+                    <?php if (! empty($track['duration'])) : ?>
+                        <span class="sv-track-row__duration">
+                            <?php echo esc_html((string) $track['duration']); ?>
+                        </span>
+                    <?php endif; ?>
+
+                    <div class="sv-track-row__actions">
+                        <button
+                            type="button"
+                            class="sv-track-row__queue"
+                            data-sv-track-queue-button="true"
+                        >
+                            <?php esc_html_e('Add to Queue', 'slim-volume'); ?>
+                        </button>
+                    </div>
+                </li>
             <?php endforeach; ?>
         </ol>
     </section>
-    <?php endif; ?>
+<?php endif; ?>
 
     <?php
         $credits = (string) get_post_meta($release_id, '_sv_release_credits', true);
