@@ -34,16 +34,34 @@ $playlist   = $config['playlist'] ?? [];
         <div class="sv-release-hero__content">
             <h1><?php the_title(); ?></h1>
 
-            <?php
-                $release_date = (string) get_post_meta($release_id, '_sv_release_date', true);
-                $release_type = (string) get_post_meta($release_id, '_sv_release_type', true);
-                ?>
+<?php
+$release_date_raw     = trim((string) get_post_meta($release_id, '_sv_release_date', true));
+$release_date_display = $release_date_raw;
+$release_type         = trim((string) get_post_meta($release_id, '_sv_release_type', true));
 
-            <?php if ($release_type || $release_date) : ?>
-            <p class="sv-release-hero__meta">
-                <?php echo esc_html(trim($release_type . ' ' . $release_date)); ?>
-            </p>
-            <?php endif; ?>
+if ($release_date_raw) {
+    $release_date_object = DateTimeImmutable::createFromFormat(
+        '!Y-m-d',
+        $release_date_raw,
+        wp_timezone()
+    );
+
+    if ($release_date_object instanceof DateTimeImmutable) {
+        $release_date_display = wp_date(
+            get_option('date_format'),
+            $release_date_object->getTimestamp()
+        );
+    }
+}
+
+$release_meta = array_filter([$release_type, $release_date_display]);
+?>
+
+<?php if ($release_meta) : ?>
+<p class="sv-release-hero__meta">
+    <?php echo esc_html(implode(' · ', $release_meta)); ?>
+</p>
+<?php endif; ?>
 
             <?php
                     $release_links = [

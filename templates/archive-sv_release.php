@@ -1,6 +1,9 @@
 <?php
-
-use SlimVolume\Frontend\TemplateLoader;
+/**
+ * Release archive template.
+ *
+ * @package SlimVolume
+ */
 
 if (! defined('ABSPATH')) {
     exit;
@@ -22,7 +25,33 @@ get_header();
 
     <?php if (have_posts()) : ?>
         <div class="sv-release-grid">
-            <?php while (have_posts()) : the_post(); ?>
+            <?php while (have_posts()) : ?>
+                <?php
+                the_post();
+
+                $release_id           = get_the_ID();
+                $release_date_raw     = trim((string) get_post_meta($release_id, '_sv_release_date', true));
+                $release_date_display = $release_date_raw;
+                $release_type         = trim((string) get_post_meta($release_id, '_sv_release_type', true));
+
+                if ($release_date_raw) {
+                    $release_date_object = DateTimeImmutable::createFromFormat(
+                        '!Y-m-d',
+                        $release_date_raw,
+                        wp_timezone()
+                    );
+
+                    if ($release_date_object instanceof DateTimeImmutable) {
+                        $release_date_display = wp_date(
+                            get_option('date_format'),
+                            $release_date_object->getTimestamp()
+                        );
+                    }
+                }
+
+                $release_meta = array_filter([$release_type, $release_date_display]);
+                ?>
+
                 <article <?php post_class('sv-release-card'); ?>>
                     <a class="sv-release-card__link" href="<?php the_permalink(); ?>">
                         <?php if (has_post_thumbnail()) : ?>
@@ -34,14 +63,9 @@ get_header();
                         <div class="sv-release-card__body">
                             <h2 class="sv-release-card__title"><?php the_title(); ?></h2>
 
-                            <?php
-                            $release_date = (string) get_post_meta(get_the_ID(), '_sv_release_date', true);
-                            $release_type = (string) get_post_meta(get_the_ID(), '_sv_release_type', true);
-                            ?>
-
-                            <?php if ($release_type || $release_date) : ?>
+                            <?php if ($release_meta) : ?>
                                 <p class="sv-release-card__meta">
-                                    <?php echo esc_html(trim($release_type . ' ' . $release_date)); ?>
+                                    <?php echo esc_html(implode(' · ', $release_meta)); ?>
                                 </p>
                             <?php endif; ?>
                         </div>
@@ -56,7 +80,6 @@ get_header();
     <?php else : ?>
         <p><?php esc_html_e('No releases found.', 'slim-volume'); ?></p>
     <?php endif; ?>
-
 </main>
 
 <?php slim_volume_render_player_shell(); ?>
