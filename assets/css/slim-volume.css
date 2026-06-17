@@ -858,7 +858,72 @@ body.sv-player-drawer-open {
     height: 90px;
   }
 }
+/* ==========================================================================
+   Fullscreen Visualizer
+   ========================================================================== */
 
+
+.sv-player__visualizer-fullscreen[hidden] {
+  display: none;
+}
+
+body.sv-visualizer-fullscreen-active {
+  overflow: hidden;
+}
+
+.sv-player__visualizer:fullscreen {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100vw;
+  height: 100vh;
+  padding: clamp(16px, 3vw, 32px);
+  overflow: hidden;
+  background: var(--sv-player-bg);
+  color: var(--sv-player-text);
+}
+
+.sv-player__visualizer:-webkit-full-screen {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100vw;
+  height: 100vh;
+  padding: clamp(16px, 3vw, 32px);
+  overflow: hidden;
+  background: var(--sv-player-bg);
+  color: var(--sv-player-text);
+}
+
+.sv-player__visualizer:fullscreen .sv-player__visualizer-header,
+.sv-player__visualizer:-webkit-full-screen .sv-player__visualizer-header {
+  flex: 0 0 auto;
+  margin-bottom: 0;
+}
+
+.sv-player__visualizer:fullscreen .sv-player__visualizer-preset,
+.sv-player__visualizer:-webkit-full-screen .sv-player__visualizer-preset {
+  font-size: clamp(1rem, 2vw, 1.35rem);
+}
+
+.sv-player__visualizer:fullscreen .sv-player__visualizer-canvas,
+.sv-player__visualizer:-webkit-full-screen .sv-player__visualizer-canvas,
+.sv-player__visualizer:fullscreen .sv-player__visualizer-canvas--butterchurn,
+.sv-player__visualizer:-webkit-full-screen .sv-player__visualizer-canvas--butterchurn {
+  flex: 1 1 auto;
+  width: 100%;
+  min-height: 0;
+  max-height: none;
+}
+
+.sv-player__visualizer:fullscreen .sv-player__visualizer-actions,
+.sv-player__visualizer:-webkit-full-screen .sv-player__visualizer-actions {
+  flex: 0 0 auto;
+  justify-content: center;
+  margin-top: 0;
+}
 /* ==========================================================================
    AJAX Navigation
    ========================================================================== */

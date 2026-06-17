@@ -93,6 +93,17 @@ if (! defined('ABSPATH')) {
                             </button>
 
                             <button
+                                class="sv-player__button sv-player__visualizer-fullscreen"
+                                type="button"
+                                data-sv-visualizer-fullscreen
+                                data-sv-fullscreen-label="<?php echo esc_attr__('Fullscreen', 'slim-volume'); ?>"
+                                data-sv-exit-fullscreen-label="<?php echo esc_attr__('Exit Fullscreen', 'slim-volume'); ?>"
+                                aria-pressed="false"
+                            >
+                                <?php echo esc_html__('Fullscreen', 'slim-volume'); ?>
+                            </button>
+
+                            <button
                                 class="sv-player__button sv-player__visualizer-toggle"
                                 type="button"
                                 data-sv-visualizer-toggle

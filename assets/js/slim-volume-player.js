@@ -54,6 +54,7 @@
       this.setupVisualizerController();
       this.restoreVisualizerVisibility();
       this.setupVisualizerResizeHandling();
+      this.setupVisualizerFullscreenHandling();
       this.bindCoreControls();
       this.bindAudioEvents();
 
@@ -101,6 +102,9 @@
       );
       this.els.visualizerNextPreset = this.root.querySelector(
         "[data-sv-visualizer-next-preset]",
+      );
+      this.els.visualizerFullscreen = this.root.querySelector(
+        "[data-sv-visualizer-fullscreen]",
       );
     },
 
@@ -455,6 +459,18 @@
           this.refreshVisualizerEls();
           this.nextButterchurnPreset();
         }
+
+        const fullscreenButton = event.target.closest(
+          "[data-sv-visualizer-fullscreen]",
+        );
+
+        if (fullscreenButton && this.root.contains(fullscreenButton)) {
+          event.preventDefault();
+          this.refreshVisualizerEls();
+          this.toggleVisualizerFullscreen();
+          return;
+        }
+
       });
 
       if (this.els.queue) {
@@ -2302,6 +2318,142 @@
         controller.resize();
       }
     },
+
+    setupVisualizerFullscreenHandling() {
+  this.updateVisualizerFullscreenUI();
+
+  document.addEventListener("fullscreenchange", () => {
+    this.handleVisualizerFullscreenChange();
+  });
+
+  document.addEventListener("webkitfullscreenchange", () => {
+    this.handleVisualizerFullscreenChange();
+  });
+},
+
+getFullscreenElement() {
+  return (
+    document.fullscreenElement ||
+    document.webkitFullscreenElement ||
+    document.msFullscreenElement ||
+    null
+  );
+},
+
+canUseFullscreen() {
+  return Boolean(
+    document.fullscreenEnabled ||
+      document.webkitFullscreenEnabled ||
+      document.msFullscreenEnabled,
+  );
+},
+
+isVisualizerFullscreen() {
+  this.refreshVisualizerEls();
+
+  return Boolean(
+    this.els.visualizer &&
+      this.getFullscreenElement() === this.els.visualizer,
+  );
+},
+
+toggleVisualizerFullscreen() {
+  if (this.isVisualizerFullscreen()) {
+    this.exitVisualizerFullscreen();
+    return;
+  }
+
+  this.requestVisualizerFullscreen();
+},
+
+requestVisualizerFullscreen() {
+  this.refreshVisualizerEls();
+
+  const target = this.els.visualizer;
+
+  if (!target || !this.canUseFullscreen()) {
+    return;
+  }
+
+  const request =
+    target.requestFullscreen ||
+    target.webkitRequestFullscreen ||
+    target.msRequestFullscreen;
+
+  if (!request) {
+    return;
+  }
+
+  const result = request.call(target);
+
+  if (result && typeof result.catch === "function") {
+    result.catch(() => {
+      this.handleVisualizerFullscreenChange();
+    });
+  }
+},
+
+exitVisualizerFullscreen() {
+  const exit =
+    document.exitFullscreen ||
+    document.webkitExitFullscreen ||
+    document.msExitFullscreen;
+
+  if (!exit) {
+    return;
+  }
+
+  const result = exit.call(document);
+
+  if (result && typeof result.catch === "function") {
+    result.catch(() => {
+      this.handleVisualizerFullscreenChange();
+    });
+  }
+},
+
+handleVisualizerFullscreenChange() {
+  const isFullscreen = this.isVisualizerFullscreen();
+
+  document.body.classList.toggle(
+    "sv-visualizer-fullscreen-active",
+    isFullscreen,
+  );
+
+  this.updateVisualizerFullscreenUI();
+  this.scheduleVisualizerResize(80);
+
+  window.setTimeout(() => {
+    this.scheduleVisualizerResize();
+  }, 260);
+},
+
+updateVisualizerFullscreenUI() {
+  this.refreshVisualizerEls();
+
+  const button = this.els.visualizerFullscreen;
+
+  if (!button) {
+    return;
+  }
+
+  const available = this.canUseFullscreen();
+
+  button.hidden = !available;
+
+  if (!available) {
+    return;
+  }
+
+  const isFullscreen = this.isVisualizerFullscreen();
+  const enterLabel = button.dataset.svFullscreenLabel || "Fullscreen";
+  const exitLabel = button.dataset.svExitFullscreenLabel || "Exit Fullscreen";
+  const label = isFullscreen ? exitLabel : enterLabel;
+
+  button.textContent = label;
+  button.setAttribute("aria-pressed", isFullscreen ? "true" : "false");
+  button.setAttribute("aria-label", label);
+},
 
     destroyVisualizer() {
       const controller = this.getVisualizerController();
