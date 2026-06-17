@@ -62,7 +62,15 @@ final class TrackContextMetaBox
                 </p>
 
                 <p class="sv-admin-track-context__release">
-                    <strong><?php echo esc_html($release_title ?: __('Untitled release', 'slim-volume')); ?></strong>
+                    <strong>
+                        <?php if ($release_edit_url) : ?>
+                            <a href="<?php echo esc_url($release_edit_url); ?>">
+                                <?php echo esc_html($release_title ?: __('Untitled release', 'slim-volume')); ?>
+                            </a>
+                        <?php else : ?>
+                            <?php echo esc_html($release_title ?: __('Untitled release', 'slim-volume')); ?>
+                        <?php endif; ?>
+                    </strong>
                 </p>
 
                 <?php if ($route_preview) : ?>
