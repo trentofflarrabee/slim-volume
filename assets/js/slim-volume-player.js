@@ -26,6 +26,9 @@
       canvasContext: null,
       initialized: false,
       failed: false,
+
+      butterchurnInstance: null,
+      butterchurnFailed: false,
     },
 
     visualizerController: null,
@@ -1807,80 +1810,80 @@
       return this.normalizeVisualizerMode(configuredMode);
     },
 
-startVisualizerMode(mode) {
-  const normalizedMode = this.normalizeVisualizerMode(mode);
+    startVisualizerMode(mode) {
+      const normalizedMode = this.normalizeVisualizerMode(mode);
 
-  switch (normalizedMode) {
-    case "butterchurn":
-      this.startButterchurnVisualizer();
-      break;
+      switch (normalizedMode) {
+        case "butterchurn":
+          this.startButterchurnVisualizer();
+          break;
 
-    case "bars":
-    default:
-      this.startBarsVisualizer();
-      break;
-  }
-},
+        case "bars":
+        default:
+          this.startBarsVisualizer();
+          break;
+      }
+    },
 
-stopVisualizerMode(mode) {
-  const normalizedMode = this.normalizeVisualizerMode(mode);
+    stopVisualizerMode(mode) {
+      const normalizedMode = this.normalizeVisualizerMode(mode);
 
-  switch (normalizedMode) {
-    case "butterchurn":
-      this.stopButterchurnVisualizer();
-      break;
+      switch (normalizedMode) {
+        case "butterchurn":
+          this.stopButterchurnVisualizer();
+          break;
 
-    case "bars":
-    default:
-      this.stopBarsVisualizer();
-      break;
-  }
-},
+        case "bars":
+        default:
+          this.stopBarsVisualizer();
+          break;
+      }
+    },
 
-resizeVisualizerMode(mode) {
-  const normalizedMode = this.normalizeVisualizerMode(mode);
+    resizeVisualizerMode(mode) {
+      const normalizedMode = this.normalizeVisualizerMode(mode);
 
-  switch (normalizedMode) {
-    case "butterchurn":
-      this.resizeButterchurnVisualizer();
-      break;
+      switch (normalizedMode) {
+        case "butterchurn":
+          this.resizeButterchurnVisualizer();
+          break;
 
-    case "bars":
-    default:
-      this.drawBarsVisualizerIdle();
-      break;
-  }
-},
+        case "bars":
+        default:
+          this.drawBarsVisualizerIdle();
+          break;
+      }
+    },
 
-drawVisualizerModeIdle(mode) {
-  const normalizedMode = this.normalizeVisualizerMode(mode);
+    drawVisualizerModeIdle(mode) {
+      const normalizedMode = this.normalizeVisualizerMode(mode);
 
-  switch (normalizedMode) {
-    case "butterchurn":
-      this.drawButterchurnVisualizerIdle();
-      break;
+      switch (normalizedMode) {
+        case "butterchurn":
+          this.drawButterchurnVisualizerIdle();
+          break;
 
-    case "bars":
-    default:
-      this.drawBarsVisualizerIdle();
-      break;
-  }
-},
+        case "bars":
+        default:
+          this.drawBarsVisualizerIdle();
+          break;
+      }
+    },
 
-markVisualizerModeUnavailable(mode) {
-  const normalizedMode = this.normalizeVisualizerMode(mode);
+    markVisualizerModeUnavailable(mode) {
+      const normalizedMode = this.normalizeVisualizerMode(mode);
 
-  switch (normalizedMode) {
-    case "butterchurn":
-      this.markButterchurnVisualizerUnavailable();
-      break;
+      switch (normalizedMode) {
+        case "butterchurn":
+          this.markButterchurnVisualizerUnavailable();
+          break;
 
-    case "bars":
-    default:
-      this.markBarsVisualizerUnavailable();
-      break;
-  }
-},
+        case "bars":
+        default:
+          this.markBarsVisualizerUnavailable();
+          break;
+      }
+    },
 
     setupVisualizerController() {
       if (this.visualizerController) {
@@ -1908,6 +1911,7 @@ markVisualizerModeUnavailable(mode) {
 
         destroy: () => {
           this.stopVisualizerMode(this.visualizerController.mode);
+          this.destroyButterchurnVisualizer();
 
           this.visualizer.context = null;
           this.visualizer.analyser = null;
@@ -1916,9 +1920,12 @@ markVisualizerModeUnavailable(mode) {
           this.visualizer.canvasContext = null;
           this.visualizer.initialized = false;
           this.visualizer.failed = false;
+          this.visualizer.butterchurnInstance = null;
+          this.visualizer.butterchurnFailed = false;
 
           if (this.root) {
             this.root.classList.remove("sv-player--visualizer-ready");
+            this.root.classList.remove("sv-player--butterchurn-ready");
           }
 
           if (this.els.visualizer) {
@@ -2091,40 +2098,154 @@ markVisualizerModeUnavailable(mode) {
       }
     },
 
-    isButterchurnAdapterAvailable() {
+isButterchurnAdapterAvailable() {
   return !!(
     window.SVButterchurn &&
-    typeof window.SVButterchurn.create === "function"
+    typeof window.SVButterchurn.create === "function" &&
+    typeof window.SVButterchurn.isAvailable === "function" &&
+    window.SVButterchurn.isAvailable()
   );
 },
 
-startButterchurnVisualizer() {
+createButterchurnVisualizer() {
+  if (this.visualizer.butterchurnInstance) {
+    return this.visualizer.butterchurnInstance;
+  }
+
+  if (this.visualizer.butterchurnFailed) {
+    return null;
+  }
+
+  if (!this.isVisualizerEnabled()) {
+    return null;
+  }
+
   if (!this.isButterchurnAdapterAvailable()) {
+    this.visualizer.butterchurnFailed = true;
+    return null;
+  }
+
+  if (!this.audio || !this.els.visualizerCanvas) {
+    return null;
+  }
+
+  const graph = this.getAudioGraph();
+
+  if (!graph || !graph.context || !graph.source) {
+    this.visualizer.butterchurnFailed = true;
+    return null;
+  }
+
+  try {
+    this.stopBarsVisualizer();
+
+    const instance = window.SVButterchurn.create({
+      canvas: this.els.visualizerCanvas,
+      audio: this.audio,
+      audioGraph: graph,
+    });
+
+    this.visualizer.butterchurnInstance = instance;
+    this.visualizer.butterchurnFailed = false;
+
+    if (this.root) {
+      this.root.classList.add("sv-player--visualizer-ready");
+      this.root.classList.add("sv-player--butterchurn-ready");
+    }
+
+    if (this.els.visualizer) {
+      this.els.visualizer.classList.remove("is-unavailable");
+    }
+
+    this.resizeButterchurnVisualizer();
+
+    return instance;
+  } catch (err) {
+    console.warn("[SVPlayer] Butterchurn unavailable. Falling back to bars.", err);
+
+    this.visualizer.butterchurnFailed = true;
+    this.visualizer.butterchurnInstance = null;
+
+    return null;
+  }
+},
+
+startButterchurnVisualizer() {
+  if (!this.isVisualizerEnabled()) {
+    return;
+  }
+
+  const instance = this.createButterchurnVisualizer();
+
+  if (!instance) {
     this.startBarsVisualizer();
     return;
   }
 
-  // Butterchurn adapter will be wired here in the next pass.
-  this.startBarsVisualizer();
+  try {
+    instance.start();
+  } catch (err) {
+    console.warn("[SVPlayer] Could not start Butterchurn. Falling back to bars.", err);
+
+    this.visualizer.butterchurnFailed = true;
+    this.destroyButterchurnVisualizer();
+    this.startBarsVisualizer();
+  }
 },
 
 stopButterchurnVisualizer() {
-  // Until the Butterchurn adapter exists, stop the bars fallback.
-  this.stopBarsVisualizer();
+  if (this.visualizer.butterchurnInstance) {
+    try {
+      this.visualizer.butterchurnInstance.stop();
+    } catch (err) {
+      console.warn("[SVPlayer] Could not stop Butterchurn.", err);
+    }
+  }
 },
 
 resizeButterchurnVisualizer() {
-  // Until the Butterchurn adapter exists, resize the bars fallback.
-  this.drawBarsVisualizerIdle();
+  if (!this.visualizer.butterchurnInstance) {
+    this.drawBarsVisualizerIdle();
+    return;
+  }
+
+  try {
+    this.visualizer.butterchurnInstance.resize();
+  } catch (err) {
+    console.warn("[SVPlayer] Could not resize Butterchurn.", err);
+  }
+},
+
+destroyButterchurnVisualizer() {
+  if (!this.visualizer.butterchurnInstance) {
+    return;
+  }
+
+  try {
+    this.visualizer.butterchurnInstance.destroy();
+  } catch (err) {
+    console.warn("[SVPlayer] Could not destroy Butterchurn.", err);
+  }
+
+  this.visualizer.butterchurnInstance = null;
+
+  if (this.root) {
+    this.root.classList.remove("sv-player--butterchurn-ready");
+  }
 },
 
 drawButterchurnVisualizerIdle() {
-  // Until the Butterchurn adapter exists, draw the bars fallback.
+  if (this.visualizer.butterchurnInstance) {
+    this.resizeButterchurnVisualizer();
+    return;
+  }
+
   this.drawBarsVisualizerIdle();
 },
 
 markButterchurnVisualizerUnavailable() {
-  // Until the Butterchurn adapter exists, mark the bars fallback unavailable.
+  this.visualizer.butterchurnFailed = true;
+  this.destroyButterchurnVisualizer();
   this.markBarsVisualizerUnavailable();
 },
 

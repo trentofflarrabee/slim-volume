@@ -77,7 +77,22 @@ if (file_exists($js_path)) {
             true
         );
 
-        $player_dependencies[] = 'slim-volume-butterchurn-presets';
+        $butterchurn_adapter_path = SLIM_VOLUME_PATH . 'assets/js/slim-volume-butterchurn-adapter.js';
+
+if (file_exists($butterchurn_adapter_path)) {
+    wp_enqueue_script(
+        'slim-volume-butterchurn-adapter',
+        SLIM_VOLUME_URL . 'assets/js/slim-volume-butterchurn-adapter.js',
+        ['slim-volume-butterchurn-presets'],
+        self::asset_version($butterchurn_adapter_path),
+        true
+    );
+
+    $player_dependencies[] = 'slim-volume-butterchurn-adapter';
+} else {
+    $player_dependencies[] = 'slim-volume-butterchurn-presets';
+}
+
     }
 
     wp_enqueue_script(
