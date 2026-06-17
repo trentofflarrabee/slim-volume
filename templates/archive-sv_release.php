@@ -29,6 +29,92 @@ $paged = max(
     (int) get_query_var('page')
 );
 
+$get_matching_release_ids = static function (string $search_query): array {
+    if ('' === trim($search_query)) {
+        return [];
+    }
+
+    $release_ids = get_posts(
+        [
+            'post_type'      => 'sv_release',
+            'post_status'    => 'publish',
+            'posts_per_page' => -1,
+            'fields'         => 'ids',
+            'no_found_rows'  => true,
+            's'              => $search_query,
+        ]
+    );
+
+    $track_title_or_content_ids = get_posts(
+        [
+            'post_type'      => 'sv_track',
+            'post_status'    => 'publish',
+            'posts_per_page' => -1,
+            'fields'         => 'ids',
+            'no_found_rows'  => true,
+            's'              => $search_query,
+        ]
+    );
+
+    $track_lyrics_ids = get_posts(
+        [
+            'post_type'      => 'sv_track',
+            'post_status'    => 'publish',
+            'posts_per_page' => -1,
+            'fields'         => 'ids',
+            'no_found_rows'  => true,
+            'meta_query'     => [
+                [
+                    'key'     => '_sv_lyrics',
+                    'value'   => $search_query,
+                    'compare' => 'LIKE',
+                ],
+            ],
+        ]
+    );
+
+    $track_ids = array_values(
+        array_unique(
+            array_map(
+                'absint',
+                array_merge($track_title_or_content_ids, $track_lyrics_ids)
+            )
+        )
+    );
+
+    foreach ($track_ids as $track_id) {
+        $release_id = (int) get_post_meta($track_id, '_sv_release_id', true);
+
+        if ($release_id <= 0) {
+            $release_id = (int) get_post_field('post_parent', $track_id);
+        }
+
+        if ($release_id <= 0) {
+            continue;
+        }
+
+        $release = get_post($release_id);
+
+        if (
+            $release instanceof WP_Post
+            && 'sv_release' === $release->post_type
+            && 'publish' === $release->post_status
+        ) {
+            $release_ids[] = $release_id;
+        }
+    }
+
+    $release_ids = array_values(
+        array_unique(
+            array_filter(
+                array_map('absint', $release_ids)
+            )
+        )
+    );
+
+    return $release_ids;
+};
+
 $query_args = [
     'post_type'      => 'sv_release',
     'post_status'    => 'publish',
@@ -37,7 +123,9 @@ $query_args = [
 ];
 
 if ($search_query) {
-    $query_args['s'] = $search_query;
+    $matching_release_ids = $get_matching_release_ids($search_query);
+
+    $query_args['post__in'] = $matching_release_ids ?: [0];
 }
 
 switch ($sort) {
@@ -128,7 +216,7 @@ get_header();
                 type="search"
                 name="sv_release_q"
                 value="<?php echo esc_attr($search_query); ?>"
-                placeholder="<?php echo esc_attr__('Search releases...', 'slim-volume'); ?>"
+                placeholder="<?php echo esc_attr__('Search releases, tracks, or lyrics...', 'slim-volume'); ?>"
             >
 
             <label class="screen-reader-text" for="sv-release-sort">
