@@ -85,28 +85,75 @@ $track_links = array_filter($track_links);
             <?php endif; ?>
 
             <div class="sv-track-hero__content">
-                <h1><?php the_title(); ?></h1>
+                <?php
+                    $track_number = $current_index >= 0 ? $current_index + 1 : 0;
+                    $track_meta   = array_filter(
+                        [
+                            $track_number > 0
+                                ? sprintf(
+                                    /* translators: %d: track number. */
+                                    __('Track %d', 'slim-volume'),
+                                    $track_number
+                                )
+                                : '',
+                            $duration,
+                        ]
+                    );
+                    ?>
 
-                <?php if ($release_id) : ?>
-                    <p class="sv-track-hero__release">
-                        <?php echo esc_html(get_the_title($release_id)); ?>
+                    <p class="sv-section-kicker">
+                        <?php esc_html_e('Track', 'slim-volume'); ?>
                     </p>
-                <?php endif; ?>
 
-                <?php if ($duration) : ?>
-                    <p class="sv-track-hero__duration">
-                        <?php echo esc_html($duration); ?>
-                    </p>
-                <?php endif; ?>
+                    <h1><?php the_title(); ?></h1>
 
-                <button
-                    type="button"
-                    class="sv-track-hero__play"
-                    data-sv-play-button="true"
-                    data-sv-track-index="<?php echo esc_attr((string) ($config['currentIndex'] ?? 0)); ?>"
-                >
-                    <?php esc_html_e('Play Track', 'slim-volume'); ?>
-                </button>
+                    <?php if ($release_id) : ?>
+                        <p class="sv-track-hero__release">
+                            <?php
+                            printf(
+                                esc_html__('From %s', 'slim-volume'),
+                                sprintf(
+                                    '<a href="%s">%s</a>',
+                                    esc_url(get_permalink($release_id)),
+                                    esc_html(get_the_title($release_id))
+                                )
+                            );
+                            ?>
+                        </p>
+                    <?php endif; ?>
+
+                    <?php if ($track_meta) : ?>
+                        <p class="sv-track-hero__meta">
+                            <?php echo esc_html(implode(' · ', $track_meta)); ?>
+                        </p>
+                    <?php endif; ?>
+
+                    <div
+                        class="sv-track-hero__actions"
+                        data-sv-track-index="<?php echo esc_attr((string) ($config['currentIndex'] ?? 0)); ?>"
+                    >
+                        <button
+                            type="button"
+                            class="sv-button sv-track-hero__play"
+                            data-sv-play-button="true"
+                        >
+                            <?php esc_html_e('Play Track', 'slim-volume'); ?>
+                        </button>
+
+                        <button
+                            type="button"
+                            class="sv-button sv-button--secondary sv-track-hero__queue"
+                            data-sv-track-queue-button="true"
+                        >
+                            <?php esc_html_e('Add to Queue', 'slim-volume'); ?>
+                        </button>
+
+                        <?php if ($release_id) : ?>
+                            <a class="sv-button sv-button--ghost sv-track-hero__back" href="<?php echo esc_url(get_permalink($release_id)); ?>">
+                                <?php esc_html_e('Back to Release', 'slim-volume'); ?>
+                            </a>
+                        <?php endif; ?>
+                    </div>
 
                 <?php if ($track_links) : ?>
                     <nav class="sv-link-list sv-track-links" aria-label="<?php esc_attr_e('Track links', 'slim-volume'); ?>">

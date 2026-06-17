@@ -448,6 +448,119 @@ body.sv-player-ready {
 }
 
 /* ==========================================================================
+   Single Track UX
+   ========================================================================== */
+.sv-track-single {
+  width: min(960px, calc(100% - 32px));
+}
+
+.sv-track-single .sv-breadcrumb {
+  margin-bottom: 24px;
+}
+
+.sv-track-single .sv-track-hero {
+  grid-template-columns: minmax(150px, 240px) minmax(0, 1fr);
+  gap: clamp(22px, 4vw, 42px);
+  align-items: center;
+  margin: 28px 0 46px;
+}
+
+.sv-track-single .sv-track-hero__art img {
+  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.22);
+}
+
+.sv-track-single .sv-track-hero__content h1 {
+  margin: 0;
+  font-size: clamp(2.4rem, 6vw, 4.5rem);
+  line-height: 0.95;
+}
+
+.sv-track-hero__release {
+  margin: 12px 0 0;
+  font-size: 1.05rem;
+}
+
+.sv-track-hero__release a {
+  color: inherit;
+  font-weight: 800;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 4px;
+}
+
+.sv-track-hero__meta {
+  margin: 10px 0 0;
+  opacity: 0.72;
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.sv-track-hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 24px;
+}
+
+.sv-button.sv-track-hero__play {
+  background: var(--sv-button-bg);
+  border-color: var(--sv-button-border);
+  color: var(--sv-button-text);
+}
+
+.sv-button.sv-track-hero__play.is-playing {
+  opacity: 0.88;
+}
+
+.sv-button--ghost {
+  background: transparent;
+  color: inherit;
+}
+
+.sv-track-lyrics,
+.sv-track-story,
+.sv-track-credits {
+  padding-top: 32px;
+  border-top: 1px solid var(--sv-card-border);
+}
+
+.sv-track-lyrics h2,
+.sv-track-story h2,
+.sv-track-credits h2 {
+  margin-top: 0;
+}
+
+.sv-track-single .sv-rich-text {
+  max-width: 720px;
+}
+
+.sv-track-links {
+  margin-top: 22px;
+}
+
+@media (max-width: 760px) {
+  .sv-track-single .sv-track-hero {
+    grid-template-columns: 1fr;
+    align-items: start;
+  }
+
+  .sv-track-single .sv-track-hero__art {
+    max-width: 260px;
+  }
+
+  .sv-track-hero__actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .sv-track-hero__actions .sv-button {
+    justify-content: center;
+    width: 100%;
+  }
+}
+
+/* ==========================================================================
    Track Lists
    ========================================================================== */
 .sv-track-list {
