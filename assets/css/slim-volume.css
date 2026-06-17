@@ -1533,6 +1533,49 @@ body.sv-ajax-loading [data-sv-page-content] {
 }
 
 /* ==========================================================================
+   Queue + Action States
+   ========================================================================== */
+.sv-button.is-queued,
+.sv-track-row__queue.is-queued {
+  border-color: var(--sv-button-border);
+  background: rgba(127, 127, 127, 0.12);
+  color: inherit;
+}
+
+.sv-button.is-disabled,
+.sv-button:disabled,
+.sv-track-row__queue.is-disabled,
+.sv-track-row__queue:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+  transform: none;
+  filter: none;
+}
+
+.sv-track-row__queue.is-queued,
+.sv-track-row__queue.is-disabled,
+.sv-track-row__queue:disabled {
+  transform: none;
+}
+
+.sv-track-row__play.is-playing {
+  border-color: var(--sv-button-border);
+  background: var(--sv-button-bg);
+  color: var(--sv-button-text);
+}
+
+.sv-track-row--active .sv-track-row__title,
+.sv-track-row.is-current .sv-track-row__title {
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 4px;
+}
+
+.sv-track-hero__queue.is-queued {
+  border-color: var(--sv-button-border);
+}
+
+/* ==========================================================================
    Responsive: Queue Drag + Drop
    ========================================================================== */
 @media (max-width: 760px) {

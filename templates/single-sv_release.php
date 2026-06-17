@@ -138,7 +138,7 @@ $release_meta = array_filter([$release_type, $release_date_display]);
                     data-sv-page-queue-button="true"
                     data-sv-page-queue-action="append"
                 >
-                    <?php esc_html_e('Add to Queue', 'slim-volume'); ?>
+                    <?php esc_html_e('Queue Release', 'slim-volume'); ?>
                 </button>
             </div>
         </div>
@@ -191,7 +191,7 @@ $release_meta = array_filter([$release_type, $release_date_display]);
                             class="sv-track-row__queue"
                             data-sv-track-queue-button="true"
                         >
-                            <?php esc_html_e('Add to Queue', 'slim-volume'); ?>
+                            <?php esc_html_e('Queue', 'slim-volume'); ?>
                         </button>
                     </div>
                 </li>

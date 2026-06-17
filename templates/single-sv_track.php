@@ -145,7 +145,7 @@ $track_links = array_filter($track_links);
                             class="sv-button sv-button--secondary sv-track-hero__queue"
                             data-sv-track-queue-button="true"
                         >
-                            <?php esc_html_e('Add to Queue', 'slim-volume'); ?>
+                            <?php esc_html_e('Queue Track', 'slim-volume'); ?>
                         </button>
 
                         <?php if ($release_id) : ?>

@@ -797,6 +797,8 @@
         button.classList.toggle("is-disabled", !hasAudio || isQueued);
         button.classList.toggle("is-queued", !!isQueued);
 
+        const isHeroQueueButton = button.classList.contains("sv-track-hero__queue");
+
         if (!hasAudio) {
           button.textContent = "No Audio";
           button.setAttribute("aria-label", "No audio available");
@@ -804,7 +806,7 @@
         }
 
         if (isQueued) {
-          button.textContent = "In Queue";
+          button.textContent = "Queued";
           button.setAttribute(
             "aria-label",
             "This track is already in the queue",
@@ -812,7 +814,7 @@
           return;
         }
 
-        button.textContent = "Add to Queue";
+        button.textContent = isHeroQueueButton ? "Queue Track" : "Queue";
         button.setAttribute(
           "aria-label",
           `Add ${track.title || "track"} to queue`,
@@ -926,18 +928,20 @@
             allPlayableTracksAlreadyQueued,
           );
 
-          if (allPlayableTracksAlreadyQueued) {
-            button.textContent = "Already in Queue";
-            button.setAttribute(
-              "aria-label",
-              "This release is already in the queue",
-            );
-            return;
-          }
+        button.classList.toggle("is-queued", allPlayableTracksAlreadyQueued);
 
-          button.textContent = "Queue Release";
-          button.setAttribute("aria-label", "Add this release to the queue");
+        if (allPlayableTracksAlreadyQueued) {
+          button.textContent = "Queued";
+          button.setAttribute(
+            "aria-label",
+            "This release is already in the queue",
+          );
           return;
+        }
+
+        button.textContent = "Queue Release";
+        button.setAttribute("aria-label", "Add this release to the queue");
+        return;
         }
 
         if (activeQueueMatchesPage) {
@@ -1456,32 +1460,34 @@
         button.disabled = !hasAudio;
         button.classList.toggle("is-disabled", !hasAudio);
 
-        if (!hasAudio) {
-          button.textContent = "No Audio";
-          button.setAttribute("aria-label", "No audio available");
-          button.classList.remove("is-current", "is-playing");
-          return;
-        }
+const isHeroPlayButton = button.classList.contains("sv-track-hero__play");
 
-        if (isCurrent && isPlaying) {
-          button.textContent = "Pause";
-          button.setAttribute("aria-label", `Pause ${track.title || "track"}`);
-          button.classList.add("is-playing");
-          button.classList.remove("is-current");
-          return;
-        }
+if (!hasAudio) {
+  button.textContent = "No Audio";
+  button.setAttribute("aria-label", "No audio available");
+  button.classList.remove("is-current", "is-playing");
+  return;
+}
 
-        if (isCurrent) {
-          button.textContent = "Play";
-          button.setAttribute("aria-label", `Play ${track.title || "track"}`);
-          button.classList.add("is-current");
-          button.classList.remove("is-playing");
-          return;
-        }
+if (isCurrent && isPlaying) {
+  button.textContent = isHeroPlayButton ? "Pause Track" : "Pause";
+  button.setAttribute("aria-label", `Pause ${track.title || "track"}`);
+  button.classList.add("is-playing");
+  button.classList.remove("is-current");
+  return;
+}
 
-        button.textContent = "Play";
-        button.setAttribute("aria-label", "Play track");
-        button.classList.remove("is-current", "is-playing");
+if (isCurrent) {
+  button.textContent = isHeroPlayButton ? "Play Track" : "Play";
+  button.setAttribute("aria-label", `Play ${track.title || "track"}`);
+  button.classList.add("is-current");
+  button.classList.remove("is-playing");
+  return;
+}
+
+button.textContent = isHeroPlayButton ? "Play Track" : "Play";
+button.setAttribute("aria-label", "Play track");
+button.classList.remove("is-current", "is-playing");
       });
     },
 
