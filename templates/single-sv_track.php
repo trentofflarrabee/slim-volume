@@ -1,7 +1,6 @@
 <?php
 
 use SlimVolume\Frontend\PlayerData;
-use SlimVolume\Frontend\TemplateLoader;
 use SlimVolume\Rewrite;
 
 if (! defined('ABSPATH')) {
@@ -108,17 +107,16 @@ $track_links = array_filter($track_links);
                     <h1><?php the_title(); ?></h1>
 
                     <?php if ($release_id) : ?>
+                        <?php
+                        $release_url   = get_permalink($release_id);
+                        $release_title = get_the_title($release_id);
+                        ?>
+
                         <p class="sv-track-hero__release">
-                            <?php
-                            printf(
-                                esc_html__('From %s', 'slim-volume'),
-                                sprintf(
-                                    '<a href="%s">%s</a>',
-                                    esc_url(get_permalink($release_id)),
-                                    esc_html(get_the_title($release_id))
-                                )
-                            );
-                            ?>
+                            <?php esc_html_e('From', 'slim-volume'); ?>
+                            <a href="<?php echo esc_url($release_url); ?>">
+                                <?php echo esc_html($release_title); ?>
+                            </a>
                         </p>
                     <?php endif; ?>
 

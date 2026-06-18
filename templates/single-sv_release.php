@@ -1,7 +1,6 @@
 <?php
 
 use SlimVolume\Frontend\PlayerData;
-use SlimVolume\Frontend\TemplateLoader;
 
 if (! defined('ABSPATH')) {
     exit;
@@ -96,10 +95,6 @@ $release_meta = array_filter([$release_type, $release_date_display]);
     <section class="sv-release-tracklist" aria-labelledby="sv-release-tracklist-heading">
         <div class="sv-release-tracklist__header">
             <div>
-                <!-- <p class="sv-section-kicker">
-                    <?php esc_html_e('Tracklist', 'slim-volume'); ?>
-                </p> -->
-
                 <h2 id="sv-release-tracklist-heading">
                     <?php esc_html_e('Tracks', 'slim-volume'); ?>
                 </h2>
