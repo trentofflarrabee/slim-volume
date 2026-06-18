@@ -1706,9 +1706,9 @@ body.sv-ajax-loading [data-sv-page-content] {
   filter: none;
 }
 
-.sv-release__play-release {
+/* .sv-release__play-release {
   margin: 0 0 18px;
-}
+} */
 
 .sv-release__queue-actions {
   display: flex;

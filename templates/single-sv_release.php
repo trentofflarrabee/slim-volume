@@ -96,9 +96,9 @@ $release_meta = array_filter([$release_type, $release_date_display]);
     <section class="sv-release-tracklist" aria-labelledby="sv-release-tracklist-heading">
         <div class="sv-release-tracklist__header">
             <div>
-                <p class="sv-section-kicker">
+                <!-- <p class="sv-section-kicker">
                     <?php esc_html_e('Tracklist', 'slim-volume'); ?>
-                </p>
+                </p> -->
 
                 <h2 id="sv-release-tracklist-heading">
                     <?php esc_html_e('Tracks', 'slim-volume'); ?>
