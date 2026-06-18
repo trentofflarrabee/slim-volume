@@ -1763,6 +1763,40 @@ body.sv-ajax-loading [data-sv-page-content] {
   gap: 16px;
 }
 
+/* Queue drawer remove button alignment fix */
+.sv-player__queue-remove {
+  align-self: center;
+  justify-self: center;
+  display: inline-grid;
+  place-items: center;
+  width: 36px;
+  min-width: 36px;
+  height: 36px;
+  min-height: 36px;
+  padding: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-indent: -999px;
+}
+
+.sv-player__queue-remove::before {
+  content: "×";
+  display: block;
+  text-indent: 0;
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
+.sv-player__queue-remove .screen-reader-text,
+.sv-player__queue-remove span {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
 .sv-player__clear-queue[hidden] {
   display: none;
 }
