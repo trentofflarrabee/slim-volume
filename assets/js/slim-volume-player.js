@@ -1617,15 +1617,15 @@ button.classList.remove("is-current", "is-playing");
         if (this.els.drawerArt) this.els.drawerArt.innerHTML = "";
 
         if (this.els.drawerTitle) {
-          this.els.drawerTitle.textContent = this.playlist.length
-            ? "Queue ready"
-            : "Nothing playing";
+        this.els.drawerTitle.textContent = this.playlist.length
+          ? "Ready to play"
+          : "Nothing playing";
         }
 
         if (this.els.drawerRelease) {
-          this.els.drawerRelease.textContent = this.playlist.length
-            ? `${this.playlist.length} track${this.playlist.length === 1 ? "" : "s"} loaded`
-            : "";
+        this.els.drawerRelease.textContent = this.playlist.length
+          ? `${this.playlist.length} track${this.playlist.length === 1 ? "" : "s"} in queue`
+          : "Add tracks from a release or track page";
         }
 
         if (this.els.drawerTrackLink) this.els.drawerTrackLink.hidden = true;
@@ -1746,7 +1746,7 @@ button.classList.remove("is-current", "is-playing");
       if (!tracks.length) {
         const empty = document.createElement("li");
         empty.className = "sv-player__queue-empty";
-        empty.textContent = "No queue loaded";
+        empty.textContent = "Your queue is empty. Add tracks from a release or track page.";
         this.els.queue.appendChild(empty);
         return;
       }
@@ -1775,7 +1775,8 @@ button.classList.remove("is-current", "is-playing");
         dragHandle.setAttribute("aria-hidden", "true");
         dragHandle.setAttribute("draggable", "true");
         dragHandle.setAttribute("data-sv-queue-drag-index", String(index));
-        dragHandle.textContent = "☰";
+        dragHandle.title = "Drag to reorder";
+        dragHandle.textContent = "⋮⋮";
 
         const button = document.createElement("button");
         button.type = "button";
@@ -1834,12 +1835,20 @@ button.classList.remove("is-current", "is-playing");
         const status = document.createElement("span");
         status.className = "sv-player__queue-status";
 
+        const isQueuedList = this.playlist.length > 0;
+
         if (!track.audioUrl) {
           status.textContent = "No audio";
         } else if (isCurrent && isPlaying) {
           status.textContent = "Playing";
         } else if (isCurrent) {
           status.textContent = "Paused";
+        } else if (isQueuedList && !currentTrack && index === this.currentIndex) {
+          status.textContent = "Ready";
+        } else if (isQueuedList && currentTrack && index === this.currentIndex + 1) {
+          status.textContent = "Next";
+        } else if (isQueuedList) {
+          status.textContent = "Queued";
         } else {
           status.textContent = "";
         }
