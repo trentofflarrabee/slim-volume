@@ -5,15 +5,6 @@
 /* ==========================================================================
    Variables
    ========================================================================== */
-/* :root {
-  --sv-player-bg: #111;
-  --sv-player-text: #fff;
-  --sv-player-muted: rgba(255, 255, 255, 0.68);
-  --sv-player-border: rgba(255, 255, 255, 0.14);
-  --sv-player-accent: currentColor;
-  --sv-card-border: rgba(0, 0, 0, 0.12);
-} */
-
 :root {
   --sv-player-bg: #111;
   --sv-player-text: #fff;
@@ -60,45 +51,106 @@ body.sv-player-ready {
 }
 
 /* ==========================================================================
-   Archive
+   Buttons
    ========================================================================== */
-.sv-release-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 24px;
-}
-
-.sv-release-card {
-  border: 1px solid var(--sv-card-border);
-  border-radius: var(--sv-radius-card);
-  overflow: hidden;
-}
-
-.sv-release-card__link {
-  display: block;
-  color: inherit;
+.sv-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+  padding: 10px 18px;
+  cursor: pointer;
+  color: var(--sv-button-text);
+  background: var(--sv-button-bg);
+  border: 1px solid var(--sv-button-border);
+  border-radius: var(--sv-radius-pill);
+  font: inherit;
+  font-weight: 700;
+  line-height: 1;
   text-decoration: none;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.16);
 }
 
-.sv-release-card__art img {
-  display: block;
-  width: 100%;
-  height: auto;
-  aspect-ratio: 1;
-  object-fit: cover;
+.sv-button:hover,
+.sv-button:focus {
+  transform: translateY(-1px);
+  filter: brightness(1.08);
 }
 
-.sv-release-card__body {
-  padding: 16px;
+.sv-button:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 3px;
 }
 
-.sv-release-card__title {
-  margin: 0;
+.sv-button:disabled,
+.sv-button.is-disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+  transform: none;
+  filter: none;
 }
 
-.sv-release-card__meta {
-  margin: 8px 0 0;
-  opacity: 0.72;
+.sv-button--secondary {
+  --sv-button-bg: transparent;
+  --sv-button-text: inherit;
+  --sv-button-border: var(--sv-card-border);
+
+  box-shadow: none;
+}
+
+.sv-button--ghost {
+  background: transparent;
+  color: inherit;
+}
+
+.sv-button.is-queued {
+  border-color: var(--sv-button-border);
+  background: rgba(127, 127, 127, 0.12);
+  color: inherit;
+}
+
+.sv-track-row__queue {
+  cursor: pointer;
+  color: inherit;
+  background: transparent;
+  border: 1px solid var(--sv-card-border);
+  border-radius: var(--sv-radius-pill);
+  padding: 6px 10px;
+  font: inherit;
+  font-size: 0.88rem;
+  line-height: 1;
+}
+
+.sv-track-row__queue:hover,
+.sv-track-row__queue:focus {
+  transform: translateY(-1px);
+}
+
+.sv-track-row__queue:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 3px;
+}
+
+.sv-track-row__queue.is-queued {
+  border-color: var(--sv-button-border);
+  background: rgba(127, 127, 127, 0.12);
+  color: inherit;
+}
+
+.sv-track-row__queue:disabled,
+.sv-track-row__queue.is-disabled,
+.sv-track-row__queue.is-queued {
+  transform: none;
+}
+
+.sv-track-row__queue:disabled,
+.sv-track-row__queue.is-disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.sv-track-hero__queue.is-queued {
+  border-color: var(--sv-button-border);
 }
 
 /* ==========================================================================
@@ -262,6 +314,7 @@ body.sv-player-ready {
   }
 }
 
+
 /* ==========================================================================
    Release + Track Layout
    ========================================================================== */
@@ -289,6 +342,49 @@ body.sv-player-ready {
 .sv-release-credits {
   margin-top: 48px;
 }
+
+
+/* ==========================================================================
+   Track Lists
+   ========================================================================== */
+.sv-track-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid var(--sv-card-border);
+}
+
+.sv-track-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 14px;
+  align-items: center;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--sv-card-border);
+}
+
+.sv-track-row--active {
+  font-weight: 700;
+}
+
+.sv-track-row__play,
+.sv-track-hero__play {
+  cursor: pointer;
+}
+
+.sv-track-row__title {
+  color: inherit;
+  text-decoration: none;
+}
+
+.sv-track-row__title:hover {
+  text-decoration: underline;
+}
+
+.sv-track-row__duration {
+  opacity: 0.7;
+}
+
 
 /* ==========================================================================
    Single Release UX
@@ -608,6 +704,7 @@ body.sv-player-ready {
   }
 }
 
+
 /* ==========================================================================
    Single Track UX
    ========================================================================== */
@@ -674,10 +771,6 @@ body.sv-player-ready {
   opacity: 0.88;
 }
 
-.sv-button--ghost {
-  background: transparent;
-  color: inherit;
-}
 
 .sv-track-lyrics,
 .sv-track-story,
@@ -721,46 +814,6 @@ body.sv-player-ready {
   }
 }
 
-/* ==========================================================================
-   Track Lists
-   ========================================================================== */
-.sv-track-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  border-top: 1px solid var(--sv-card-border);
-}
-
-.sv-track-row {
-  display: grid;
-  grid-template-columns: auto 1fr auto;
-  gap: 14px;
-  align-items: center;
-  padding: 14px 0;
-  border-bottom: 1px solid var(--sv-card-border);
-}
-
-.sv-track-row--active {
-  font-weight: 700;
-}
-
-.sv-track-row__play,
-.sv-track-hero__play {
-  cursor: pointer;
-}
-
-.sv-track-row__title {
-  color: inherit;
-  text-decoration: none;
-}
-
-.sv-track-row__title:hover {
-  text-decoration: underline;
-}
-
-.sv-track-row__duration {
-  opacity: 0.7;
-}
 
 /* ==========================================================================
    Rich Text
@@ -768,6 +821,122 @@ body.sv-player-ready {
 .sv-rich-text {
   line-height: 1.7;
 }
+
+
+/* ==========================================================================
+   Links + Pills
+   ========================================================================== */
+.sv-link-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 18px 0;
+}
+
+.sv-link-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 38px;
+  padding: 8px 14px;
+  border: 1px solid var(--sv-card-border);
+  border-radius: var(--sv-radius-pill);
+  color: inherit;
+  text-decoration: none;
+  line-height: 1;
+}
+
+.sv-link-pill:hover,
+.sv-link-pill:focus {
+  text-decoration: none;
+  transform: translateY(-1px);
+}
+
+
+/* ==========================================================================
+   Track Play States
+   ========================================================================== */
+.sv-track-row__play.is-playing,
+.sv-track-hero__play.is-playing {
+  font-weight: 700;
+}
+
+.sv-track-hero__play.is-current {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
+
+/* ==========================================================================
+   Track Navigation
+   ========================================================================== */
+.sv-track-nav {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+  margin-top: 56px;
+  padding-top: 28px;
+  border-top: 1px solid var(--sv-card-border);
+}
+
+.sv-track-nav a {
+  display: block;
+  padding: 18px;
+  border: 1px solid var(--sv-card-border);
+  border-radius: var(--sv-radius-card);
+  color: inherit;
+  text-decoration: none;
+}
+
+.sv-track-nav a:hover,
+.sv-track-nav a:focus {
+  transform: translateY(-1px);
+}
+
+.sv-track-nav span {
+  display: block;
+  margin-bottom: 6px;
+  opacity: 0.68;
+  font-size: 0.85rem;
+}
+
+.sv-track-nav strong {
+  display: block;
+  font-size: 1.05rem;
+}
+
+.sv-track-nav__next {
+  text-align: right;
+}
+
+@media (max-width: 640px) {
+  .sv-track-nav {
+    grid-template-columns: 1fr;
+  }
+
+  .sv-track-nav__next {
+    text-align: left;
+  }
+}
+
+
+/* ==========================================================================
+   AJAX Navigation
+   ========================================================================== */
+body.sv-ajax-loading [data-sv-page-content] {
+  opacity: 0.55;
+  pointer-events: none;
+  transition: opacity 160ms ease;
+}
+
+[data-sv-page-content] {
+  transition: opacity 160ms ease;
+}
+
+[data-sv-page-content]:focus {
+  outline: none;
+}
+
 
 /* ==========================================================================
    Player Bar
@@ -916,99 +1085,181 @@ body.sv-player-ready {
   }
 }
 
-/* ==========================================================================
-   Links + Pills
-   ========================================================================== */
-.sv-link-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin: 18px 0;
-}
 
-.sv-link-pill {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 38px;
-  padding: 8px 14px;
-  border: 1px solid var(--sv-card-border);
-  border-radius: var(--sv-radius-pill);
-  color: inherit;
-  text-decoration: none;
+/* ==========================================================================
+   Player Controls + Transport Icons
+   ========================================================================== */
+.sv-player__icon-button {
+  display: inline-grid;
+  place-items: center;
+  width: 42px;
+  min-width: 42px;
+  height: 42px;
+  padding: 0;
+  font-size: 1rem;
   line-height: 1;
 }
 
-.sv-link-pill:hover,
-.sv-link-pill:focus {
-  text-decoration: none;
-  transform: translateY(-1px);
+.sv-player__play-button {
+  width: 48px;
+  min-width: 48px;
+  height: 48px;
+  font-size: 1.08rem;
 }
 
-/* ==========================================================================
-   Track Play States
-   ========================================================================== */
-.sv-track-row__play.is-playing,
-.sv-track-hero__play.is-playing {
-  font-weight: 700;
-}
-
-.sv-track-hero__play.is-current {
+.sv-player__button:focus-visible,
+.sv-player__progress:focus-visible,
+.sv-player__queue-button:focus-visible,
+.sv-link-pill:focus-visible {
   outline: 2px solid currentColor;
-  outline-offset: 2px;
+  outline-offset: 3px;
 }
 
-/* ==========================================================================
-   Track Navigation
-   ========================================================================== */
-.sv-track-nav {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 18px;
-  margin-top: 56px;
-  padding-top: 28px;
-  border-top: 1px solid var(--sv-card-border);
+.sv-player__button.is-playing {
+  border-color: currentColor;
 }
 
-.sv-track-nav a {
-  display: block;
-  padding: 18px;
-  border: 1px solid var(--sv-card-border);
-  border-radius: var(--sv-radius-card);
+.sv-player__drawer-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.sv-player__queue-count {
+  display: inline-grid;
+  place-items: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: var(--sv-radius-pill);
+  color: var(--sv-player-bg);
+  background: var(--sv-player-text);
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.sv-player__queue-count[hidden] {
+  display: none;
+}
+
+.sv-player [data-sv-prev],
+.sv-player [data-sv-next],
+.sv-player [data-sv-play-toggle] {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
   color: inherit;
-  text-decoration: none;
+  font-size: 0;
+  line-height: 1;
 }
 
-.sv-track-nav a:hover,
-.sv-track-nav a:focus {
-  transform: translateY(-1px);
+.sv-player [data-sv-play-toggle-icon] {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
-.sv-track-nav span {
+.sv-player [data-sv-prev]::before,
+.sv-player [data-sv-prev]::after,
+.sv-player [data-sv-next]::before,
+.sv-player [data-sv-next]::after,
+.sv-player [data-sv-play-toggle]::before {
+  content: "";
   display: block;
-  margin-bottom: 6px;
-  opacity: 0.68;
-  font-size: 0.85rem;
 }
 
-.sv-track-nav strong {
-  display: block;
-  font-size: 1.05rem;
+/* Play button */
+.sv-player [data-sv-play-toggle]::before {
+  width: 0;
+  height: 0;
+  margin-left: 3px;
+  border-top: 9px solid transparent;
+  border-bottom: 9px solid transparent;
+  border-left: 14px solid currentColor;
 }
 
-.sv-track-nav__next {
-  text-align: right;
+/* Pause state */
+.sv-player [data-sv-play-toggle].is-playing::before {
+  width: 16px;
+  height: 18px;
+  margin-left: 0;
+  border: 0;
+  background:
+    linear-gradient(currentColor 0 0) left / 5px 100% no-repeat,
+    linear-gradient(currentColor 0 0) right / 5px 100% no-repeat;
 }
 
-@media (max-width: 640px) {
-  .sv-track-nav {
-    grid-template-columns: 1fr;
+/* Previous / Next shared sizing */
+.sv-player [data-sv-prev]::before,
+.sv-player [data-sv-next]::before {
+  position: absolute;
+  width: 14px;
+  height: 16px;
+  background: currentColor;
+}
+
+.sv-player [data-sv-prev]::after,
+.sv-player [data-sv-next]::after {
+  position: absolute;
+  width: 3px;
+  height: 16px;
+  border-radius: 999px;
+  background: currentColor;
+}
+
+/* Previous */
+.sv-player [data-sv-prev]::before {
+  left: 14px;
+  clip-path: polygon(100% 0, 100% 100%, 0 50%);
+}
+
+.sv-player [data-sv-prev]::after {
+  left: 11px;
+}
+
+/* Next */
+.sv-player [data-sv-next]::before {
+  right: 14px;
+  clip-path: polygon(0 0, 0 100%, 100% 50%);
+}
+
+.sv-player [data-sv-next]::after {
+  right: 11px;
+}
+
+.sv-player [data-sv-prev]:disabled,
+.sv-player [data-sv-next]:disabled,
+.sv-player [data-sv-play-toggle]:disabled {
+  opacity: 0.42;
+}
+
+@media (max-width: 760px) {
+  .sv-player__icon-button {
+    width: 38px;
+    min-width: 38px;
+    height: 38px;
   }
 
-  .sv-track-nav__next {
-    text-align: left;
+  .sv-player__play-button {
+    width: 42px;
+    min-width: 42px;
+    height: 42px;
+  }
+
+  .sv-player__drawer-toggle {
+    padding-inline: 10px;
+  }
+
+  .sv-player__drawer-toggle [data-sv-drawer-toggle-label] {
+    display: none;
   }
 }
+
 
 /* ==========================================================================
    Player Drawer
@@ -1129,9 +1380,33 @@ body.sv-player-drawer-open {
   border-color: var(--sv-player-border);
 }
 
+
 /* ==========================================================================
-   Queue
+   Queue Drawer
    ========================================================================== */
+.sv-player__drawer-queue-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.sv-player__clear-queue,
+[data-sv-clear-queue] {
+  color: var(--sv-player-muted);
+}
+
+.sv-player__clear-queue:hover,
+.sv-player__clear-queue:focus,
+[data-sv-clear-queue]:hover,
+[data-sv-clear-queue]:focus {
+  color: var(--sv-player-text);
+}
+
+.sv-player__clear-queue[hidden] {
+  display: none;
+}
+
 .sv-player__queue {
   display: grid;
   gap: 8px;
@@ -1142,16 +1417,18 @@ body.sv-player-drawer-open {
 
 .sv-player__queue-item {
   display: grid;
-  grid-template-columns: 28px minmax(0, 1fr) auto;
+  grid-template-columns: 30px minmax(0, 1fr) auto;
   gap: 8px;
   align-items: center;
+  margin: 0;
 }
 
 .sv-player__queue-drag {
   display: inline-grid;
   place-items: center;
-  width: 28px;
-  height: 42px;
+  align-self: center;
+  width: 30px;
+  height: 36px;
   cursor: grab;
   color: var(--sv-player-muted);
   border: 1px solid transparent;
@@ -1171,12 +1448,13 @@ body.sv-player-drawer-open {
 }
 
 .sv-player__queue-item.is-dragging {
-  opacity: 0.5;
+  opacity: 0.45;
 }
 
 .sv-player__queue-item.is-drop-target .sv-player__queue-button {
-  border-color: var(--sv-player-text);
-  box-shadow: 0 0 0 1px var(--sv-player-text);
+  border-color: currentColor;
+  border-style: dashed;
+  box-shadow: 0 0 0 1px currentColor;
 }
 
 .sv-player__queue-button {
@@ -1254,6 +1532,10 @@ body.sv-player-drawer-open {
   text-transform: uppercase;
 }
 
+.sv-player__queue-button.is-disabled .sv-player__queue-status {
+  color: rgba(255, 255, 255, 0.52);
+}
+
 .sv-player__queue-item.is-current .sv-player__queue-button,
 .sv-player__queue-item.is-playing .sv-player__queue-button {
   border-color: var(--sv-player-text);
@@ -1269,24 +1551,33 @@ body.sv-player-drawer-open {
 }
 
 .sv-player__queue-remove {
+  align-self: center;
+  justify-self: center;
   display: inline-grid;
   place-items: center;
-  width: 34px;
-  min-width: 34px;
-  height: 34px;
+  width: 36px;
+  min-width: 36px;
+  height: 36px;
+  min-height: 36px;
   padding: 0;
+  overflow: hidden;
   cursor: pointer;
   color: var(--sv-player-muted);
   background: transparent;
   border: 1px solid var(--sv-player-border);
   border-radius: var(--sv-radius-pill);
-  font-size: 0;
+  font: inherit;
   line-height: 1;
+  white-space: nowrap;
+  text-indent: -999px;
 }
 
 .sv-player__queue-remove::before {
   content: "×";
-  font-size: 1.2rem;
+  display: block;
+  color: inherit;
+  text-indent: 0;
+  font-size: 1.25rem;
   line-height: 1;
 }
 
@@ -1296,15 +1587,27 @@ body.sv-player-drawer-open {
   background: rgba(255, 255, 255, 0.08);
 }
 
+.sv-player__queue-remove:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 3px;
+}
+
+.sv-player__queue-remove .screen-reader-text,
+.sv-player__queue-remove span {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
 .sv-player__queue-empty {
   padding: 14px;
   border: 1px dashed var(--sv-player-border);
   border-radius: var(--sv-radius-control);
 }
 
-/* ==========================================================================
-   Responsive: Player Drawer + Queue
-   ========================================================================== */
 @media (max-width: 760px) {
   body.sv-player-drawer-open {
     padding-bottom: 650px;
@@ -1363,106 +1666,10 @@ body.sv-player-drawer-open {
     width: 32px;
     min-width: 32px;
     height: 32px;
+    min-height: 32px;
   }
 }
 
-/* ==========================================================================
-   Player Controls + States
-   ========================================================================== */
-.sv-player__icon-button {
-  display: inline-grid;
-  place-items: center;
-  width: 42px;
-  min-width: 42px;
-  height: 42px;
-  padding: 0;
-  font-size: 1rem;
-  line-height: 1;
-}
-
-.sv-player__play-button {
-  width: 48px;
-  min-width: 48px;
-  height: 48px;
-  font-size: 1.08rem;
-}
-
-.sv-player__button:focus-visible,
-.sv-player__progress:focus-visible,
-.sv-player__queue-button:focus-visible,
-.sv-link-pill:focus-visible {
-  outline: 2px solid currentColor;
-  outline-offset: 3px;
-}
-
-.sv-player__button.is-playing {
-  border-color: currentColor;
-}
-
-.sv-player__drawer-toggle {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  white-space: nowrap;
-}
-
-.sv-player__queue-count {
-  display: inline-grid;
-  place-items: center;
-  min-width: 22px;
-  height: 22px;
-  padding: 0 6px;
-  border-radius: var(--sv-radius-pill);
-  color: var(--sv-player-bg);
-  background: var(--sv-player-text);
-  font-size: 0.78rem;
-  font-weight: 700;
-  line-height: 1;
-}
-
-.sv-player__queue-count[hidden] {
-  display: none;
-}
-
-.sv-track-row__play.is-disabled,
-.sv-track-hero__play.is-disabled {
-  cursor: not-allowed;
-  opacity: 0.5;
-}
-
-.sv-player__queue-status {
-  min-width: 64px;
-  text-align: right;
-}
-
-.sv-player__queue-button.is-disabled .sv-player__queue-status {
-  color: rgba(255, 255, 255, 0.52);
-}
-
-/* ==========================================================================
-   Responsive: Player Controls
-   ========================================================================== */
-@media (max-width: 760px) {
-  .sv-player__icon-button {
-    width: 38px;
-    min-width: 38px;
-    height: 38px;
-  }
-
-  .sv-player__play-button {
-    width: 42px;
-    min-width: 42px;
-    height: 42px;
-  }
-
-  .sv-player__drawer-toggle {
-    padding-inline: 10px;
-  }
-
-  .sv-player__drawer-toggle [data-sv-drawer-toggle-label] {
-    display: none;
-  }
-}
 
 /* ==========================================================================
    Visualizer
@@ -1583,6 +1790,7 @@ body.sv-player-drawer-open {
     height: 90px;
   }
 }
+
 /* ==========================================================================
    Fullscreen Visualizer
    ========================================================================== */
@@ -1649,381 +1857,4 @@ body.sv-visualizer-fullscreen-active {
   justify-content: center;
   margin-top: 0;
 }
-/* ==========================================================================
-   AJAX Navigation
-   ========================================================================== */
-body.sv-ajax-loading [data-sv-page-content] {
-  opacity: 0.55;
-  pointer-events: none;
-  transition: opacity 160ms ease;
-}
 
-[data-sv-page-content] {
-  transition: opacity 160ms ease;
-}
-
-[data-sv-page-content]:focus {
-  outline: none;
-}
-
-/* ==========================================================================
-   Buttons
-   ========================================================================== */
-.sv-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 42px;
-  padding: 10px 18px;
-  cursor: pointer;
-  color: var(--sv-button-text);
-  background: var(--sv-button-bg);
-  border: 1px solid var(--sv-button-border);
-  border-radius: var(--sv-radius-pill);
-  font: inherit;
-  font-weight: 700;
-  line-height: 1;
-  text-decoration: none;
-  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.16);
-}
-
-.sv-button:hover,
-.sv-button:focus {
-  transform: translateY(-1px);
-  filter: brightness(1.08);
-}
-
-.sv-button:focus-visible {
-  outline: 2px solid currentColor;
-  outline-offset: 3px;
-}
-
-.sv-button:disabled,
-.sv-button.is-disabled {
-  cursor: not-allowed;
-  opacity: 0.5;
-  transform: none;
-  filter: none;
-}
-
-/* .sv-release__play-release {
-  margin: 0 0 18px;
-} */
-
-.sv-release__queue-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin: 0 0 18px;
-}
-
-.sv-button--secondary {
-  --sv-button-bg: transparent;
-  --sv-button-text: inherit;
-  --sv-button-border: var(--sv-card-border);
-
-  box-shadow: none;
-}
-
-.sv-track-row__queue {
-  cursor: pointer;
-  color: inherit;
-  background: transparent;
-  border: 1px solid var(--sv-card-border);
-  border-radius: var(--sv-radius-pill);
-  padding: 6px 10px;
-  font: inherit;
-  font-size: 0.88rem;
-  line-height: 1;
-}
-
-.sv-track-row__queue:hover,
-.sv-track-row__queue:focus {
-  transform: translateY(-1px);
-}
-
-.sv-track-row__queue:focus-visible {
-  outline: 2px solid currentColor;
-  outline-offset: 3px;
-}
-
-.sv-track-row__queue:disabled,
-.sv-track-row__queue.is-disabled {
-  cursor: not-allowed;
-  opacity: 0.5;
-  transform: none;
-}
-
-.sv-player__clear-queue,
-[data-sv-clear-queue] {
-  color: var(--sv-player-muted);
-}
-
-.sv-player__clear-queue:hover,
-.sv-player__clear-queue:focus,
-[data-sv-clear-queue]:hover,
-[data-sv-clear-queue]:focus {
-  color: var(--sv-player-text);
-}
-
-/* ==========================================================================
-   Queue Actions
-   ========================================================================== */
-.sv-player__drawer-queue-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-}
-
-/* Queue drawer remove button alignment fix */
-.sv-player__queue-remove {
-  align-self: center;
-  justify-self: center;
-  display: inline-grid;
-  place-items: center;
-  width: 36px;
-  min-width: 36px;
-  height: 36px;
-  min-height: 36px;
-  padding: 0;
-  overflow: hidden;
-  white-space: nowrap;
-  text-indent: -999px;
-}
-
-.sv-player__queue-remove::before {
-  content: "×";
-  display: block;
-  text-indent: 0;
-  font-size: 1.25rem;
-  line-height: 1;
-}
-
-.sv-player__queue-remove .screen-reader-text,
-.sv-player__queue-remove span {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip-path: inset(50%);
-  white-space: nowrap;
-}
-
-.sv-player__clear-queue[hidden] {
-  display: none;
-}
-
-.sv-player__queue-item {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 8px;
-  align-items: stretch;
-  margin: 0;
-}
-
-.sv-player__queue-remove {
-  align-self: center;
-  min-height: 36px;
-  padding: 6px 10px;
-  cursor: pointer;
-  color: inherit;
-  background: transparent;
-  border: 1px solid var(--sv-player-border);
-  border-radius: var(--sv-radius-pill);
-  font: inherit;
-  font-size: 0.82rem;
-  line-height: 1;
-}
-
-.sv-player__queue-remove:hover,
-.sv-player__queue-remove:focus {
-  background: rgba(255, 255, 255, 0.08);
-}
-
-.sv-player__queue-remove:focus-visible {
-  outline: 2px solid currentColor;
-  outline-offset: 3px;
-}
-
-/* ==========================================================================
-   Queue Drag + Drop
-   ========================================================================== */
-.sv-player__queue-item {
-  grid-template-columns: auto minmax(0, 1fr) auto;
-}
-
-.sv-player__queue-drag {
-  display: inline-grid;
-  place-items: center;
-  align-self: center;
-  width: 30px;
-  height: 36px;
-  cursor: grab;
-  color: var(--sv-player-muted);
-  user-select: none;
-}
-
-.sv-player__queue-item.is-dragging {
-  opacity: 0.45;
-}
-
-.sv-player__queue-item.is-drop-target .sv-player__queue-button {
-  border-color: currentColor;
-  border-style: dashed;
-}
-
-/* ==========================================================================
-   Queue + Action States
-   ========================================================================== */
-.sv-button.is-queued,
-.sv-track-row__queue.is-queued {
-  border-color: var(--sv-button-border);
-  background: rgba(127, 127, 127, 0.12);
-  color: inherit;
-}
-
-.sv-button.is-disabled,
-.sv-button:disabled,
-.sv-track-row__queue.is-disabled,
-.sv-track-row__queue:disabled {
-  cursor: not-allowed;
-  opacity: 0.5;
-  transform: none;
-  filter: none;
-}
-
-.sv-track-row__queue.is-queued,
-.sv-track-row__queue.is-disabled,
-.sv-track-row__queue:disabled {
-  transform: none;
-}
-
-.sv-track-row__play.is-playing {
-  border-color: var(--sv-button-border);
-  background: var(--sv-button-bg);
-  color: var(--sv-button-text);
-}
-
-.sv-track-row--active .sv-track-row__title,
-.sv-track-row.is-current .sv-track-row__title {
-  text-decoration: underline;
-  text-decoration-thickness: 1px;
-  text-underline-offset: 4px;
-}
-
-.sv-track-hero__queue.is-queued {
-  border-color: var(--sv-button-border);
-}
-
-/* ==========================================================================
-   Responsive: Queue Drag + Drop
-   ========================================================================== */
-@media (max-width: 760px) {
-  .sv-player__queue-item {
-    grid-template-columns: auto minmax(0, 1fr);
-  }
-
-  .sv-player__queue-remove {
-    grid-column: 2;
-    justify-self: start;
-    margin-left: 0;
-  }
-}
-
-/* ==========================================================================
-   Player Transport Icons
-   ========================================================================== */
-.sv-player [data-sv-prev],
-.sv-player [data-sv-next],
-.sv-player [data-sv-play-toggle] {
-  position: relative;
-  display: inline-grid;
-  place-items: center;
-  color: inherit;
-  font-size: 0;
-  line-height: 1;
-}
-
-.sv-player [data-sv-play-toggle-icon] {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip-path: inset(50%);
-  white-space: nowrap;
-}
-
-.sv-player [data-sv-prev]::before,
-.sv-player [data-sv-prev]::after,
-.sv-player [data-sv-next]::before,
-.sv-player [data-sv-next]::after,
-.sv-player [data-sv-play-toggle]::before {
-  content: "";
-  display: block;
-}
-
-/* Play button */
-.sv-player [data-sv-play-toggle]::before {
-  width: 0;
-  height: 0;
-  margin-left: 3px;
-  border-top: 9px solid transparent;
-  border-bottom: 9px solid transparent;
-  border-left: 14px solid currentColor;
-}
-
-/* Pause state */
-.sv-player [data-sv-play-toggle].is-playing::before {
-  width: 16px;
-  height: 18px;
-  margin-left: 0;
-  border: 0;
-  background:
-    linear-gradient(currentColor 0 0) left / 5px 100% no-repeat,
-    linear-gradient(currentColor 0 0) right / 5px 100% no-repeat;
-}
-
-/* Previous / Next shared sizing */
-.sv-player [data-sv-prev]::before,
-.sv-player [data-sv-next]::before {
-  position: absolute;
-  width: 14px;
-  height: 16px;
-  background: currentColor;
-}
-
-.sv-player [data-sv-prev]::after,
-.sv-player [data-sv-next]::after {
-  position: absolute;
-  width: 3px;
-  height: 16px;
-  border-radius: 999px;
-  background: currentColor;
-}
-
-/* Previous */
-.sv-player [data-sv-prev]::before {
-  left: 14px;
-  clip-path: polygon(100% 0, 100% 100%, 0 50%);
-}
-
-.sv-player [data-sv-prev]::after {
-  left: 11px;
-}
-
-/* Next */
-.sv-player [data-sv-next]::before {
-  right: 14px;
-  clip-path: polygon(0 0, 0 100%, 100% 50%);
-}
-
-.sv-player [data-sv-next]::after {
-  right: 11px;
-}
-
-.sv-player [data-sv-prev]:disabled,
-.sv-player [data-sv-next]:disabled,
-.sv-player [data-sv-play-toggle]:disabled {
-  opacity: 0.42;
-}
