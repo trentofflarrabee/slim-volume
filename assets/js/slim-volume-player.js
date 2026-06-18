@@ -1727,8 +1727,12 @@ button.classList.remove("is-current", "is-playing");
           this.playlist.length > 1 ||
           (!hasActiveAudio && this.playlist.length > 0);
 
+        const label = hasActiveAudio ? "Clear Upcoming" : "Clear Queue";
+
         this.els.clearQueue.hidden = !canClear;
         this.els.clearQueue.disabled = !canClear;
+        this.els.clearQueue.textContent = label;
+        this.els.clearQueue.setAttribute("aria-label", label);
       }
 
       if (this.els.queueCount) {

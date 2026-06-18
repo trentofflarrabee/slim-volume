@@ -1754,6 +1754,18 @@ body.sv-ajax-loading [data-sv-page-content] {
   transform: none;
 }
 
+.sv-player__clear-queue,
+[data-sv-clear-queue] {
+  color: var(--sv-player-muted);
+}
+
+.sv-player__clear-queue:hover,
+.sv-player__clear-queue:focus,
+[data-sv-clear-queue]:hover,
+[data-sv-clear-queue]:focus {
+  color: var(--sv-player-text);
+}
+
 /* ==========================================================================
    Queue Actions
    ========================================================================== */
