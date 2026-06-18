@@ -1930,3 +1930,100 @@ body.sv-ajax-loading [data-sv-page-content] {
     margin-left: 0;
   }
 }
+
+/* ==========================================================================
+   Player Transport Icons
+   ========================================================================== */
+.sv-player [data-sv-prev],
+.sv-player [data-sv-next],
+.sv-player [data-sv-play-toggle] {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  color: inherit;
+  font-size: 0;
+  line-height: 1;
+}
+
+.sv-player [data-sv-play-toggle-icon] {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.sv-player [data-sv-prev]::before,
+.sv-player [data-sv-prev]::after,
+.sv-player [data-sv-next]::before,
+.sv-player [data-sv-next]::after,
+.sv-player [data-sv-play-toggle]::before {
+  content: "";
+  display: block;
+}
+
+/* Play button */
+.sv-player [data-sv-play-toggle]::before {
+  width: 0;
+  height: 0;
+  margin-left: 3px;
+  border-top: 9px solid transparent;
+  border-bottom: 9px solid transparent;
+  border-left: 14px solid currentColor;
+}
+
+/* Pause state */
+.sv-player [data-sv-play-toggle].is-playing::before {
+  width: 16px;
+  height: 18px;
+  margin-left: 0;
+  border: 0;
+  background:
+    linear-gradient(currentColor 0 0) left / 5px 100% no-repeat,
+    linear-gradient(currentColor 0 0) right / 5px 100% no-repeat;
+}
+
+/* Previous / Next shared sizing */
+.sv-player [data-sv-prev]::before,
+.sv-player [data-sv-next]::before {
+  position: absolute;
+  width: 14px;
+  height: 16px;
+  background: currentColor;
+}
+
+.sv-player [data-sv-prev]::after,
+.sv-player [data-sv-next]::after {
+  position: absolute;
+  width: 3px;
+  height: 16px;
+  border-radius: 999px;
+  background: currentColor;
+}
+
+/* Previous */
+.sv-player [data-sv-prev]::before {
+  left: 14px;
+  clip-path: polygon(100% 0, 100% 100%, 0 50%);
+}
+
+.sv-player [data-sv-prev]::after {
+  left: 11px;
+}
+
+/* Next */
+.sv-player [data-sv-next]::before {
+  right: 14px;
+  clip-path: polygon(0 0, 0 100%, 100% 50%);
+}
+
+.sv-player [data-sv-next]::after {
+  right: 11px;
+}
+
+.sv-player [data-sv-prev]:disabled,
+.sv-player [data-sv-next]:disabled,
+.sv-player [data-sv-play-toggle]:disabled {
+  opacity: 0.42;
+}
