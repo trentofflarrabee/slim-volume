@@ -14,7 +14,6 @@ require_once SLIM_VOLUME_PATH . 'includes/Rewrite.php';
 require_once SLIM_VOLUME_PATH . 'includes/Assets.php';
 require_once SLIM_VOLUME_PATH . 'includes/Frontend/TemplateLoader.php';
 require_once SLIM_VOLUME_PATH . 'includes/Frontend/PlayerData.php';
-require_once SLIM_VOLUME_PATH . 'includes/Frontend/Seo.php';
 require_once SLIM_VOLUME_PATH . 'includes/Admin/ReleaseMetaBoxes.php';
 require_once SLIM_VOLUME_PATH . 'includes/Admin/TrackMetaBoxes.php';
 require_once SLIM_VOLUME_PATH . 'includes/Admin/AdminColumns.php';
@@ -67,7 +66,6 @@ final class Plugin
         add_filter('post_type_link', [Rewrite::class, 'filter_track_permalink'], 10, 2);
 
         add_filter('template_include', [Frontend\TemplateLoader::class, 'template_include']);
-        add_action('wp_head', [Frontend\Seo::class, 'render'], 2);
 
         add_action('wp_enqueue_scripts', [Assets::class, 'enqueue_frontend']);
         add_action('admin_enqueue_scripts', [Assets::class, 'enqueue_admin']);
