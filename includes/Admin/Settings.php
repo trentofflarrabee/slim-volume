@@ -25,6 +25,9 @@ final class Settings
     public static function defaults(): array
     {
         return [
+            'player_enabled'             => true,
+            'release_card_link_behavior' => 'internal',
+
             'ajax_navigation' => true,
             'persistence'    => true,
             'visualizer'     => true,
@@ -278,6 +281,19 @@ if (! isset($visualizer_modes[$visualizer_mode])) {
     $visualizer_mode = 'bars';
 }
 
+$release_card_link_behavior = isset($input['release_card_link_behavior'])
+    ? sanitize_key((string) $input['release_card_link_behavior'])
+    : (string) ($defaults['release_card_link_behavior'] ?? 'internal');
+
+$allowed_release_card_link_behaviors = [
+    'internal',
+    'external_when_available',
+];
+
+if (! in_array($release_card_link_behavior, $allowed_release_card_link_behaviors, true)) {
+    $release_card_link_behavior = 'internal';
+}
+
 $seo = [
     'seo_enabled'             => ! empty($input['seo_enabled']),
     'seo_artist_name'         => sanitize_text_field((string) ($input['seo_artist_name'] ?? '')),
@@ -288,6 +304,9 @@ $seo = [
 
 return array_merge(
     [
+        'player_enabled'             => ! empty($input['player_enabled']),
+        'release_card_link_behavior' => $release_card_link_behavior,
+
         'ajax_navigation' => ! empty($input['ajax_navigation']),
         'persistence'    => ! empty($input['persistence']),
         'visualizer'      => ! empty($input['visualizer']),
@@ -371,6 +390,14 @@ return array_merge(
                 <table class="form-table" role="presentation">
                     <tbody>
                         <?php self::render_checkbox_row(
+                            'player_enabled',
+                            __('Frontend player', 'slim-volume'),
+                            __('Enable the persistent audio player, queue drawer, play buttons, AJAX player navigation, and visualizer features.', 'slim-volume'),
+                            $settings,
+                            __('Disable this for a catalog-only discography with release pages and external links but no site audio player.', 'slim-volume')
+                        ); ?>
+
+                        <?php self::render_checkbox_row(
                             'ajax_navigation',
                             __('AJAX music navigation', 'slim-volume'),
                             __('Keep the player alive while navigating between music pages.', 'slim-volume'),
@@ -391,12 +418,46 @@ return array_merge(
                             $settings
                         ); ?>
 
+                        <?php self::render_setting_select_row(
+                            'visualizer_mode',
+                            __('Visualizer mode', 'slim-volume'),
+                            self::visualizer_modes(),
+                            $settings,
+                            __('Choose Bars or Butterchurn. Butterchurn only appears when the vendor files are installed.', 'slim-volume')
+                        ); ?>
+
                         <?php self::render_checkbox_row(
                             'debug',
                             __('Debug mode', 'slim-volume'),
                             __('Expose extra JavaScript debugging tools in the browser console.', 'slim-volume'),
                             $settings,
                             __('Leave this disabled on production sites unless actively troubleshooting.', 'slim-volume')
+                        ); ?>
+                    </tbody>
+                </table>
+
+                <h2><?php echo esc_html__('Catalog Mode', 'slim-volume'); ?></h2>
+
+                <p>
+                    <?php
+                    echo esc_html__(
+                        'Control how release cards behave for artists who want a simple discography grid that links directly to streaming, Bandcamp, pre-save, or another external destination.',
+                        'slim-volume'
+                    );
+                    ?>
+                </p>
+
+                <table class="form-table" role="presentation">
+                    <tbody>
+                        <?php self::render_setting_select_row(
+                            'release_card_link_behavior',
+                            __('Release card links', 'slim-volume'),
+                            [
+                                'internal'                => __('Slim Volume release pages', 'slim-volume'),
+                                'external_when_available' => __('External release URL when available', 'slim-volume'),
+                            ],
+                            $settings,
+                            __('When external linking is enabled, release cards use each release\'s Primary External URL when present and fall back to the Slim Volume release page otherwise.', 'slim-volume')
                         ); ?>
                     </tbody>
                 </table>
@@ -867,6 +928,44 @@ private static function render_appearance_preview(string $preview_style): void
                     rows="4"
                     name="<?php echo esc_attr(self::OPTION_NAME); ?>[<?php echo esc_attr($key); ?>]"
                 ><?php echo esc_textarea($value); ?></textarea>
+
+                <?php if ($description !== '') : ?>
+                    <p class="description"><?php echo esc_html($description); ?></p>
+                <?php endif; ?>
+            </td>
+        </tr>
+        <?php
+    }
+
+
+
+    private static function render_setting_select_row(
+        string $key,
+        string $label,
+        array $options,
+        array $settings,
+        string $description = ''
+    ): void {
+        $current = (string) ($settings[$key] ?? (self::defaults()[$key] ?? ''));
+
+        ?>
+        <tr>
+            <th scope="row">
+                <label for="slim-volume-<?php echo esc_attr($key); ?>">
+                    <?php echo esc_html($label); ?>
+                </label>
+            </th>
+            <td>
+                <select
+                    id="slim-volume-<?php echo esc_attr($key); ?>"
+                    name="<?php echo esc_attr(self::OPTION_NAME); ?>[<?php echo esc_attr($key); ?>]"
+                >
+                    <?php foreach ($options as $option_value => $option_label) : ?>
+                        <option value="<?php echo esc_attr((string) $option_value); ?>" <?php selected($current, (string) $option_value); ?>>
+                            <?php echo esc_html((string) $option_label); ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
 
                 <?php if ($description !== '') : ?>
                     <p class="description"><?php echo esc_html($description); ?></p>

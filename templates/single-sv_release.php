@@ -1,5 +1,6 @@
 <?php
 
+use SlimVolume\Admin\Settings;
 use SlimVolume\Frontend\PlayerData;
 
 if (! defined('ABSPATH')) {
@@ -9,8 +10,19 @@ if (! defined('ABSPATH')) {
 get_header();
 
 $release_id = get_the_ID();
-$config     = PlayerData::get_release_page_config($release_id);
-$playlist   = $config['playlist'] ?? [];
+$settings   = Settings::get_settings();
+
+$player_enabled = ! empty($settings['player_enabled']);
+$config         = PlayerData::get_release_page_config($release_id);
+$playlist       = $config['playlist'] ?? [];
+
+$primary_external_url     = esc_url_raw((string) get_post_meta($release_id, '_sv_external_url', true));
+$primary_external_label   = trim((string) get_post_meta($release_id, '_sv_external_label', true));
+$primary_external_new_tab = (bool) get_post_meta($release_id, '_sv_external_new_tab', true);
+
+if ($primary_external_label === '') {
+    $primary_external_label = __('Listen', 'slim-volume');
+}
 ?>
 
 <main id="primary" class="sv-release sv-release-single" data-sv-page-content>
@@ -63,13 +75,22 @@ $release_meta = array_filter([$release_type, $release_date_display]);
 <?php endif; ?>
 
             <?php
-                    $release_links = [
-                        'Spotify'     => (string) get_post_meta($release_id, '_sv_spotify_url', true),
-                        'Apple Music' => (string) get_post_meta($release_id, '_sv_apple_music_url', true),
-                        'YouTube'     => (string) get_post_meta($release_id, '_sv_youtube_url', true),
-                        'Bandcamp'    => (string) get_post_meta($release_id, '_sv_bandcamp_url', true),
-                        'Purchase'    => (string) get_post_meta($release_id, '_sv_purchase_url', true),
-                    ];
+                    $release_links = [];
+
+                    if ($primary_external_url !== '') {
+                        $release_links[$primary_external_label] = $primary_external_url;
+                    }
+
+                    $release_links = array_merge(
+                        $release_links,
+                        [
+                            'Spotify'     => (string) get_post_meta($release_id, '_sv_spotify_url', true),
+                            'Apple Music' => (string) get_post_meta($release_id, '_sv_apple_music_url', true),
+                            'YouTube'     => (string) get_post_meta($release_id, '_sv_youtube_url', true),
+                            'Bandcamp'    => (string) get_post_meta($release_id, '_sv_bandcamp_url', true),
+                            'Purchase'    => (string) get_post_meta($release_id, '_sv_purchase_url', true),
+                        ]
+                    );
 
                     $release_links = array_filter($release_links);
                     ?>
@@ -116,6 +137,7 @@ $release_meta = array_filter([$release_type, $release_date_display]);
                 </p>
             </div>
 
+            <?php if ($player_enabled) : ?>
             <div class="sv-release__queue-actions">
                 <button
                     type="button"
@@ -136,6 +158,7 @@ $release_meta = array_filter([$release_type, $release_date_display]);
                     <?php esc_html_e('Queue Release', 'slim-volume'); ?>
                 </button>
             </div>
+            <?php endif; ?>
         </div>
 
         <ol class="sv-track-list sv-release-tracklist__list">
@@ -159,6 +182,7 @@ $release_meta = array_filter([$release_type, $release_date_display]);
                         <?php echo esc_html(str_pad((string) ($index + 1), 2, '0', STR_PAD_LEFT)); ?>
                     </span>
 
+                    <?php if ($player_enabled) : ?>
                     <button
                         type="button"
                         class="sv-track-row__play"
@@ -167,6 +191,7 @@ $release_meta = array_filter([$release_type, $release_date_display]);
                     >
                         <?php esc_html_e('Play', 'slim-volume'); ?>
                     </button>
+                    <?php endif; ?>
 
                     <div class="sv-track-row__body">
                         <a class="sv-track-row__title" href="<?php echo esc_url((string) ($track['trackUrl'] ?? '#')); ?>">
@@ -180,6 +205,7 @@ $release_meta = array_filter([$release_type, $release_date_display]);
                         </span>
                     <?php endif; ?>
 
+                    <?php if ($player_enabled) : ?>
                     <div class="sv-track-row__actions">
                         <button
                             type="button"
@@ -189,6 +215,7 @@ $release_meta = array_filter([$release_type, $release_date_display]);
                             <?php esc_html_e('Queue', 'slim-volume'); ?>
                         </button>
                     </div>
+                    <?php endif; ?>
                 </li>
             <?php endforeach; ?>
         </ol>
@@ -208,11 +235,15 @@ $release_meta = array_filter([$release_type, $release_date_display]);
     </section>
     <?php endif; ?>
 
-    <?php PlayerData::render_page_config($config); ?>
+    <?php if ($player_enabled) : ?>
+        <?php PlayerData::render_page_config($config); ?>
+    <?php endif; ?>
     <?php endwhile; ?>
 </main>
 
-<?php slim_volume_render_player_shell(); ?>
+<?php if ($player_enabled) : ?>
+    <?php slim_volume_render_player_shell(); ?>
+<?php endif; ?>
 
 <?php
 get_footer();

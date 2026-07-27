@@ -1,5 +1,6 @@
 <?php
 
+use SlimVolume\Admin\Settings;
 use SlimVolume\Frontend\PlayerData;
 use SlimVolume\Rewrite;
 
@@ -11,7 +12,10 @@ get_header();
 
 $track_id   = get_the_ID();
 $release_id = Rewrite::get_track_release_id($track_id);
-$config     = PlayerData::get_track_page_config($track_id);
+$settings   = Settings::get_settings();
+
+$player_enabled = ! empty($settings['player_enabled']);
+$config         = PlayerData::get_track_page_config($track_id);
 $lyrics     = (string) get_post_meta($track_id, '_sv_lyrics', true);
 $credits    = (string) get_post_meta($track_id, '_sv_track_credits', true);
 $duration   = (string) get_post_meta($track_id, '_sv_duration', true);
@@ -130,6 +134,7 @@ $track_links = array_filter($track_links);
                         class="sv-track-hero__actions"
                         data-sv-track-index="<?php echo esc_attr((string) ($config['currentIndex'] ?? 0)); ?>"
                     >
+                        <?php if ($player_enabled) : ?>
                         <button
                             type="button"
                             class="sv-button sv-track-hero__play"
@@ -145,6 +150,7 @@ $track_links = array_filter($track_links);
                         >
                             <?php esc_html_e('Queue Track', 'slim-volume'); ?>
                         </button>
+                        <?php endif; ?>
 
                         <?php if ($release_id) : ?>
                             <a class="sv-button sv-button--ghost sv-track-hero__back" href="<?php echo esc_url(get_permalink($release_id)); ?>">
@@ -223,11 +229,15 @@ $track_links = array_filter($track_links);
             </nav>
         <?php endif; ?>
 
-        <?php PlayerData::render_page_config($config); ?>
+        <?php if ($player_enabled) : ?>
+            <?php PlayerData::render_page_config($config); ?>
+        <?php endif; ?>
     <?php endwhile; ?>
 </main>
 
-<?php slim_volume_render_player_shell(); ?>
+<?php if ($player_enabled) : ?>
+    <?php slim_volume_render_player_shell(); ?>
+<?php endif; ?>
 
 <?php
 get_footer();

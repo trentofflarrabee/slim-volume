@@ -136,6 +136,66 @@ final class ReleaseMetaBoxes
 
     public static function render_links(\WP_Post $post): void
     {
+        $external_url     = (string) get_post_meta($post->ID, '_sv_external_url', true);
+        $external_label   = (string) get_post_meta($post->ID, '_sv_external_label', true);
+        $external_new_tab = (bool) get_post_meta($post->ID, '_sv_external_new_tab', true);
+
+        if ($external_label === '') {
+            $external_label = __('Listen', 'slim-volume');
+        }
+
+        ?>
+        <div class="sv-release-primary-link-fields">
+            <p>
+                <label for="sv_external_url">
+                    <strong><?php esc_html_e('Primary External Release URL', 'slim-volume'); ?></strong>
+                </label>
+                <br>
+                <input
+                    type="url"
+                    id="sv_external_url"
+                    name="sv_external_url"
+                    value="<?php echo esc_attr($external_url); ?>"
+                    style="width:100%;max-width:680px;"
+                    placeholder="<?php echo esc_attr__('https://bandcamp.com/album/example', 'slim-volume'); ?>"
+                >
+            </p>
+
+            <p class="description">
+                <?php esc_html_e('Optional. Use this for catalog-mode release cards, a primary frontend CTA, and release SEO sameAs data.', 'slim-volume'); ?>
+            </p>
+
+            <p>
+                <label for="sv_external_label">
+                    <strong><?php esc_html_e('Primary External Link Label', 'slim-volume'); ?></strong>
+                </label>
+                <br>
+                <input
+                    type="text"
+                    id="sv_external_label"
+                    name="sv_external_label"
+                    value="<?php echo esc_attr($external_label); ?>"
+                    style="width:100%;max-width:260px;"
+                    placeholder="<?php echo esc_attr__('Listen', 'slim-volume'); ?>"
+                >
+            </p>
+
+            <p>
+                <label>
+                    <input
+                        type="checkbox"
+                        name="sv_external_new_tab"
+                        value="1"
+                        <?php checked($external_new_tab, true); ?>
+                    >
+                    <?php esc_html_e('Open primary external link in a new tab', 'slim-volume'); ?>
+                </label>
+            </p>
+
+            <hr>
+        </div>
+        <?php
+
         $fields = [
             'sv_spotify_url'     => ['_sv_spotify_url', __('Spotify URL', 'slim-volume')],
             'sv_apple_music_url' => ['_sv_apple_music_url', __('Apple Music URL', 'slim-volume')],
@@ -219,6 +279,7 @@ final class ReleaseMetaBoxes
             'sv_release_type'   => '_sv_release_type',
             'sv_label'          => '_sv_label',
             'sv_catalog_number' => '_sv_catalog_number',
+            'sv_external_label' => '_sv_external_label',
         ];
 
         foreach ($string_fields as $field => $meta_key) {
@@ -230,6 +291,7 @@ final class ReleaseMetaBoxes
         }
 
         $url_fields = [
+            'sv_external_url'    => '_sv_external_url',
             'sv_spotify_url'     => '_sv_spotify_url',
             'sv_apple_music_url' => '_sv_apple_music_url',
             'sv_youtube_url'     => '_sv_youtube_url',
@@ -253,5 +315,8 @@ final class ReleaseMetaBoxes
 
         $featured = isset($_POST['sv_featured_release']) ? '1' : '0';
         update_post_meta($post_id, '_sv_featured_release', $featured);
+
+        $external_new_tab = isset($_POST['sv_external_new_tab']) ? '1' : '0';
+        update_post_meta($post_id, '_sv_external_new_tab', $external_new_tab);
     }
 }

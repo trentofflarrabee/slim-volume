@@ -16,6 +16,7 @@ if (! defined('ABSPATH')) {
 final class Seo
 {
     private const SAME_AS_LINK_KEYS = [
+        'external',
         'spotify',
         'appleMusic',
         'youtube',
@@ -305,6 +306,15 @@ final class Seo
         $description  = $full ? self::post_description($release_id) : '';
         $release_type = (string) get_post_meta($release_id, '_sv_release_type', true);
         $genre        = (string) get_post_meta($release_id, '_sv_genre', true);
+        $same_as      = self::same_as_links(
+            [
+                'external'   => (string) get_post_meta($release_id, '_sv_external_url', true),
+                'spotify'    => (string) get_post_meta($release_id, '_sv_spotify_url', true),
+                'appleMusic' => (string) get_post_meta($release_id, '_sv_apple_music_url', true),
+                'youtube'    => (string) get_post_meta($release_id, '_sv_youtube_url', true),
+                'bandcamp'   => (string) get_post_meta($release_id, '_sv_bandcamp_url', true),
+            ]
+        );
 
         return self::clean_schema(
             [
@@ -318,6 +328,7 @@ final class Seo
                 'genre'            => $genre,
                 'albumReleaseType' => self::album_release_type($release_type),
                 'byArtist'         => self::artist_schema($artist),
+                'sameAs'           => $same_as,
             ]
         );
     }

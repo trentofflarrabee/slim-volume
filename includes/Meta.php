@@ -23,6 +23,8 @@ final class Meta
             '_sv_release_type',
             '_sv_label',
             '_sv_catalog_number',
+            '_sv_external_url',
+            '_sv_external_label',
             '_sv_spotify_url',
             '_sv_apple_music_url',
             '_sv_youtube_url',
@@ -52,6 +54,20 @@ final class Meta
                 'type'              => 'string',
                 'show_in_rest'      => true,
                 'sanitize_callback' => 'wp_kses_post',
+                'auth_callback'     => [self::class, 'can_edit_post_meta'],
+            ]
+        );
+
+
+        register_post_meta(
+            PostTypes::RELEASE,
+            '_sv_external_new_tab',
+            [
+                'single'            => true,
+                'type'              => 'boolean',
+                'default'           => false,
+                'show_in_rest'      => true,
+                'sanitize_callback' => [self::class, 'sanitize_bool'],
                 'auth_callback'     => [self::class, 'can_edit_post_meta'],
             ]
         );

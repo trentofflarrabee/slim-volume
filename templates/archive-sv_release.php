@@ -5,6 +5,8 @@
  * @package SlimVolume
  */
 
+use SlimVolume\Admin\Settings;
+
 if (! defined('ABSPATH')) {
     exit;
 }
@@ -12,6 +14,16 @@ if (! defined('ABSPATH')) {
 $search_query = isset($_GET['sv_release_q'])
     ? sanitize_text_field(wp_unslash($_GET['sv_release_q']))
     : '';
+
+$settings = Settings::get_settings();
+
+$release_card_link_behavior = isset($settings['release_card_link_behavior'])
+    ? sanitize_key((string) $settings['release_card_link_behavior'])
+    : 'internal';
+
+if (! in_array($release_card_link_behavior, ['internal', 'external_when_available'], true)) {
+    $release_card_link_behavior = 'internal';
+}
 
 $sort = isset($_GET['sv_release_sort'])
     ? sanitize_key(wp_unslash($_GET['sv_release_sort']))
@@ -262,10 +274,29 @@ get_header();
 
                 $release_id   = get_the_ID();
                 $release_meta = $format_release_meta($release_id);
+
+                $external_url     = esc_url_raw((string) get_post_meta($release_id, '_sv_external_url', true));
+                $external_label   = trim((string) get_post_meta($release_id, '_sv_external_label', true));
+                $external_new_tab = (bool) get_post_meta($release_id, '_sv_external_new_tab', true);
+
+                if ($external_label === '') {
+                    $external_label = __('Listen', 'slim-volume');
+                }
+
+                $use_external_link = $external_url !== '' && 'external_when_available' === $release_card_link_behavior;
+                $card_url          = $use_external_link ? $external_url : get_permalink($release_id);
+                $card_cta          = $use_external_link ? $external_label : __('View Release', 'slim-volume');
                 ?>
 
                 <article <?php post_class('sv-release-card'); ?>>
-                    <a class="sv-release-card__link" href="<?php the_permalink(); ?>">
+                    <a
+                        class="sv-release-card__link"
+                        href="<?php echo esc_url($card_url); ?>"
+                        <?php if ($use_external_link && $external_new_tab) : ?>
+                            target="_blank"
+                            rel="noopener noreferrer"
+                        <?php endif; ?>
+                    >
                         <?php if (has_post_thumbnail()) : ?>
                             <div class="sv-release-card__art">
                                 <?php the_post_thumbnail('medium_large'); ?>
@@ -282,7 +313,7 @@ get_header();
                             <?php endif; ?>
 
                             <span class="sv-release-card__cta">
-                                <?php esc_html_e('View Release', 'slim-volume'); ?>
+                                <?php echo esc_html($card_cta); ?>
                             </span>
                         </div>
                     </a>
@@ -327,7 +358,9 @@ get_header();
     <?php endif; ?>
 </main>
 
-<?php slim_volume_render_player_shell(); ?>
+<?php if (! empty($settings['player_enabled'])) : ?>
+    <?php slim_volume_render_player_shell(); ?>
+<?php endif; ?>
 
 <?php
 get_footer();

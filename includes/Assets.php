@@ -40,6 +40,10 @@ final class Assets
 
 $settings = Admin\Settings::get_settings();
 
+if (empty($settings['player_enabled'])) {
+    return;
+}
+
 $visualizer_mode = isset($settings['visualizer_mode'])
     ? sanitize_key((string) $settings['visualizer_mode'])
     : 'bars';

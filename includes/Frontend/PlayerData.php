@@ -198,6 +198,7 @@ final class PlayerData
     private static function get_track_links(int $track_id, int $release_id = 0): array
     {
         $map = [
+            'external'   => '_sv_external_url',
             'spotify'    => '_sv_spotify_url',
             'appleMusic' => '_sv_apple_music_url',
             'youtube'    => '_sv_youtube_url',
