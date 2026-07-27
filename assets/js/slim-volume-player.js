@@ -1685,25 +1685,94 @@ button.classList.remove("is-current", "is-playing");
       if (this.els.drawerLinks) {
         this.els.drawerLinks.innerHTML = "";
 
-        const labels = {
-          spotify: "Spotify",
-          appleMusic: "Apple Music",
-          youtube: "YouTube",
-          bandcamp: "Bandcamp",
-          purchase: "Purchase",
-          download: "Download",
+        const services = {
+          spotify: {
+            label: "Listen on Spotify",
+            icon: `
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <circle cx="12" cy="12" r="9.25"></circle>
+                <path d="M6.8 9.15c3.55-1.05 7.75-.75 10.65.85"></path>
+                <path d="M7.4 12.25c3.05-.78 6.55-.48 9.05.82"></path>
+                <path d="M8.05 15.25c2.5-.58 5.3-.28 7.35.78"></path>
+              </svg>
+            `,
+          },
+
+          appleMusic: {
+            label: "Listen on Apple Music",
+            icon: `
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <rect x="4.25" y="3.75" width="15.5" height="16.5" rx="3"></rect>
+                <path d="M14.75 7.15v8.1"></path>
+                <path d="M14.75 8.1 9.6 9.2v6.6"></path>
+                <circle cx="8.25" cy="16.25" r="1.7"></circle>
+                <circle cx="13.4" cy="14.95" r="1.7"></circle>
+              </svg>
+            `,
+          },
+
+          youtube: {
+            label: "Watch on YouTube",
+            icon: `
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <rect x="3.25" y="6.25" width="17.5" height="11.5" rx="3.25"></rect>
+                <path
+                  class="sv-player__service-icon-fill"
+                  d="m10 9.25 5 2.75-5 2.75Z"
+                ></path>
+              </svg>
+            `,
+          },
+
+          bandcamp: {
+            label: "Listen on Bandcamp",
+            icon: `
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path
+                  class="sv-player__service-icon-fill"
+                  d="M7.15 7.25h12.1l-4.4 9.5H2.75Z"
+                ></path>
+              </svg>
+            `,
+          },
+
+          purchase: {
+            label: "Purchase this track",
+            icon: `
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path d="M6.5 8.25h11l1 11h-13Z"></path>
+                <path d="M9 8.25V6.8a3 3 0 0 1 6 0v1.45"></path>
+              </svg>
+            `,
+          },
+
+          download: {
+            label: "Download this track",
+            icon: `
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path d="M12 4.5v10.25"></path>
+                <path d="m8.25 11.25 3.75 3.75 3.75-3.75"></path>
+                <path d="M5.25 18.5h13.5"></path>
+              </svg>
+            `,
+          },
         };
 
         const links = track.links || {};
 
-        Object.keys(labels).forEach((key) => {
+        Object.keys(services).forEach((key) => {
           if (!links[key]) return;
 
+          const service = services[key];
           const link = document.createElement("a");
-          link.className = "sv-link-pill";
-          link.href = links[key];
-          link.textContent = labels[key];
 
+          link.className =
+            `sv-player__service-link sv-player__service-link--${key}`;
+
+          link.href = links[key];
+          link.innerHTML = service.icon;
+          link.setAttribute("aria-label", service.label);
+          link.setAttribute("title", service.label);
           link.target = "_blank";
           link.rel = "noopener noreferrer";
 
