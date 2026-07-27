@@ -570,8 +570,6 @@ return array_merge(
     <?php
     self::render_preset_row($settings);
 
-    self::render_text_row('player_bg', __('Player background', 'slim-volume'), $settings, '--sv-player-bg');
-    self::render_text_row('player_text', __('Player text', 'slim-volume'), $settings, '--sv-player-text');
                         self::render_text_row('player_bg', __('Player background', 'slim-volume'), $settings, '--sv-player-bg');
                         self::render_text_row('player_text', __('Player text', 'slim-volume'), $settings, '--sv-player-text');
                         self::render_text_row('player_muted', __('Player muted text', 'slim-volume'), $settings, '--sv-player-muted');
@@ -595,6 +593,8 @@ return array_merge(
 
                 <?php submit_button(__('Save Settings', 'slim-volume')); ?>
             </form>
+
+            <?php self::render_preview_script(); ?>
         </div>
         <?php
     }
@@ -740,6 +740,24 @@ private static function render_preview_css(): void
             background: var(--sv-player-accent);
         }
 
+        .sv-settings-color-control {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .sv-settings-color-control input[type="color"] {
+            width: 44px;
+            height: 34px;
+            padding: 0 2px;
+            cursor: pointer;
+        }
+
+        .sv-settings-color-control .regular-text {
+            max-width: 280px;
+        }
+
         @media (max-width: 782px) {
             .sv-settings-preview__player {
                 grid-template-columns: 52px minmax(0, 1fr);
@@ -762,7 +780,7 @@ private static function render_preview_css(): void
 private static function render_appearance_preview(string $preview_style): void
 {
     ?>
-    <div class="sv-settings-preview" style="<?php echo esc_attr($preview_style); ?>">
+    <div class="sv-settings-preview" data-sv-settings-preview style="<?php echo esc_attr($preview_style); ?>">
         <p class="sv-settings-preview__label">
             <?php echo esc_html__('Appearance Preview', 'slim-volume'); ?>
         </p>
@@ -802,6 +820,237 @@ private static function render_appearance_preview(string $preview_style): void
     <?php
 }
 
+    private static function render_preview_script(): void
+    {
+        $presets_json = wp_json_encode(
+            self::appearance_presets(),
+            JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT
+        );
+
+        if (! is_string($presets_json) || $presets_json === '') {
+            $presets_json = '{}';
+        }
+
+        $defaults_json = wp_json_encode(
+            self::defaults(),
+            JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT
+        );
+
+        if (! is_string($defaults_json) || $defaults_json === '') {
+            $defaults_json = '{}';
+        }
+
+        $option_name_json = wp_json_encode(
+            self::OPTION_NAME,
+            JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT
+        );
+
+        if (! is_string($option_name_json) || $option_name_json === '') {
+            $option_name_json = '"slim_volume_settings"';
+        }
+
+        ?>
+        <script>
+            (function () {
+                const preview = document.querySelector('[data-sv-settings-preview]');
+
+                if (!preview) {
+                    return;
+                }
+
+                const optionName = <?php echo $option_name_json; ?>;
+                const presets = <?php echo $presets_json; ?>;
+                const defaults = <?php echo $defaults_json; ?>;
+
+                const map = {
+                    player_bg: '--sv-player-bg',
+                    player_text: '--sv-player-text',
+                    player_muted: '--sv-player-muted',
+                    player_border: '--sv-player-border',
+                    player_accent: '--sv-player-accent',
+                    button_bg: '--sv-button-bg',
+                    button_text: '--sv-button-text',
+                    button_border: '--sv-button-border',
+                    card_border: '--sv-card-border',
+                    radius_card: '--sv-radius-card',
+                    radius_art: '--sv-radius-art',
+                    radius_control: '--sv-radius-control',
+                    radius_small: '--sv-radius-small',
+                    radius_pill: '--sv-radius-pill'
+                };
+
+                const colorKeys = [
+                    'player_bg',
+                    'player_text',
+                    'player_muted',
+                    'player_border',
+                    'player_accent',
+                    'button_bg',
+                    'button_text',
+                    'button_border',
+                    'card_border'
+                ];
+
+                function getField(key) {
+                    return document.querySelector('[name="' + optionName + '[' + key + ']"]');
+                }
+
+                function getColorField(key) {
+                    return document.querySelector('[data-sv-color-picker="' + key + '"]');
+                }
+
+                function isHexColor(value) {
+                    return /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i.test(String(value || '').trim());
+                }
+
+                function normalizeHex(value) {
+                    const nextValue = String(value || '').trim();
+
+                    if (/^#[0-9a-f]{6}$/i.test(nextValue)) {
+                        return nextValue;
+                    }
+
+                    if (/^#[0-9a-f]{3}$/i.test(nextValue)) {
+                        return '#' + nextValue.slice(1).split('').map(function (part) {
+                            return part + part;
+                        }).join('');
+                    }
+
+                    return '';
+                }
+
+                function readFieldValue(key) {
+                    const field = getField(key);
+
+                    if (!field) {
+                        return defaults[key] || '';
+                    }
+
+                    const value = String(field.value || '').trim();
+
+                    return value || defaults[key] || '';
+                }
+
+                function applyValue(key, value) {
+                    if (!map[key]) {
+                        return;
+                    }
+
+                    const fallback = defaults[key] || '';
+                    const nextValue = String(value || fallback || '').trim();
+
+                    if (nextValue === '') {
+                        preview.style.removeProperty(map[key]);
+                        return;
+                    }
+
+                    preview.style.setProperty(map[key], nextValue);
+                }
+
+                function syncColorPicker(key, value) {
+                    if (colorKeys.indexOf(key) === -1) {
+                        return;
+                    }
+
+                    const colorField = getColorField(key);
+
+                    if (!colorField) {
+                        return;
+                    }
+
+                    const normalized = normalizeHex(value);
+
+                    if (normalized !== '') {
+                        colorField.value = normalized;
+                    }
+                }
+
+                function applyCurrentFields() {
+                    Object.keys(map).forEach(function (key) {
+                        const value = readFieldValue(key);
+
+                        syncColorPicker(key, value);
+                        applyValue(key, value);
+                    });
+                }
+
+                function setPresetToCustom() {
+                    const presetField = getField('appearance_preset');
+
+                    if (presetField && presetField.value !== 'custom') {
+                        presetField.value = 'custom';
+                    }
+                }
+
+                Object.keys(map).forEach(function (key) {
+                    const field = getField(key);
+
+                    if (!field) {
+                        return;
+                    }
+
+                    const handleManualChange = function () {
+                        const value = readFieldValue(key);
+
+                        setPresetToCustom();
+                        syncColorPicker(key, value);
+                        applyValue(key, value);
+                    };
+
+                    field.addEventListener('input', handleManualChange);
+                    field.addEventListener('change', handleManualChange);
+                });
+
+                colorKeys.forEach(function (key) {
+                    const colorField = getColorField(key);
+                    const textField = getField(key);
+
+                    if (!colorField || !textField) {
+                        return;
+                    }
+
+                    const handleColorChange = function () {
+                        textField.value = colorField.value;
+                        setPresetToCustom();
+                        applyValue(key, colorField.value);
+                    };
+
+                    colorField.addEventListener('input', handleColorChange);
+                    colorField.addEventListener('change', handleColorChange);
+                });
+
+                const presetField = getField('appearance_preset');
+
+                if (presetField) {
+                    presetField.addEventListener('change', function () {
+                        const preset = presets[presetField.value] || {};
+                        const values = preset.values || {};
+
+                        if (presetField.value === 'custom') {
+                            applyCurrentFields();
+                            return;
+                        }
+
+                        Object.keys(map).forEach(function (key) {
+                            const value = values[key] || defaults[key] || '';
+                            const field = getField(key);
+
+                            if (field && value !== '') {
+                                field.value = value;
+                            }
+
+                            syncColorPicker(key, value);
+                            applyValue(key, value);
+                        });
+                    });
+                }
+
+                applyCurrentFields();
+            })();
+        </script>
+        <?php
+    }
+
     private static function render_checkbox_row(
         string $key,
         string $label,
@@ -836,12 +1085,67 @@ private static function render_appearance_preview(string $preview_style): void
 
     
 
+    private static function color_setting_keys(): array
+    {
+        return [
+            'player_bg',
+            'player_text',
+            'player_muted',
+            'player_border',
+            'player_accent',
+            'button_bg',
+            'button_text',
+            'button_border',
+            'card_border',
+        ];
+    }
+
+    private static function is_color_setting(string $key): bool
+    {
+        return in_array($key, self::color_setting_keys(), true);
+    }
+
+    private static function normalize_hex_color(string $value): string
+    {
+        $value = trim($value);
+
+        if (preg_match('/^#[0-9a-fA-F]{6}$/', $value) === 1) {
+            return $value;
+        }
+
+        if (preg_match('/^#([0-9a-fA-F])([0-9a-fA-F])([0-9a-fA-F])$/', $value, $matches) === 1) {
+            return '#' . $matches[1] . $matches[1] . $matches[2] . $matches[2] . $matches[3] . $matches[3];
+        }
+
+        return '';
+    }
+
+    private static function color_picker_value(string $key, array $settings): string
+    {
+        $value = self::normalize_hex_color((string) ($settings[$key] ?? ''));
+
+        if ($value !== '') {
+            return $value;
+        }
+
+        $default_value = self::normalize_hex_color((string) (self::defaults()[$key] ?? ''));
+
+        if ($default_value !== '') {
+            return $default_value;
+        }
+
+        return '#000000';
+    }
+
     private static function render_text_row(
         string $key,
         string $label,
         array $settings,
         string $css_variable
     ): void {
+        $value = (string) ($settings[$key] ?? '');
+        $placeholder = (string) (self::defaults()[$key] ?? '');
+        $is_color = self::is_color_setting($key);
         ?>
         <tr>
             <th scope="row">
@@ -850,14 +1154,34 @@ private static function render_appearance_preview(string $preview_style): void
                 </label>
             </th>
             <td>
-                <input
-                    id="slim-volume-<?php echo esc_attr($key); ?>"
-                    class="regular-text code"
-                    type="text"
-                    name="<?php echo esc_attr(self::OPTION_NAME); ?>[<?php echo esc_attr($key); ?>]"
-                    value="<?php echo esc_attr((string) ($settings[$key] ?? '')); ?>"
-                    placeholder="<?php echo esc_attr((string) (self::defaults()[$key] ?? '')); ?>"
-                >
+                <?php if ($is_color) : ?>
+                    <div class="sv-settings-color-control">
+                        <input
+                            type="color"
+                            value="<?php echo esc_attr(self::color_picker_value($key, $settings)); ?>"
+                            data-sv-color-picker="<?php echo esc_attr($key); ?>"
+                            aria-label="<?php echo esc_attr(sprintf(__('%s color picker', 'slim-volume'), $label)); ?>"
+                        >
+
+                        <input
+                            id="slim-volume-<?php echo esc_attr($key); ?>"
+                            class="regular-text code"
+                            type="text"
+                            name="<?php echo esc_attr(self::OPTION_NAME); ?>[<?php echo esc_attr($key); ?>]"
+                            value="<?php echo esc_attr($value); ?>"
+                            placeholder="<?php echo esc_attr($placeholder); ?>"
+                        >
+                    </div>
+                <?php else : ?>
+                    <input
+                        id="slim-volume-<?php echo esc_attr($key); ?>"
+                        class="regular-text code"
+                        type="text"
+                        name="<?php echo esc_attr(self::OPTION_NAME); ?>[<?php echo esc_attr($key); ?>]"
+                        value="<?php echo esc_attr($value); ?>"
+                        placeholder="<?php echo esc_attr($placeholder); ?>"
+                    >
+                <?php endif; ?>
 
                 <p class="description">
                     <?php
@@ -867,6 +1191,12 @@ private static function render_appearance_preview(string $preview_style): void
                     );
                     ?>
                 </p>
+
+                <?php if ($is_color) : ?>
+                    <p class="description">
+                        <?php echo esc_html__('Use the color picker for simple hex colors, or type an advanced CSS color value like rgba(), currentColor, or var(--theme-color).', 'slim-volume'); ?>
+                    </p>
+                <?php endif; ?>
             </td>
         </tr>
         <?php
@@ -1001,7 +1331,7 @@ private static function render_appearance_preview(string $preview_style): void
                 </select>
 
                 <p class="description">
-                    <?php echo esc_html__('Choose a starter appearance preset. Selecting a preset applies its saved color and radius values when settings are saved.', 'slim-volume'); ?>
+                    <?php echo esc_html__('Choose a starter appearance preset. Selecting a preset updates the preview immediately and fills the color/radius fields below.', 'slim-volume'); ?>
                 </p>
             </td>
         </tr>
