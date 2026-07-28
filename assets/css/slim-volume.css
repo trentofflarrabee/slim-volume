@@ -379,6 +379,7 @@ body.sv-player-ready {
 }
 
 .sv-release-card__art {
+  position: relative;
   display: grid;
   place-items: center;
   overflow: hidden;
@@ -390,6 +391,21 @@ body.sv-player-ready {
     border-color var(--sv-transition-fast),
     transform var(--sv-transition-fast),
     box-shadow var(--sv-transition-fast);
+}
+
+.sv-release-card__art::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: rgba(0, 0, 0, 0.18);
+  opacity: 0;
+  transition: opacity 220ms ease;
+}
+
+.sv-release-card:hover .sv-release-card__art::after,
+.sv-release-card:focus-within .sv-release-card__art::after {
+  opacity: 1;
 }
 
 .sv-release-card__art img {
@@ -422,15 +438,10 @@ body.sv-player-ready {
 
 .sv-release-card:hover .sv-release-card__art,
 .sv-release-card:focus-within .sv-release-card__art {
-  border-color: var(--sv-button-border);
-  transform: translateY(-2px);
   box-shadow: 0 14px 30px rgba(0, 0, 0, 0.14);
 }
 
-.sv-release-card:hover .sv-release-card__art img,
-.sv-release-card:focus-within .sv-release-card__art img {
-  transform: scale(1.025);
-}
+
 
 .sv-release-card__body {
   display: grid;
