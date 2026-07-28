@@ -17,6 +17,15 @@
 
     queueDragIndex: null,
 
+    timedLyrics: {
+      root: null,
+      trackId: 0,
+      lines: [],
+      activeIndex: -1,
+      suppressAutoFollowUntil: 0,
+    },
+    pendingTimedLyricsSeek: null,
+
     visualizer: {
       context: null,
       analyser: null,
@@ -67,6 +76,7 @@
       this.bindTrackPlayButtons();
       this.bindTrackQueueButtons();
       this.bindPageQueueButtons();
+      this.bindTimedLyrics();
       this.syncNowPlayingUi();
       this.syncPlayButtonState();
       this.renderDrawer();
@@ -328,6 +338,7 @@
       this.bindTrackPlayButtons();
       this.bindTrackQueueButtons();
       this.bindPageQueueButtons();
+      this.bindTimedLyrics();
       this.syncNowPlayingUi();
       this.syncPlayButtonState();
       this.renderDrawer();
@@ -612,19 +623,46 @@
         if (event.key === "Escape" && this.drawerOpen) {
           this.setDrawerOpen(false);
         }
+
+        if (
+          this.timedLyrics.root &&
+          ["ArrowUp", "ArrowDown", "PageUp", "PageDown", "Home", "End"].includes(
+            event.key,
+          )
+        ) {
+          this.suppressTimedLyricsAutoFollow();
+        }
       });
+
+      window.addEventListener(
+        "wheel",
+        () => {
+          this.suppressTimedLyricsAutoFollow();
+        },
+        { passive: true },
+      );
+
+      window.addEventListener(
+        "touchmove",
+        () => {
+          this.suppressTimedLyricsAutoFollow();
+        },
+        { passive: true },
+      );
     },
 
     bindAudioEvents() {
       this.audio.addEventListener("play", () => {
         this.syncPlayButtonState();
         this.syncNowPlayingUi();
+        this.syncTimedLyrics({ force: true });
         this.startVisualizer();
       });
 
       this.audio.addEventListener("pause", () => {
         this.syncPlayButtonState();
         this.renderDrawer();
+        this.syncTimedLyrics({ force: true });
         this.stopVisualizer();
         this.drawVisualizerIdle();
         this.scheduleSaveState();
@@ -632,20 +670,24 @@
 
       this.audio.addEventListener("ended", () => {
         this.syncPlayButtonState();
+        this.syncTimedLyrics({ force: true });
         this.stopVisualizer();
         this.next();
       });
 
       this.audio.addEventListener("loadedmetadata", () => {
         this.applyPendingRestoreTime();
+        this.applyPendingTimedLyricsSeek();
         this.updateDurationUi();
         this.updateProgressUi();
+        this.syncTimedLyrics({ force: true });
         this.renderDrawer();
         this.scheduleSaveState();
       });
 
       this.audio.addEventListener("timeupdate", () => {
         this.updateProgressUi();
+        this.syncTimedLyrics();
         this.scheduleSaveState();
       });
       window.addEventListener("beforeunload", () => {
@@ -1249,6 +1291,7 @@
       this.syncPlayButtonState();
       this.renderDrawer();
       this.scheduleSaveState();
+      this.applyPendingTimedLyricsSeek();
 
       if (options.autoplay) {
         this.play();
@@ -1328,6 +1371,7 @@
 
       try {
         this.audio.currentTime = Math.max(0, seconds);
+        this.syncTimedLyrics({ force: true });
       } catch (err) {
         console.warn("[SVPlayer] Seek failed.", err);
       }
@@ -1362,6 +1406,302 @@
       this.updateProgressUi();
       this.updateDurationUi();
       this.renderDrawer();
+      this.syncTimedLyrics({ force: true });
+    },
+
+    bindTimedLyrics() {
+      const root = document.querySelector("[data-sv-timed-lyrics]");
+
+      if (this.timedLyrics.root === root && root) {
+        this.syncTimedLyrics({ force: true });
+        return;
+      }
+
+      this.resetTimedLyrics();
+
+      if (!root) {
+        return;
+      }
+
+      const trackId = parseInt(
+        root.getAttribute("data-sv-track-id") || "0",
+        10,
+      );
+
+      if (!Number.isFinite(trackId) || trackId <= 0) {
+        return;
+      }
+
+      const lines = Array.from(
+        root.querySelectorAll("[data-sv-lyric-start]"),
+      )
+        .map((element) => {
+          const start = Number.parseFloat(
+            element.getAttribute("data-sv-lyric-start") || "",
+          );
+
+          return {
+            element,
+            start,
+          };
+        })
+        .filter((line) => Number.isFinite(line.start));
+
+      if (!lines.length) {
+        return;
+      }
+
+      this.timedLyrics.root = root;
+      this.timedLyrics.trackId = trackId;
+      this.timedLyrics.lines = lines;
+      this.timedLyrics.activeIndex = -1;
+
+      root.classList.add("is-enhanced");
+
+      lines.forEach((line) => {
+        const labelText = (line.element.textContent || "").trim();
+        const timeLabel = this.formatTime(line.start);
+
+        line.element.setAttribute("role", "button");
+        line.element.setAttribute("tabindex", "0");
+        line.element.setAttribute(
+          "aria-label",
+          `Play from ${timeLabel}: ${labelText}`,
+        );
+
+        const activate = (event) => {
+          event.preventDefault();
+          this.playFromTimedLyric(line.start);
+        };
+
+        line.element.addEventListener("click", activate);
+        line.element.addEventListener("keydown", (event) => {
+          if (event.key !== "Enter" && event.key !== " ") {
+            return;
+          }
+
+          activate(event);
+        });
+      });
+
+      this.syncTimedLyrics({ force: true });
+    },
+
+    resetTimedLyrics() {
+      const state = this.timedLyrics;
+
+      if (state.root) {
+        state.root.classList.remove(
+          "is-enhanced",
+          "is-current-track",
+          "is-following",
+        );
+        state.root.removeAttribute("data-sv-lyric-state");
+      }
+
+      state.lines.forEach((line) => {
+        line.element.classList.remove("is-active", "is-past", "is-upcoming");
+        line.element.removeAttribute("aria-current");
+      });
+
+      state.root = null;
+      state.trackId = 0;
+      state.lines = [];
+      state.activeIndex = -1;
+      state.suppressAutoFollowUntil = 0;
+    },
+
+    playFromTimedLyric(start) {
+      if (!Number.isFinite(start) || !this.timedLyrics.trackId) {
+        return;
+      }
+
+      const trackId = this.timedLyrics.trackId;
+      const currentTrack = this.getCurrentTrack();
+      const isCurrentTrack =
+        currentTrack && String(currentTrack.id) === String(trackId);
+
+      this.timedLyrics.suppressAutoFollowUntil = 0;
+
+      if (isCurrentTrack && this.hasActiveAudio()) {
+        this.seek(start);
+        this.play();
+        return;
+      }
+
+      const tracks = this.albumTracklist.length
+        ? this.albumTracklist
+        : this.playlist;
+
+      const index = tracks.findIndex((track) => {
+        return track && String(track.id) === String(trackId);
+      });
+
+      if (index < 0 || !tracks[index] || !tracks[index].audioUrl) {
+        return;
+      }
+
+      this.pendingTimedLyricsSeek = {
+        trackId,
+        start,
+        autoplay: true,
+      };
+
+      this.loadPlaylist(tracks, {
+        startIndex: index,
+        autoplay: false,
+        load: true,
+      });
+    },
+
+    applyPendingTimedLyricsSeek() {
+      const pending = this.pendingTimedLyricsSeek;
+
+      if (!pending || !this.audio) {
+        return;
+      }
+
+      const track = this.getCurrentTrack();
+
+      if (!track || String(track.id) !== String(pending.trackId)) {
+        return;
+      }
+
+      if (this.audio.readyState < 1) {
+        return;
+      }
+
+      this.pendingTimedLyricsSeek = null;
+      this.seek(pending.start);
+
+      if (pending.autoplay) {
+        this.play();
+      }
+    },
+
+    suppressTimedLyricsAutoFollow(duration = 6000) {
+      if (!this.timedLyrics.root) {
+        return;
+      }
+
+      this.timedLyrics.suppressAutoFollowUntil = Date.now() + duration;
+    },
+
+    syncTimedLyrics(options = {}) {
+      const state = this.timedLyrics;
+
+      if (!state.root || !state.lines.length || !this.audio) {
+        return;
+      }
+
+      const currentTrack = this.getCurrentTrack();
+      const matchesTrack =
+        currentTrack &&
+        String(currentTrack.id) === String(state.trackId);
+      const isPlaying =
+        matchesTrack && !this.audio.paused && !this.audio.ended;
+
+      state.root.classList.toggle("is-current-track", !!matchesTrack);
+      state.root.classList.toggle("is-following", !!isPlaying);
+      state.root.setAttribute(
+        "data-sv-lyric-state",
+        isPlaying ? "playing" : matchesTrack ? "paused" : "idle",
+      );
+
+      if (!matchesTrack) {
+        state.activeIndex = -1;
+
+        state.lines.forEach((line) => {
+          line.element.classList.remove(
+            "is-active",
+            "is-past",
+            "is-upcoming",
+          );
+          line.element.removeAttribute("aria-current");
+        });
+
+        return;
+      }
+
+      const activeIndex = this.getActiveTimedLyricIndex(
+        this.audio.currentTime || 0,
+      );
+      const activeChanged = activeIndex !== state.activeIndex;
+
+      if (!activeChanged && !options.force) {
+        return;
+      }
+
+      state.activeIndex = activeIndex;
+
+      state.lines.forEach((line, index) => {
+        const isActive = index === activeIndex;
+        const isPast = activeIndex >= 0 && index < activeIndex;
+        const isUpcoming = activeIndex < 0 || index > activeIndex;
+
+        line.element.classList.toggle("is-active", isActive);
+        line.element.classList.toggle("is-past", isPast);
+        line.element.classList.toggle("is-upcoming", isUpcoming);
+
+        if (isActive) {
+          line.element.setAttribute("aria-current", "true");
+        } else {
+          line.element.removeAttribute("aria-current");
+        }
+      });
+
+      if (isPlaying && activeChanged && activeIndex >= 0) {
+        this.maybeAutoFollowTimedLyric(state.lines[activeIndex].element);
+      }
+    },
+
+    getActiveTimedLyricIndex(currentTime) {
+      const lines = this.timedLyrics.lines;
+      let low = 0;
+      let high = lines.length - 1;
+      let match = -1;
+
+      while (low <= high) {
+        const middle = Math.floor((low + high) / 2);
+
+        if (lines[middle].start <= currentTime) {
+          match = middle;
+          low = middle + 1;
+        } else {
+          high = middle - 1;
+        }
+      }
+
+      return match;
+    },
+
+    maybeAutoFollowTimedLyric(element) {
+      if (
+        !element ||
+        Date.now() < this.timedLyrics.suppressAutoFollowUntil
+      ) {
+        return;
+      }
+
+      const rect = element.getBoundingClientRect();
+      const viewportHeight =
+        window.innerHeight || document.documentElement.clientHeight || 0;
+      const upperBoundary = viewportHeight * 0.24;
+      const lowerBoundary = viewportHeight * 0.72;
+
+      if (rect.top >= upperBoundary && rect.bottom <= lowerBoundary) {
+        return;
+      }
+
+      const reduceMotion = window.matchMedia(
+        "(prefers-reduced-motion: reduce)",
+      ).matches;
+
+      element.scrollIntoView({
+        behavior: reduceMotion ? "auto" : "smooth",
+        block: "center",
+        inline: "nearest",
+      });
     },
 
     updateMetaUi(track) {

@@ -990,6 +990,83 @@ body.sv-player-ready {
   max-width: 720px;
 }
 
+
+/* Timed lyrics preserve the static lyric layout until the matching track plays. */
+.sv-timed-lyrics__verse {
+  margin: 1em 0;
+}
+
+.sv-timed-lyrics__verse:first-child {
+  margin-top: 0;
+}
+
+.sv-timed-lyrics__verse:last-child {
+  margin-bottom: 0;
+}
+
+.sv-timed-lyrics__line,
+.sv-timed-lyrics__section {
+  display: block;
+  width: fit-content;
+  max-width: 100%;
+  color: inherit;
+  font: inherit;
+  line-height: inherit;
+  transform: scale(1);
+  transform-origin: left center;
+}
+
+.sv-timed-lyrics__section {
+  font-weight: 800;
+}
+
+.sv-timed-lyrics.is-enhanced .sv-timed-lyrics__line {
+  cursor: pointer;
+  border-radius: 2px;
+  transition:
+    color 220ms ease,
+    opacity 220ms ease,
+    transform 260ms ease;
+}
+
+.sv-timed-lyrics.is-enhanced .sv-timed-lyrics__line:hover {
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 4px;
+}
+
+.sv-timed-lyrics.is-enhanced .sv-timed-lyrics__line:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 4px;
+}
+
+.sv-timed-lyrics.is-following .sv-timed-lyrics__line {
+  opacity: 0.58;
+}
+
+.sv-timed-lyrics.is-following .sv-timed-lyrics__line.is-past {
+  opacity: 0.38;
+}
+
+.sv-timed-lyrics.is-following .sv-timed-lyrics__line.is-active {
+  position: relative;
+  z-index: 1;
+  color: var(--sv-player-accent);
+  opacity: 1;
+  font-weight: 700;
+  transform: scale(1.045);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sv-timed-lyrics.is-enhanced .sv-timed-lyrics__line {
+    transition: none;
+  }
+
+  .sv-timed-lyrics.is-following .sv-timed-lyrics__line.is-active {
+    transform: none;
+  }
+}
+
 .sv-track-links {
   margin-top: 22px;
 }

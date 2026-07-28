@@ -3,6 +3,7 @@
 use SlimVolume\Admin\Settings;
 use SlimVolume\Frontend\PlayerData;
 use SlimVolume\Rewrite;
+use SlimVolume\TimedLyrics;
 
 if (! defined('ABSPATH')) {
     exit;
@@ -16,9 +17,16 @@ $settings   = Settings::get_settings();
 
 $player_enabled = ! empty($settings['player_enabled']);
 $config         = PlayerData::get_track_page_config($track_id);
-$lyrics     = (string) get_post_meta($track_id, '_sv_lyrics', true);
-$credits    = (string) get_post_meta($track_id, '_sv_track_credits', true);
-$duration   = (string) get_post_meta($track_id, '_sv_duration', true);
+$lyrics       = (string) get_post_meta($track_id, '_sv_lyrics', true);
+$credits      = (string) get_post_meta($track_id, '_sv_track_credits', true);
+$duration     = (string) get_post_meta($track_id, '_sv_duration', true);
+$timed_lyrics = $player_enabled
+    ? TimedLyrics::get_public_payload($track_id)
+    : [];
+
+$timed_lyric_lines = isset($timed_lyrics['lines']) && is_array($timed_lyrics['lines'])
+    ? $timed_lyrics['lines']
+    : [];
 
 $playlist = isset($config['playlist']) && is_array($config['playlist'])
     ? $config['playlist']
@@ -249,9 +257,78 @@ $track_links = array_filter($track_links);
         <?php if ($lyrics) : ?>
             <section class="sv-track-lyrics">
                 <h2><?php esc_html_e('Lyrics', 'slim-volume'); ?></h2>
-                <div class="sv-rich-text">
-                    <?php echo wp_kses_post(wpautop($lyrics)); ?>
-                </div>
+
+                <?php if ($timed_lyric_lines) : ?>
+                    <div
+                        class="sv-rich-text sv-timed-lyrics"
+                        data-sv-timed-lyrics
+                        data-sv-track-id="<?php echo esc_attr((string) $track_id); ?>"
+                        data-sv-timed-lyrics-version="<?php echo esc_attr((string) ($timed_lyrics['version'] ?? 1)); ?>"
+                    >
+                        <?php
+                        $verse_open = false;
+
+                        foreach ($timed_lyric_lines as $line) :
+                            if (! is_array($line)) {
+                                continue;
+                            }
+
+                            $line_type = sanitize_key((string) ($line['type'] ?? 'line'));
+                            $line_text = (string) ($line['text'] ?? '');
+                            $line_id   = sanitize_key((string) ($line['id'] ?? ''));
+
+                            if ($line_type === 'spacer') :
+                                if ($verse_open) :
+                                    ?>
+                                    </p>
+                                    <?php
+                                    $verse_open = false;
+                                endif;
+
+                                continue;
+                            endif;
+
+                            if (! $verse_open) :
+                                ?>
+                                <p class="sv-timed-lyrics__verse">
+                                <?php
+                                $verse_open = true;
+                            endif;
+
+                            if ($line_type === 'section') :
+                                ?>
+                                <span class="sv-timed-lyrics__section">
+                                    <?php echo esc_html($line_text); ?>
+                                </span>
+                                <?php
+                                continue;
+                            endif;
+
+                            $line_start = isset($line['start']) && is_numeric($line['start'])
+                                ? (float) $line['start']
+                                : null;
+                            ?>
+                            <span
+                                class="sv-timed-lyrics__line"
+                                data-sv-lyric-line
+                                data-sv-lyric-id="<?php echo esc_attr($line_id); ?>"
+                                <?php if ($line_start !== null) : ?>
+                                    data-sv-lyric-start="<?php echo esc_attr(number_format($line_start, 3, '.', '')); ?>"
+                                <?php endif; ?>
+                            >
+                                <?php echo esc_html($line_text); ?>
+                            </span>
+                        <?php endforeach; ?>
+
+                        <?php if ($verse_open) : ?>
+                            </p>
+                        <?php endif; ?>
+                    </div>
+                <?php else : ?>
+                    <div class="sv-rich-text">
+                        <?php echo wp_kses_post(wpautop($lyrics)); ?>
+                    </div>
+                <?php endif; ?>
             </section>
         <?php endif; ?>
 
