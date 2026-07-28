@@ -21,6 +21,8 @@ require_once SLIM_VOLUME_PATH . 'includes/Admin/TrackMetaBoxes.php';
 require_once SLIM_VOLUME_PATH . 'includes/Admin/AdminColumns.php';
 require_once SLIM_VOLUME_PATH . 'includes/Admin/ReleaseTrackManager.php';
 require_once SLIM_VOLUME_PATH . 'includes/Admin/Settings.php';
+require_once SLIM_VOLUME_PATH . 'includes/Artists/ProjectTaxonomy.php';
+require_once SLIM_VOLUME_PATH . 'includes/Artists/ArtistResolver.php';
 require_once SLIM_VOLUME_PATH . 'includes/Admin/ReleaseDashboardMetaBox.php';
 require_once SLIM_VOLUME_PATH . 'includes/Admin/TrackReleasePrefill.php';
 require_once SLIM_VOLUME_PATH . 'includes/Admin/TrackContextMetaBox.php';
@@ -45,6 +47,7 @@ final class Plugin
         add_action('after_setup_theme', [PostTypes::class, 'add_theme_support']);
 
         add_action('init', [PostTypes::class, 'register']);
+        add_action('init', [Artists\ProjectTaxonomy::class, 'register']);
         add_action('init', [Meta::class, 'register']);
         add_action('init', [Rewrite::class, 'register']);
 
@@ -85,6 +88,7 @@ final class Plugin
     public static function activate(): void
     {
         PostTypes::register();
+        Artists\ProjectTaxonomy::register();
         Meta::register();
         Rewrite::register();
 
