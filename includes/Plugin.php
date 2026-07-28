@@ -25,6 +25,7 @@ require_once SLIM_VOLUME_PATH . 'includes/Admin/ReleaseDashboardMetaBox.php';
 require_once SLIM_VOLUME_PATH . 'includes/Admin/TrackReleasePrefill.php';
 require_once SLIM_VOLUME_PATH . 'includes/Admin/TrackContextMetaBox.php';
 require_once SLIM_VOLUME_PATH . 'includes/Admin/TrackReleaseFilter.php';
+require_once SLIM_VOLUME_PATH . 'includes/Admin/TimedLyricsAdmin.php';
 
 final class Plugin
 {
@@ -54,6 +55,7 @@ final class Plugin
         add_action('add_meta_boxes', [Admin\TrackReleasePrefill::class, 'register']);
         add_action('add_meta_boxes', [Admin\TrackContextMetaBox::class, 'register']);
         add_action('add_meta_boxes', [Admin\TrackReleaseFilter::class, 'register']);
+        add_action('add_meta_boxes', [Admin\TimedLyricsAdmin::class, 'register_meta_box']);
 
         add_action('save_post_' . PostTypes::RELEASE, [Admin\ReleaseMetaBoxes::class, 'save']);
         add_action('save_post_' . PostTypes::RELEASE, [Admin\ReleaseTrackManager::class, 'save_order']);
@@ -61,6 +63,7 @@ final class Plugin
         add_action('save_post_' . PostTypes::TRACK, [TimedLyrics::class, 'reconcile'], 20);
 
         add_action('admin_init', [Admin\AdminColumns::class, 'register']);
+        add_action('admin_menu', [Admin\TimedLyricsAdmin::class, 'register_page']);
         
         Admin\Settings::init();
 

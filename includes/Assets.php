@@ -142,16 +142,23 @@ if (file_exists($butterchurn_adapter_path)) {
 
     public static function enqueue_admin(string $hook): void
     {
-        if (! in_array($hook, ['post.php', 'post-new.php', 'edit.php'], true)) {
+        $screen = get_current_screen();
+
+        if (! $screen) {
             return;
         }
 
-        $screen = get_current_screen();
+        $is_timed_lyrics_screen = (
+            $screen->id === PostTypes::RELEASE . '_page_slim-volume-lyrics-sync'
+            || $hook === PostTypes::RELEASE . '_page_slim-volume-lyrics-sync'
+        );
 
-        if (
-            ! $screen
-            || ! in_array($screen->post_type, [PostTypes::RELEASE, PostTypes::TRACK], true)
-        ) {
+        $is_music_post_screen = (
+            in_array($hook, ['post.php', 'post-new.php', 'edit.php'], true)
+            && in_array($screen->post_type, [PostTypes::RELEASE, PostTypes::TRACK], true)
+        );
+
+        if (! $is_timed_lyrics_screen && ! $is_music_post_screen) {
             return;
         }
 
@@ -164,6 +171,10 @@ if (file_exists($butterchurn_adapter_path)) {
                 [],
                 self::asset_version($css_path)
             );
+        }
+
+        if ($is_timed_lyrics_screen) {
+            return;
         }
 
         if ($screen->post_type === PostTypes::RELEASE) {
