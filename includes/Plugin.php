@@ -9,6 +9,7 @@ if (! defined('ABSPATH')) {
 }
 
 require_once SLIM_VOLUME_PATH . 'includes/PostTypes.php';
+require_once SLIM_VOLUME_PATH . 'includes/TimedLyrics.php';
 require_once SLIM_VOLUME_PATH . 'includes/Meta.php';
 require_once SLIM_VOLUME_PATH . 'includes/Rewrite.php';
 require_once SLIM_VOLUME_PATH . 'includes/Assets.php';
@@ -57,6 +58,7 @@ final class Plugin
         add_action('save_post_' . PostTypes::RELEASE, [Admin\ReleaseMetaBoxes::class, 'save']);
         add_action('save_post_' . PostTypes::RELEASE, [Admin\ReleaseTrackManager::class, 'save_order']);
         add_action('save_post_' . PostTypes::TRACK, [Admin\TrackMetaBoxes::class, 'save']);
+        add_action('save_post_' . PostTypes::TRACK, [TimedLyrics::class, 'reconcile'], 20);
 
         add_action('admin_init', [Admin\AdminColumns::class, 'register']);
         

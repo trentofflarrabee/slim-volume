@@ -150,6 +150,31 @@ final class Meta
 
         register_post_meta(
             PostTypes::TRACK,
+            TimedLyrics::META_KEY,
+            [
+                'single'            => true,
+                'type'              => 'string',
+                'show_in_rest'      => false,
+                'sanitize_callback' => [TimedLyrics::class, 'sanitize_json_meta'],
+                'auth_callback'     => [self::class, 'can_edit_post_meta'],
+            ]
+        );
+
+        register_post_meta(
+            PostTypes::TRACK,
+            TimedLyrics::STATUS_META_KEY,
+            [
+                'single'            => true,
+                'type'              => 'string',
+                'default'           => TimedLyrics::STATUS_NONE,
+                'show_in_rest'      => false,
+                'sanitize_callback' => [TimedLyrics::class, 'sanitize_status'],
+                'auth_callback'     => [self::class, 'can_edit_post_meta'],
+            ]
+        );
+
+        register_post_meta(
+            PostTypes::TRACK,
             '_sv_track_credits',
             [
                 'single'            => true,
