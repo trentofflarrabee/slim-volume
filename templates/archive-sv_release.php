@@ -218,52 +218,98 @@ get_header();
         </p>
 
         <form class="sv-release-archive-controls" method="get" action="<?php echo esc_url($archive_url); ?>">
-            <label class="screen-reader-text" for="sv-release-search">
-                <?php esc_html_e('Search releases', 'slim-volume'); ?>
-            </label>
+            <div class="sv-release-archive-controls__field sv-release-archive-controls__field--search">
+                <label class="sv-release-archive-controls__label" for="sv-release-search">
+                    <?php esc_html_e('Search music', 'slim-volume'); ?>
+                </label>
 
-            <input
-                id="sv-release-search"
-                class="sv-release-archive-controls__search"
-                type="search"
-                name="sv_release_q"
-                value="<?php echo esc_attr($search_query); ?>"
-                placeholder="<?php echo esc_attr__('Search releases, tracks, or lyrics...', 'slim-volume'); ?>"
-            >
+                <div class="sv-release-archive-controls__input-wrap">
+                    <span class="sv-release-archive-controls__search-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" focusable="false">
+                            <circle cx="10.8" cy="10.8" r="6.6"></circle>
+                            <path d="m16 16 4.2 4.2"></path>
+                        </svg>
+                    </span>
 
-            <label class="screen-reader-text" for="sv-release-sort">
-                <?php esc_html_e('Sort releases', 'slim-volume'); ?>
-            </label>
+                    <input
+                        id="sv-release-search"
+                        class="sv-release-archive-controls__search"
+                        type="search"
+                        name="sv_release_q"
+                        value="<?php echo esc_attr($search_query); ?>"
+                        placeholder="<?php echo esc_attr__('Release, track, or lyric...', 'slim-volume'); ?>"
+                    >
+                </div>
+            </div>
 
-            <select
-                id="sv-release-sort"
-                class="sv-release-archive-controls__sort"
-                name="sv_release_sort"
-            >
-                <option value="newest" <?php selected($sort, 'newest'); ?>>
-                    <?php esc_html_e('Newest first', 'slim-volume'); ?>
-                </option>
-                <option value="oldest" <?php selected($sort, 'oldest'); ?>>
-                    <?php esc_html_e('Oldest first', 'slim-volume'); ?>
-                </option>
-                <option value="title_asc" <?php selected($sort, 'title_asc'); ?>>
-                    <?php esc_html_e('Title A–Z', 'slim-volume'); ?>
-                </option>
-                <option value="title_desc" <?php selected($sort, 'title_desc'); ?>>
-                    <?php esc_html_e('Title Z–A', 'slim-volume'); ?>
-                </option>
-            </select>
+            <div class="sv-release-archive-controls__field sv-release-archive-controls__field--sort">
+                <label class="sv-release-archive-controls__label" for="sv-release-sort">
+                    <?php esc_html_e('Sort by', 'slim-volume'); ?>
+                </label>
 
-            <button class="sv-button sv-release-archive-controls__submit" type="submit">
-                <?php esc_html_e('Apply', 'slim-volume'); ?>
-            </button>
+                <div class="sv-release-archive-controls__select-wrap">
+                    <select
+                        id="sv-release-sort"
+                        class="sv-release-archive-controls__sort"
+                        name="sv_release_sort"
+                    >
+                        <option value="newest" <?php selected($sort, 'newest'); ?>>
+                            <?php esc_html_e('Newest first', 'slim-volume'); ?>
+                        </option>
+                        <option value="oldest" <?php selected($sort, 'oldest'); ?>>
+                            <?php esc_html_e('Oldest first', 'slim-volume'); ?>
+                        </option>
+                        <option value="title_asc" <?php selected($sort, 'title_asc'); ?>>
+                            <?php esc_html_e('Title A–Z', 'slim-volume'); ?>
+                        </option>
+                        <option value="title_desc" <?php selected($sort, 'title_desc'); ?>>
+                            <?php esc_html_e('Title Z–A', 'slim-volume'); ?>
+                        </option>
+                    </select>
+                </div>
+            </div>
 
-            <?php if ($search_query || 'newest' !== $sort) : ?>
-                <a class="sv-release-archive-controls__clear" href="<?php echo esc_url($archive_url); ?>">
-                    <?php esc_html_e('Clear', 'slim-volume'); ?>
-                </a>
-            <?php endif; ?>
+            <div class="sv-release-archive-controls__actions">
+                <button class="sv-button sv-release-archive-controls__submit" type="submit">
+                    <?php esc_html_e('Apply', 'slim-volume'); ?>
+                </button>
+
+                <?php if ($search_query || 'newest' !== $sort) : ?>
+                    <a class="sv-release-archive-controls__clear" href="<?php echo esc_url($archive_url); ?>">
+                        <?php esc_html_e('Clear', 'slim-volume'); ?>
+                    </a>
+                <?php endif; ?>
+            </div>
         </form>
+
+        <p class="sv-release-archive-summary" aria-live="polite">
+            <span>
+                <?php
+                printf(
+                    esc_html(
+                        _n(
+                            '%s release',
+                            '%s releases',
+                            (int) $release_query->found_posts,
+                            'slim-volume'
+                        )
+                    ),
+                    esc_html(number_format_i18n((int) $release_query->found_posts))
+                );
+                ?>
+            </span>
+
+            <?php if ($search_query) : ?>
+                <span>
+                    <?php
+                    printf(
+                        esc_html__('matching “%s”', 'slim-volume'),
+                        esc_html($search_query)
+                    );
+                    ?>
+                </span>
+            <?php endif; ?>
+        </p>
     </header>
 
     <?php if ($release_query->have_posts()) : ?>
@@ -297,11 +343,19 @@ get_header();
                             rel="noopener noreferrer"
                         <?php endif; ?>
                     >
-                        <?php if (has_post_thumbnail()) : ?>
-                            <div class="sv-release-card__art">
+                        <div class="sv-release-card__art">
+                            <?php if (has_post_thumbnail()) : ?>
                                 <?php the_post_thumbnail('medium_large'); ?>
-                            </div>
-                        <?php endif; ?>
+                            <?php else : ?>
+                                <span class="sv-release-card__art-placeholder" aria-hidden="true">
+                                    <svg viewBox="0 0 48 48" focusable="false">
+                                        <circle cx="24" cy="24" r="17"></circle>
+                                        <circle cx="24" cy="24" r="5"></circle>
+                                        <path d="M24 7v8M24 33v8M7 24h8M33 24h8"></path>
+                                    </svg>
+                                </span>
+                            <?php endif; ?>
+                        </div>
 
                         <div class="sv-release-card__body">
                             <h2 class="sv-release-card__title"><?php the_title(); ?></h2>
