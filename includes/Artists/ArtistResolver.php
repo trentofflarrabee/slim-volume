@@ -111,7 +111,15 @@ final class ArtistResolver
     public static function for_release(int $release_id, ?array $settings = null): array
     {
         $fallback = self::default_artist($settings);
-        $term     = ProjectTaxonomy::get_release_project_term($release_id);
+
+        // Keep existing assignments stored when the optional project feature is
+        // disabled, but resolve public/template/SEO identity through the global
+        // fallback until the feature is enabled again.
+        if (! ProjectTaxonomy::is_enabled()) {
+            return $fallback;
+        }
+
+        $term = ProjectTaxonomy::get_release_project_term($release_id);
 
         if (! $term instanceof WP_Term) {
             return $fallback;

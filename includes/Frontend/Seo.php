@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace SlimVolume\Frontend;
 
 use SlimVolume\Admin\Settings;
+use SlimVolume\Artists\ArtistResolver;
 use SlimVolume\PostTypes;
 use SlimVolume\Rewrite;
 use WP_Post;
@@ -63,10 +64,16 @@ final class Seo
 
     private static function render_archive(array $settings): void
     {
-        $archive_url = self::archive_url();
-        $artist      = self::artist($settings);
-        $description = self::archive_description($settings);
-        $releases    = self::get_releases_for_archive();
+        $archive_url   = self::archive_url();
+        $description   = self::archive_description($settings);
+        $releases      = self::get_releases_for_archive();
+        $release_ids   = array_map(
+            static fn (WP_Post $release): int => (int) $release->ID,
+            $releases
+        );
+        $default_artist = ArtistResolver::default_artist($settings);
+        $artists        = ArtistResolver::for_releases($release_ids, $settings);
+        $is_mixed       = count($artists) > 1;
 
         $image = self::setting_url($settings, 'seo_default_image');
 
@@ -77,33 +84,90 @@ final class Seo
         $albums = [];
 
         foreach ($releases as $release) {
-            $album = self::album_schema((int) $release->ID, $artist, false);
+            $release_id     = (int) $release->ID;
+            $release_artist = ArtistResolver::for_release($release_id, $settings);
+            $album          = self::album_schema($release_id, $release_artist, false);
 
             if ($album) {
                 $albums[] = $album;
             }
         }
 
-        $schema = self::clean_schema(
-            [
-                '@context'    => 'https://schema.org',
-                '@type'       => 'MusicGroup',
-                '@id'         => trailingslashit($artist['url']) . '#artist',
-                'name'        => $artist['name'],
-                'url'         => $artist['url'],
-                'description' => $description,
-                'image'       => $image,
-                'album'       => $albums,
-            ]
-        );
+        if ($is_mixed) {
+            $site_name = trim((string) get_bloginfo('name'));
+
+            if ($site_name === '') {
+                $site_name = $default_artist['name'];
+            }
+
+            $items = [];
+
+            foreach ($albums as $index => $album) {
+                $items[] = [
+                    '@type'    => 'ListItem',
+                    'position' => $index + 1,
+                    'url'      => (string) ($album['url'] ?? ''),
+                    'item'     => $album,
+                ];
+            }
+
+            $schema = self::clean_schema(
+                [
+                    '@context'    => 'https://schema.org',
+                    '@type'       => 'CollectionPage',
+                    '@id'         => trailingslashit($archive_url) . '#music-collection',
+                    'name'        => sprintf(
+                        /* translators: %s: website or catalog name. */
+                        __('Music from %s', 'slim-volume'),
+                        $site_name
+                    ),
+                    'url'         => $archive_url,
+                    'description' => $description,
+                    'image'       => $image,
+                    'publisher'   => self::publisher_schema($default_artist),
+                    'mainEntity'  => [
+                        '@type'           => 'ItemList',
+                        'numberOfItems'   => count($items),
+                        'itemListElement' => $items,
+                    ],
+                ]
+            );
+
+            $title = sprintf(
+                /* translators: %s: website or catalog name. */
+                __('Music from %s', 'slim-volume'),
+                $site_name
+            );
+        } else {
+            $artist = $artists ? reset($artists) : $default_artist;
+
+            if (! is_array($artist)) {
+                $artist = $default_artist;
+            }
+
+            $schema = self::clean_schema(
+                [
+                    '@context'    => 'https://schema.org',
+                    '@type'       => 'MusicGroup',
+                    '@id'         => (string) ($artist['schemaId'] ?? ''),
+                    'name'        => (string) ($artist['name'] ?? ''),
+                    'url'         => (string) ($artist['url'] ?? ''),
+                    'description' => $description,
+                    'image'       => $image !== '' ? $image : (string) ($artist['image'] ?? ''),
+                    'album'       => $albums,
+                ]
+            );
+
+            $title = sprintf(
+                /* translators: %s: artist/project name. */
+                __('Music by %s', 'slim-volume'),
+                (string) ($artist['name'] ?? $default_artist['name'])
+            );
+        }
 
         self::render_head_block(
             [
-                'title'       => sprintf(
-                    /* translators: %s: site/artist name. */
-                    __('Music by %s', 'slim-volume'),
-                    $artist['name']
-                ),
+                'title'       => $title,
                 'description' => $description,
                 'url'         => $archive_url,
                 'image'       => $image,
@@ -121,13 +185,13 @@ final class Seo
             return;
         }
 
-        $artist      = self::artist($settings);
-        $title       = get_the_title($release_id);
-        $url         = get_permalink($release_id);
-        $image       = self::artwork_url($release_id) ?: self::setting_url($settings, 'seo_default_image');
-        $description = self::post_description($release_id);
+        $artist       = ArtistResolver::for_release($release_id, $settings);
+        $title        = get_the_title($release_id);
+        $url          = get_permalink($release_id);
+        $image        = self::artwork_url($release_id) ?: self::setting_url($settings, 'seo_default_image');
+        $description  = self::post_description($release_id);
         $release_date = self::release_date($release_id);
-        $schema      = self::release_schema($release_id, $artist);
+        $schema       = self::release_schema($release_id, $artist);
 
         self::render_head_block(
             [
@@ -152,7 +216,7 @@ final class Seo
             return;
         }
 
-        $artist     = self::artist($settings);
+        $artist     = ArtistResolver::for_track($track_id, $settings);
         $release_id = Rewrite::get_track_release_id($track_id);
         $data       = PlayerData::get_track_data($track_id);
 
@@ -416,33 +480,49 @@ final class Seo
         return '';
     }
 
-    private static function artist(array $settings): array
+    private static function publisher_schema(array $fallback_artist): array
     {
-        $name = trim((string) ($settings['seo_artist_name'] ?? ''));
-        $url  = self::setting_url($settings, 'seo_artist_url');
+        $site_name = trim((string) get_bloginfo('name'));
+        $site_url  = home_url('/');
 
-        if ($name === '') {
-            $name = get_bloginfo('name') ?: __('Artist', 'slim-volume');
+        if ($site_name === '') {
+            $site_name = (string) ($fallback_artist['name'] ?? '');
         }
 
-        if ($url === '') {
-            $url = home_url('/');
-        }
-
-        return [
-            'name' => $name,
-            'url'  => $url,
-        ];
+        return self::clean_schema(
+            [
+                '@type' => 'Organization',
+                '@id'   => trailingslashit($site_url) . '#publisher',
+                'name'  => $site_name,
+                'url'   => $site_url,
+                'image' => esc_url_raw((string) ($fallback_artist['image'] ?? '')),
+            ]
+        );
     }
 
     private static function artist_schema(array $artist): array
     {
+        $entity_type = (string) ($artist['entityType'] ?? 'MusicGroup');
+
+        if (! in_array($entity_type, ['MusicGroup', 'Person'], true)) {
+            $entity_type = 'MusicGroup';
+        }
+
+        $url       = esc_url_raw((string) ($artist['url'] ?? ''));
+        $schema_id = trim((string) ($artist['schemaId'] ?? ''));
+
+        if ($schema_id === '' && $url !== '') {
+            $schema_id = trailingslashit($url) . '#artist';
+        }
+
         return self::clean_schema(
             [
-                '@type' => 'MusicGroup',
-                '@id'   => trailingslashit($artist['url']) . '#artist',
-                'name'  => $artist['name'],
-                'url'   => $artist['url'],
+                '@type'       => $entity_type,
+                '@id'         => $schema_id,
+                'name'        => self::single_line((string) ($artist['name'] ?? '')),
+                'url'         => $url,
+                'image'       => esc_url_raw((string) ($artist['image'] ?? '')),
+                'description' => self::single_line((string) ($artist['description'] ?? '')),
             ]
         );
     }
