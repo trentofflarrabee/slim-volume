@@ -896,8 +896,8 @@ body.sv-player-ready {
 
 .sv-service-link svg {
   display: block;
-  width: 22px;
-  height: 22px;
+  width: 35px;
+  height: 35px;
   overflow: visible;
   fill: none;
   stroke: currentColor;
@@ -1539,8 +1539,8 @@ body.sv-player-drawer-open {
 
 .sv-player__service-link svg {
   display: block;
-  width: 22px;
-  height: 22px;
+  width: 30px;
+  height: 30px;
   overflow: visible;
   fill: none;
   stroke: currentColor;

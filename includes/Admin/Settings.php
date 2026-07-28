@@ -365,235 +365,426 @@ return array_merge(
             wp_die(esc_html__('You do not have permission to access this page.', 'slim-volume'));
         }
 
-        $settings = self::get_settings();
+        $settings      = self::get_settings();
         $preview_style = self::get_preview_style($settings);
 
         ?>
-        <div class="wrap">
+        <div class="wrap sv-settings">
             <?php self::render_preview_css(); ?>
+
             <h1><?php echo esc_html__('Slim Volume Settings', 'slim-volume'); ?></h1>
 
-            <p>
-                <?php
-                echo esc_html__(
-                    'Configure Slim Volume frontend behavior, player features, and appearance options.',
-                    'slim-volume'
-                );
-                ?>
+            <p class="sv-settings__intro">
+                <?php echo esc_html__('Configure the music catalog, frontend player, music SEO, and visual appearance.', 'slim-volume'); ?>
             </p>
 
-            <form method="post" action="options.php">
+            <?php settings_errors(); ?>
+
+            <form method="post" action="options.php" data-sv-settings-form>
                 <?php settings_fields(self::OPTION_GROUP); ?>
 
-                <h2><?php echo esc_html__('Frontend Features', 'slim-volume'); ?></h2>
-
-                <table class="form-table" role="presentation">
-                    <tbody>
-                        <?php self::render_checkbox_row(
-                            'player_enabled',
-                            __('Frontend player', 'slim-volume'),
-                            __('Enable the persistent audio player, queue drawer, play buttons, AJAX player navigation, and visualizer features.', 'slim-volume'),
-                            $settings,
-                            __('Disable this for a catalog-only discography with release pages and external links but no site audio player.', 'slim-volume')
-                        ); ?>
-
-                        <?php self::render_checkbox_row(
-                            'ajax_navigation',
-                            __('AJAX music navigation', 'slim-volume'),
-                            __('Keep the player alive while navigating between music pages.', 'slim-volume'),
-                            $settings
-                        ); ?>
-
-                        <?php self::render_checkbox_row(
-                            'persistence',
-                            __('Persistent player state', 'slim-volume'),
-                            __('Restore the queue, current track, drawer state, and playback position after refresh.', 'slim-volume'),
-                            $settings
-                        ); ?>
-
-                        <?php self::render_checkbox_row(
-                            'visualizer',
-                            __('Visualizer', 'slim-volume'),
-                            __('Enable the player drawer visualizer.', 'slim-volume'),
-                            $settings
-                        ); ?>
-
-                        <?php self::render_setting_select_row(
-                            'visualizer_mode',
-                            __('Visualizer mode', 'slim-volume'),
-                            self::visualizer_modes(),
-                            $settings,
-                            __('Choose Bars or Butterchurn. Butterchurn only appears when the vendor files are installed.', 'slim-volume')
-                        ); ?>
-
-                        <?php self::render_checkbox_row(
-                            'debug',
-                            __('Debug mode', 'slim-volume'),
-                            __('Expose extra JavaScript debugging tools in the browser console.', 'slim-volume'),
-                            $settings,
-                            __('Leave this disabled on production sites unless actively troubleshooting.', 'slim-volume')
-                        ); ?>
-                    </tbody>
-                </table>
-
-                <h2><?php echo esc_html__('Catalog Mode', 'slim-volume'); ?></h2>
-
-                <p>
+                <nav class="nav-tab-wrapper sv-settings-tabs" aria-label="<?php echo esc_attr__('Slim Volume settings sections', 'slim-volume'); ?>" role="tablist">
                     <?php
-                    echo esc_html__(
-                        'Control how release cards behave for artists who want a simple discography grid that links directly to streaming, Bandcamp, pre-save, or another external destination.',
-                        'slim-volume'
-                    );
+                    $tabs = [
+                        'general'    => __('General', 'slim-volume'),
+                        'catalog'    => __('Catalog', 'slim-volume'),
+                        'seo'        => __('SEO', 'slim-volume'),
+                        'appearance' => __('Appearance', 'slim-volume'),
+                    ];
                     ?>
-                </p>
 
-                <table class="form-table" role="presentation">
-                    <tbody>
-                        <?php self::render_setting_select_row(
-                            'release_card_link_behavior',
-                            __('Release card links', 'slim-volume'),
-                            [
-                                'internal'                => __('Slim Volume release pages', 'slim-volume'),
-                                'external_when_available' => __('External release URL when available', 'slim-volume'),
-                            ],
-                            $settings,
-                            __('When external linking is enabled, release cards use each release\'s Primary External URL when present and fall back to the Slim Volume release page otherwise.', 'slim-volume')
-                        ); ?>
-                    </tbody>
-                </table>
+                    <?php foreach ($tabs as $tab_key => $tab_label) : ?>
+                        <a
+                            class="nav-tab<?php echo $tab_key === 'general' ? ' nav-tab-active' : ''; ?>"
+                            href="#sv-settings-<?php echo esc_attr($tab_key); ?>"
+                            id="sv-settings-tab-<?php echo esc_attr($tab_key); ?>"
+                            role="tab"
+                            aria-controls="sv-settings-<?php echo esc_attr($tab_key); ?>"
+                            aria-selected="<?php echo $tab_key === 'general' ? 'true' : 'false'; ?>"
+                            data-sv-settings-tab="<?php echo esc_attr($tab_key); ?>"
+                        >
+                            <?php echo esc_html($tab_label); ?>
+                        </a>
+                    <?php endforeach; ?>
+                </nav>
 
+                <section
+                    class="sv-settings-panel is-active"
+                    id="sv-settings-general"
+                    role="tabpanel"
+                    aria-labelledby="sv-settings-tab-general"
+                    data-sv-settings-panel="general"
+                >
+                    <div class="sv-settings-section">
+                        <h2><?php echo esc_html__('Frontend Player', 'slim-volume'); ?></h2>
+                        <p class="description">
+                            <?php echo esc_html__('Choose whether Slim Volume behaves as a full audio-player experience or a catalog-only discography.', 'slim-volume'); ?>
+                        </p>
 
-                <h2><?php echo esc_html__('SEO Metadata', 'slim-volume'); ?></h2>
+                        <table class="form-table" role="presentation">
+                            <tbody>
+                                <?php self::render_checkbox_row(
+                                    'player_enabled',
+                                    __('Frontend player', 'slim-volume'),
+                                    __('Enable the persistent audio player, queue drawer, play/queue buttons, AJAX player navigation, and visualizer features.', 'slim-volume'),
+                                    $settings,
+                                    __('Disable this for a catalog-only discography with release pages and external links but no site audio player.', 'slim-volume')
+                                ); ?>
 
-                <p>
-                    <?php
-                    echo esc_html__(
-                        'Output music-focused meta tags, Open Graph tags, Twitter card tags, and JSON-LD structured data for the music archive, releases, and tracks.',
-                        'slim-volume'
-                    );
-                    ?>
-                </p>
+                                <?php self::render_checkbox_row(
+                                    'ajax_navigation',
+                                    __('AJAX music navigation', 'slim-volume'),
+                                    __('Keep audio playing while visitors move between the /music archive, release pages, and track pages.', 'slim-volume'),
+                                    $settings,
+                                    __('Requires the frontend player to be enabled.', 'slim-volume')
+                                ); ?>
 
-                <table class="form-table" role="presentation">
-                    <tbody>
-                        <?php self::render_checkbox_row(
-                            'seo_enabled',
-                            __('Enable Slim Volume SEO metadata', 'slim-volume'),
-                            __('Output Slim Volume SEO tags on music archive, release, and track pages.', 'slim-volume'),
-                            $settings,
-                            __('Leave this disabled if another SEO plugin is already controlling these tags for music pages.', 'slim-volume')
-                        ); ?>
+                                <?php self::render_checkbox_row(
+                                    'persistence',
+                                    __('Persistent player state', 'slim-volume'),
+                                    __('Restore the queue, current track, drawer state, and playback position after refresh.', 'slim-volume'),
+                                    $settings
+                                ); ?>
+                            </tbody>
+                        </table>
+                    </div>
 
-                        <?php self::render_setting_text_row(
-                            'seo_artist_name',
-                            __('Artist / project name', 'slim-volume'),
-                            $settings,
-                            __('Defaults to the site title when blank.', 'slim-volume')
-                        ); ?>
+                    <div class="sv-settings-section">
+                        <h2><?php echo esc_html__('Visualizer', 'slim-volume'); ?></h2>
+                        <p class="description">
+                            <?php echo esc_html__('Control the visualizer shown inside the expanded player drawer.', 'slim-volume'); ?>
+                        </p>
 
-                        <?php self::render_setting_text_row(
-                            'seo_artist_url',
-                            __('Artist / project URL', 'slim-volume'),
-                            $settings,
-                            __('Defaults to the site home URL when blank.', 'slim-volume'),
-                            'url',
-                            'regular-text code'
-                        ); ?>
+                        <table class="form-table" role="presentation">
+                            <tbody>
+                                <?php self::render_checkbox_row(
+                                    'visualizer',
+                                    __('Enable visualizer', 'slim-volume'),
+                                    __('Show a visualizer panel in the expanded player drawer.', 'slim-volume'),
+                                    $settings,
+                                    __('This setting has no effect when the frontend player is disabled.', 'slim-volume')
+                                ); ?>
 
-                        <?php self::render_setting_textarea_row(
-                            'seo_archive_description',
-                            __('Music archive description', 'slim-volume'),
-                            $settings,
-                            __('Used for the /music archive description, Open Graph description, and JSON-LD description. Defaults to a generated description when blank.', 'slim-volume')
-                        ); ?>
+                                <?php self::render_setting_select_row(
+                                    'visualizer_mode',
+                                    __('Visualizer mode', 'slim-volume'),
+                                    self::visualizer_modes(),
+                                    $settings,
+                                    __('Bars uses the built-in canvas visualizer. Butterchurn uses the installed Butterchurn vendor files and preset library.', 'slim-volume')
+                                ); ?>
+                            </tbody>
+                        </table>
+                    </div>
 
-                        <?php self::render_setting_text_row(
-                            'seo_default_image',
-                            __('Default social image URL', 'slim-volume'),
-                            $settings,
-                            __('Used as a fallback image for archive/social metadata. Release and track artwork still take priority.', 'slim-volume'),
-                            'url',
-                            'regular-text code'
-                        ); ?>
-                    </tbody>
-                </table>
+                    <div class="sv-settings-section">
+                        <h2><?php echo esc_html__('Troubleshooting', 'slim-volume'); ?></h2>
 
-                <h2><?php echo esc_html__('Player Appearance', 'slim-volume'); ?></h2>
+                        <table class="form-table" role="presentation">
+                            <tbody>
+                                <?php self::render_checkbox_row(
+                                    'debug',
+                                    __('Debug mode', 'slim-volume'),
+                                    __('Expose extra Slim Volume JavaScript diagnostics in the browser console.', 'slim-volume'),
+                                    $settings,
+                                    __('Leave this disabled on production sites unless actively troubleshooting.', 'slim-volume')
+                                ); ?>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
 
-                <p>
-                    <?php
-                    echo esc_html__(
-                        'These values map directly to Slim Volume CSS variables. You can use hex colors, rgba(), currentColor, or var(--theme-variable) values.',
-                        'slim-volume'
-                    );
-                    ?>
-                </p>
+                <section
+                    class="sv-settings-panel"
+                    id="sv-settings-catalog"
+                    role="tabpanel"
+                    aria-labelledby="sv-settings-tab-catalog"
+                    data-sv-settings-panel="catalog"
+                    hidden
+                >
+                    <div class="sv-settings-section">
+                        <h2><?php echo esc_html__('Catalog Mode', 'slim-volume'); ?></h2>
+                        <p class="description">
+                            <?php echo esc_html__('Control where the clickable artwork and title on the /music release grid send visitors.', 'slim-volume'); ?>
+                        </p>
 
-                <p class="description">
-                    <?php
-                    echo esc_html__(
-                        'Theme CSS and child theme CSS can still override these variables. The settings below are intended as convenient defaults for site owners.',
-                        'slim-volume'
-                    );
-                    ?>
-                </p>
+                        <table class="form-table" role="presentation">
+                            <tbody>
+                                <?php self::render_setting_select_row(
+                                    'release_card_link_behavior',
+                                    __('Release card destination', 'slim-volume'),
+                                    [
+                                        'internal'                => __('Slim Volume release page', 'slim-volume'),
+                                        'external_when_available' => __('Primary External URL when available', 'slim-volume'),
+                                    ],
+                                    $settings,
+                                    __('External mode uses each release\'s Primary External URL and falls back to the internal release page when that field is empty.', 'slim-volume')
+                                ); ?>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
 
-                <div class="notice notice-info inline" style="padding: 12px 16px;">
-                    <p>
-                        <strong><?php echo esc_html__('Developer note:', 'slim-volume'); ?></strong>
-                        <?php
-                        echo esc_html__(
-                            'Slim Volume outputs these appearance settings as CSS custom properties on :root.',
-                            'slim-volume'
-                        );
-                        ?>
-                    </p>
+                <section
+                    class="sv-settings-panel"
+                    id="sv-settings-seo"
+                    role="tabpanel"
+                    aria-labelledby="sv-settings-tab-seo"
+                    data-sv-settings-panel="seo"
+                    hidden
+                >
+                    <div class="sv-settings-section">
+                        <h2><?php echo esc_html__('Music SEO Metadata', 'slim-volume'); ?></h2>
+                        <p class="description">
+                            <?php echo esc_html__('Output music-focused meta descriptions, Open Graph tags, Twitter card tags, and JSON-LD for /music, releases, and tracks.', 'slim-volume'); ?>
+                        </p>
 
-                    <p style="margin-bottom: 0;">
-                        <code>--sv-player-bg</code>,
-                        <code>--sv-player-text</code>,
-                        <code>--sv-player-muted</code>,
-                        <code>--sv-player-border</code>,
-                        <code>--sv-player-accent</code>,
-                        <code>--sv-button-bg</code>,
-                        <code>--sv-button-text</code>,
-                        <code>--sv-button-border</code>,
-                        <code>--sv-radius-pill</code>
-                    </p>
+                        <table class="form-table" role="presentation">
+                            <tbody>
+                                <?php self::render_checkbox_row(
+                                    'seo_enabled',
+                                    __('Enable Slim Volume SEO metadata', 'slim-volume'),
+                                    __('Output Slim Volume SEO tags on the music archive, release pages, and track pages.', 'slim-volume'),
+                                    $settings,
+                                    __('Leave this disabled when another SEO plugin is already controlling these tags for Slim Volume pages.', 'slim-volume')
+                                ); ?>
+
+                                <?php self::render_setting_text_row(
+                                    'seo_artist_name',
+                                    __('Artist / project name', 'slim-volume'),
+                                    $settings,
+                                    __('Used as the MusicGroup name in JSON-LD and in generated /music social titles. Defaults to the site title when blank.', 'slim-volume')
+                                ); ?>
+
+                                <?php self::render_setting_text_row(
+                                    'seo_artist_url',
+                                    __('Artist / project URL', 'slim-volume'),
+                                    $settings,
+                                    __('Used as the artist URL inside MusicGroup, MusicAlbum, and MusicRecording data. Defaults to the site home URL when blank.', 'slim-volume'),
+                                    'url',
+                                    'regular-text code'
+                                ); ?>
+
+                                <?php self::render_setting_textarea_row(
+                                    'seo_archive_description',
+                                    __('Music archive description', 'slim-volume'),
+                                    $settings,
+                                    __('Used for the /music meta description, Open Graph description, Twitter description, and MusicGroup JSON-LD description.', 'slim-volume')
+                                ); ?>
+
+                                <?php self::render_setting_text_row(
+                                    'seo_default_image',
+                                    __('Default social image URL', 'slim-volume'),
+                                    $settings,
+                                    __('Fallback image for /music and for releases or tracks without artwork. Release and track artwork still take priority.', 'slim-volume'),
+                                    'url',
+                                    'regular-text code'
+                                ); ?>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <section
+                    class="sv-settings-panel"
+                    id="sv-settings-appearance"
+                    role="tabpanel"
+                    aria-labelledby="sv-settings-tab-appearance"
+                    data-sv-settings-panel="appearance"
+                    hidden
+                >
+                    <div class="sv-settings-section">
+                        <h2><?php echo esc_html__('Player and Music Page Appearance', 'slim-volume'); ?></h2>
+                        <p class="description">
+                            <?php echo esc_html__('Adjust colors and corner shapes while the live player preview updates immediately.', 'slim-volume'); ?>
+                        </p>
+
+                        <details class="sv-settings-developer-note">
+                            <summary><?php echo esc_html__('Developer CSS variable reference', 'slim-volume'); ?></summary>
+                            <p><?php echo esc_html__('Slim Volume outputs these values as CSS custom properties on :root. Theme and child-theme CSS can still override them.', 'slim-volume'); ?></p>
+                            <p>
+                                <code>--sv-player-bg</code>,
+                                <code>--sv-player-text</code>,
+                                <code>--sv-player-muted</code>,
+                                <code>--sv-player-border</code>,
+                                <code>--sv-player-accent</code>,
+                                <code>--sv-button-bg</code>,
+                                <code>--sv-button-text</code>,
+                                <code>--sv-button-border</code>,
+                                <code>--sv-card-border</code>,
+                                <code>--sv-radius-card</code>,
+                                <code>--sv-radius-art</code>,
+                                <code>--sv-radius-control</code>,
+                                <code>--sv-radius-small</code>,
+                                <code>--sv-radius-pill</code>
+                            </p>
+                        </details>
+
+                        <div class="sv-settings-appearance-layout">
+                            <div class="sv-settings-appearance-fields">
+                                <div class="sv-settings-subsection">
+                                    <h3><?php echo esc_html__('Preset', 'slim-volume'); ?></h3>
+                                    <table class="form-table" role="presentation">
+                                        <tbody><?php self::render_preset_row($settings); ?></tbody>
+                                    </table>
+                                </div>
+
+                                <div class="sv-settings-subsection">
+                                    <h3><?php echo esc_html__('Player colors', 'slim-volume'); ?></h3>
+                                    <table class="form-table" role="presentation">
+                                        <tbody>
+                                            <?php
+                                            self::render_text_row(
+                                                'player_bg',
+                                                __('Player and drawer background', 'slim-volume'),
+                                                $settings,
+                                                '--sv-player-bg',
+                                                __('Fixed player bar, expanded queue drawer, and fullscreen visualizer background.', 'slim-volume'),
+                                                __('Player + drawer', 'slim-volume')
+                                            );
+                                            self::render_text_row(
+                                                'player_text',
+                                                __('Primary player text', 'slim-volume'),
+                                                $settings,
+                                                '--sv-player-text',
+                                                __('Current track title, drawer headings, primary labels, and player service icons.', 'slim-volume'),
+                                                __('Player + drawer', 'slim-volume')
+                                            );
+                                            self::render_text_row(
+                                                'player_muted',
+                                                __('Secondary player text', 'slim-volume'),
+                                                $settings,
+                                                '--sv-player-muted',
+                                                __('Release name, elapsed time, queue metadata/status, drag handles, and visualizer labels.', 'slim-volume'),
+                                                __('Player + drawer', 'slim-volume')
+                                            );
+                                            self::render_text_row(
+                                                'player_border',
+                                                __('Passive player borders', 'slim-volume'),
+                                                $settings,
+                                                '--sv-player-border',
+                                                __('Player top edge, inactive progress track, drawer cards, queue rows, visualizer outline, and secondary player controls.', 'slim-volume'),
+                                                __('Player + drawer', 'slim-volume')
+                                            );
+                                            self::render_text_row(
+                                                'player_accent',
+                                                __('Active player accent', 'slim-volume'),
+                                                $settings,
+                                                '--sv-player-accent',
+                                                __('Played progress, queue-count badge, current/playing queue state, and player hover or focus highlights.', 'slim-volume'),
+                                                __('Active states', 'slim-volume')
+                                            );
+                                            ?>
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                <div class="sv-settings-subsection">
+                                    <h3><?php echo esc_html__('Buttons and page structure', 'slim-volume'); ?></h3>
+                                    <table class="form-table" role="presentation">
+                                        <tbody>
+                                            <?php
+                                            self::render_text_row(
+                                                'button_bg',
+                                                __('Primary action background', 'slim-volume'),
+                                                $settings,
+                                                '--sv-button-bg',
+                                                __('Primary Play and Queue buttons on music pages, plus the player transport buttons.', 'slim-volume'),
+                                                __('Buttons', 'slim-volume')
+                                            );
+                                            self::render_text_row(
+                                                'button_text',
+                                                __('Primary action text and icons', 'slim-volume'),
+                                                $settings,
+                                                '--sv-button-text',
+                                                __('Text and transport icons inside primary action buttons.', 'slim-volume'),
+                                                __('Buttons', 'slim-volume')
+                                            );
+                                            self::render_text_row(
+                                                'button_border',
+                                                __('Primary action and current-track outline', 'slim-volume'),
+                                                $settings,
+                                                '--sv-button-border',
+                                                __('Primary button outlines, queued-button states, and the active track highlight in release tracklists.', 'slim-volume'),
+                                                __('Buttons + tracklist', 'slim-volume')
+                                            );
+                                            self::render_text_row(
+                                                'card_border',
+                                                __('Content and secondary-control borders', 'slim-volume'),
+                                                $settings,
+                                                '--sv-card-border',
+                                                __('Archive artwork frames, search/sort fields, release track rows, lyrics/story separators, secondary buttons, and track navigation cards.', 'slim-volume'),
+                                                __('Music pages', 'slim-volume')
+                                            );
+                                            ?>
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                <div class="sv-settings-subsection">
+                                    <h3><?php echo esc_html__('Corner shapes', 'slim-volume'); ?></h3>
+                                    <table class="form-table" role="presentation">
+                                        <tbody>
+                                            <?php
+                                            self::render_text_row(
+                                                'radius_card',
+                                                __('Panel and card radius', 'slim-volume'),
+                                                $settings,
+                                                '--sv-radius-card',
+                                                __('Expanded drawer current-track card, visualizer panel, and previous/next track navigation cards.', 'slim-volume'),
+                                                __('Panels', 'slim-volume')
+                                            );
+                                            self::render_text_row(
+                                                'radius_art',
+                                                __('Hero artwork radius', 'slim-volume'),
+                                                $settings,
+                                                '--sv-radius-art',
+                                                __('Large featured artwork on single release and single track pages.', 'slim-volume'),
+                                                __('Release + track pages', 'slim-volume')
+                                            );
+                                            self::render_text_row(
+                                                'radius_control',
+                                                __('Track and queue row radius', 'slim-volume'),
+                                                $settings,
+                                                '--sv-radius-control',
+                                                __('Release track rows, queue rows, drawer artwork, and the empty-queue panel.', 'slim-volume'),
+                                                __('Rows + drawer', 'slim-volume')
+                                            );
+                                            self::render_text_row(
+                                                'radius_small',
+                                                __('Thumbnail radius', 'slim-volume'),
+                                                $settings,
+                                                '--sv-radius-small',
+                                                __('Archive artwork, player-bar artwork, queue thumbnails, and compact drag controls.', 'slim-volume'),
+                                                __('Artwork thumbnails', 'slim-volume')
+                                            );
+                                            self::render_text_row(
+                                                'radius_pill',
+                                                __('Button and pill radius', 'slim-volume'),
+                                                $settings,
+                                                '--sv-radius-pill',
+                                                __('Action buttons, transport controls, queue badges, archive search fields, and compact track controls.', 'slim-volume'),
+                                                __('Global controls', 'slim-volume')
+                                            );
+                                            ?>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <aside class="sv-settings-appearance-preview">
+                                <?php self::render_appearance_preview($preview_style); ?>
+                            </aside>
+                        </div>
+                    </div>
+                </section>
+
+                <div class="sv-settings-save-bar">
+                    <?php submit_button(__('Save Settings', 'slim-volume'), 'primary', 'submit', false); ?>
+                    <span class="description"><?php echo esc_html__('All tabs are saved together.', 'slim-volume'); ?></span>
                 </div>
-
-                <?php self::render_appearance_preview($preview_style); ?>
-
-
-                <table class="form-table" role="presentation">
-                    <tbody>
-    <?php
-    self::render_preset_row($settings);
-
-                        self::render_text_row('player_bg', __('Player background', 'slim-volume'), $settings, '--sv-player-bg');
-                        self::render_text_row('player_text', __('Player text', 'slim-volume'), $settings, '--sv-player-text');
-                        self::render_text_row('player_muted', __('Player muted text', 'slim-volume'), $settings, '--sv-player-muted');
-                        self::render_text_row('player_border', __('Player border', 'slim-volume'), $settings, '--sv-player-border');
-                        self::render_text_row('player_accent', __('Player accent', 'slim-volume'), $settings, '--sv-player-accent');
-
-                        self::render_text_row('button_bg', __('Button background', 'slim-volume'), $settings, '--sv-button-bg');
-                        self::render_text_row('button_text', __('Button text', 'slim-volume'), $settings, '--sv-button-text');
-                        self::render_text_row('button_border', __('Button border', 'slim-volume'), $settings, '--sv-button-border');
-
-                        self::render_text_row('card_border', __('Card border', 'slim-volume'), $settings, '--sv-card-border');
-
-                        self::render_text_row('radius_card', __('Card radius', 'slim-volume'), $settings, '--sv-radius-card');
-                        self::render_text_row('radius_art', __('Artwork radius', 'slim-volume'), $settings, '--sv-radius-art');
-                        self::render_text_row('radius_control', __('Control radius', 'slim-volume'), $settings, '--sv-radius-control');
-                        self::render_text_row('radius_small', __('Small radius', 'slim-volume'), $settings, '--sv-radius-small');
-                        self::render_text_row('radius_pill', __('Pill radius', 'slim-volume'), $settings, '--sv-radius-pill');
-                        ?>
-                    </tbody>
-                </table>
-
-                <?php submit_button(__('Save Settings', 'slim-volume')); ?>
             </form>
 
+            <?php self::render_tabs_script(); ?>
             <?php self::render_preview_script(); ?>
         </div>
         <?php
@@ -1051,6 +1242,123 @@ private static function render_appearance_preview(string $preview_style): void
         <?php
     }
 
+    private static function render_tabs_script(): void
+    {
+        ?>
+        <script>
+            (function () {
+                const tabs = Array.from(document.querySelectorAll('[data-sv-settings-tab]'));
+                const panels = Array.from(document.querySelectorAll('[data-sv-settings-panel]'));
+                const form = document.querySelector('[data-sv-settings-form]');
+
+                if (!tabs.length || !panels.length) {
+                    return;
+                }
+
+                const storageKey = 'slimVolumeSettingsTab';
+
+                function activateTab(tabKey, shouldFocus) {
+                    const nextTab = tabs.find(function (tab) {
+                        return tab.dataset.svSettingsTab === tabKey;
+                    }) || tabs[0];
+
+                    const nextKey = nextTab.dataset.svSettingsTab;
+
+                    tabs.forEach(function (tab) {
+                        const isActive = tab === nextTab;
+                        tab.classList.toggle('nav-tab-active', isActive);
+                        tab.setAttribute('aria-selected', isActive ? 'true' : 'false');
+                        tab.setAttribute('tabindex', isActive ? '0' : '-1');
+                    });
+
+                    panels.forEach(function (panel) {
+                        const isActive = panel.dataset.svSettingsPanel === nextKey;
+                        panel.hidden = !isActive;
+                        panel.classList.toggle('is-active', isActive);
+                    });
+
+                    try {
+                        window.localStorage.setItem(storageKey, nextKey);
+                    } catch (error) {
+                        // Storage is optional.
+                    }
+
+                    if (window.history && window.history.replaceState) {
+                        window.history.replaceState(null, '', '#sv-settings-' + nextKey);
+                    }
+
+                    if (shouldFocus) {
+                        nextTab.focus();
+                    }
+                }
+
+                function initialTab() {
+                    const match = window.location.hash.match(/^#sv-settings-(general|catalog|seo|appearance)$/);
+
+                    if (match) {
+                        return match[1];
+                    }
+
+                    try {
+                        return window.localStorage.getItem(storageKey) || 'general';
+                    } catch (error) {
+                        return 'general';
+                    }
+                }
+
+                tabs.forEach(function (tab, index) {
+                    tab.addEventListener('click', function (event) {
+                        event.preventDefault();
+                        activateTab(tab.dataset.svSettingsTab, false);
+                    });
+
+                    tab.addEventListener('keydown', function (event) {
+                        if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) {
+                            return;
+                        }
+
+                        event.preventDefault();
+
+                        let nextIndex = index;
+
+                        if (event.key === 'ArrowRight') {
+                            nextIndex = (index + 1) % tabs.length;
+                        } else if (event.key === 'ArrowLeft') {
+                            nextIndex = (index - 1 + tabs.length) % tabs.length;
+                        } else if (event.key === 'Home') {
+                            nextIndex = 0;
+                        } else if (event.key === 'End') {
+                            nextIndex = tabs.length - 1;
+                        }
+
+                        activateTab(tabs[nextIndex].dataset.svSettingsTab, true);
+                    });
+                });
+
+                if (form) {
+                    form.addEventListener('submit', function () {
+                        const active = tabs.find(function (tab) {
+                            return tab.classList.contains('nav-tab-active');
+                        });
+
+                        if (!active) {
+                            return;
+                        }
+
+                        try {
+                            window.localStorage.setItem(storageKey, active.dataset.svSettingsTab);
+                        } catch (error) {
+                            // Storage is optional.
+                        }
+                    });
+                }
+
+                activateTab(initialTab(), false);
+            })();
+        </script>
+        <?php
+    }
+
     private static function render_checkbox_row(
         string $key,
         string $label,
@@ -1141,17 +1449,23 @@ private static function render_appearance_preview(string $preview_style): void
         string $key,
         string $label,
         array $settings,
-        string $css_variable
+        string $css_variable,
+        string $description = '',
+        string $scope = ''
     ): void {
-        $value = (string) ($settings[$key] ?? '');
+        $value       = (string) ($settings[$key] ?? '');
         $placeholder = (string) (self::defaults()[$key] ?? '');
-        $is_color = self::is_color_setting($key);
+        $is_color    = self::is_color_setting($key);
         ?>
-        <tr>
+        <tr class="sv-settings-field-row">
             <th scope="row">
                 <label for="slim-volume-<?php echo esc_attr($key); ?>">
                     <?php echo esc_html($label); ?>
                 </label>
+
+                <?php if ($scope !== '') : ?>
+                    <span class="sv-settings-scope"><?php echo esc_html($scope); ?></span>
+                <?php endif; ?>
             </th>
             <td>
                 <?php if ($is_color) : ?>
@@ -1183,18 +1497,25 @@ private static function render_appearance_preview(string $preview_style): void
                     >
                 <?php endif; ?>
 
-                <p class="description">
+                <?php if ($description !== '') : ?>
+                    <p class="description sv-settings-field-description"><?php echo esc_html($description); ?></p>
+                <?php endif; ?>
+
+                <p class="description sv-settings-variable">
                     <?php
                     printf(
-                        esc_html__('Outputs %s.', 'slim-volume'),
+                        wp_kses(
+                            __('CSS variable: %s', 'slim-volume'),
+                            ['code' => []]
+                        ),
                         '<code>' . esc_html($css_variable) . '</code>'
                     );
                     ?>
                 </p>
 
                 <?php if ($is_color) : ?>
-                    <p class="description">
-                        <?php echo esc_html__('Use the color picker for simple hex colors, or type an advanced CSS color value like rgba(), currentColor, or var(--theme-color).', 'slim-volume'); ?>
+                    <p class="description sv-settings-advanced-color-note">
+                        <?php echo esc_html__('Use the picker for a hex color, or type an advanced CSS value such as rgba(), currentColor, or var(--theme-color).', 'slim-volume'); ?>
                     </p>
                 <?php endif; ?>
             </td>
