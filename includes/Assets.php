@@ -174,6 +174,66 @@ if (file_exists($butterchurn_adapter_path)) {
         }
 
         if ($is_timed_lyrics_screen) {
+            $sync_js_path = SLIM_VOLUME_PATH . 'assets/js/admin-timed-lyrics.js';
+            $track_id     = isset($_GET['track_id'])
+                ? absint($_GET['track_id'])
+                : 0;
+
+            if (
+                $track_id > 0
+                && get_post_type($track_id) === PostTypes::TRACK
+                && current_user_can('edit_post', $track_id)
+                && file_exists($sync_js_path)
+            ) {
+                wp_enqueue_script(
+                    'slim-volume-admin-timed-lyrics',
+                    SLIM_VOLUME_URL . 'assets/js/admin-timed-lyrics.js',
+                    [],
+                    self::asset_version($sync_js_path),
+                    true
+                );
+
+                $document = TimedLyrics::get_authoring_document($track_id);
+
+                wp_add_inline_script(
+                    'slim-volume-admin-timed-lyrics',
+                    'window.SVTimedLyricsAdmin = ' . wp_json_encode(
+                        [
+                            'ajaxUrl'  => admin_url('admin-ajax.php'),
+                            'action'   => Admin\TimedLyricsAdmin::AJAX_ACTION,
+                            'nonce'    => wp_create_nonce(
+                                Admin\TimedLyricsAdmin::NONCE_ACTION . ':' . $track_id
+                            ),
+                            'trackId'  => $track_id,
+                            'document' => $document,
+                            'strings'  => [
+                                'ready'              => __('Ready. Start Sync when you are prepared to tap each line.', 'slim-volume'),
+                                'armed'              => __('Sync armed. Press Space slightly before each lyric should activate.', 'slim-volume'),
+                                'reviewing'          => __('Review mode. Playback follows the saved timestamps.', 'slim-volume'),
+                                'finished'           => __('Timing pass reached the final lyric. Review or save your work.', 'slim-volume'),
+                                'dirty'              => __('Unsaved timing changes.', 'slim-volume'),
+                                'saving'             => __('Saving timed lyrics…', 'slim-volume'),
+                                'savedDraft'          => __('Timed lyrics draft saved.', 'slim-volume'),
+                                'savedComplete'       => __('Timed lyrics are complete and eligible for public display.', 'slim-volume'),
+                                'saveFailed'          => __('Timed lyrics could not be saved.', 'slim-volume'),
+                                'noTimestamp'         => __('Select a timed lyric line before adjusting it.', 'slim-volume'),
+                                'orderConflict'       => __('That timestamp would overlap the previous or next lyric line.', 'slim-volume'),
+                                'confirmReset'        => __('Clear every lyric timestamp in this workspace?', 'slim-volume'),
+                                'unsavedWarning'      => __('You have unsaved timed-lyrics changes.', 'slim-volume'),
+                                'allLinesRequired'    => __('Every lyric line needs a timestamp before it can be marked complete.', 'slim-volume'),
+                                'audioUnavailable'    => __('The audio source is unavailable.', 'slim-volume'),
+                                'startSync'           => __('Start Sync', 'slim-volume'),
+                                'resumeSync'          => __('Resume Sync', 'slim-volume'),
+                                'stopSync'            => __('Stop Sync', 'slim-volume'),
+                                'review'              => __('Review', 'slim-volume'),
+                                'stopReview'          => __('Stop Review', 'slim-volume'),
+                            ],
+                        ]
+                    ) . ';',
+                    'before'
+                );
+            }
+
             return;
         }
 

@@ -64,6 +64,10 @@ final class Plugin
 
         add_action('admin_init', [Admin\AdminColumns::class, 'register']);
         add_action('admin_menu', [Admin\TimedLyricsAdmin::class, 'register_page']);
+        add_action(
+            'wp_ajax_' . Admin\TimedLyricsAdmin::AJAX_ACTION,
+            [Admin\TimedLyricsAdmin::class, 'ajax_save']
+        );
         
         Admin\Settings::init();
 

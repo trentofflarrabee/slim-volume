@@ -59,6 +59,56 @@ final class TimedLyrics
     }
 
     /**
+     * Return a current, saveable authoring document for the admin workspace.
+     *
+     * Existing timestamps are retained only while the stored line model still
+     * matches the current plain lyrics. When lyrics changed, the workspace
+     * receives a fresh draft model instead of an unsaveable stale document.
+     */
+    public static function get_authoring_document(int $track_id): array
+    {
+        if (! self::is_track($track_id)) {
+            return [];
+        }
+
+        $lyrics          = (string) get_post_meta($track_id, '_sv_lyrics', true);
+        $generated_lines = self::generate_lines($lyrics);
+        $stored          = self::get_document($track_id);
+        $stored_lines    = is_array($stored['lines'] ?? null)
+            ? array_values($stored['lines'])
+            : [];
+
+        $duration = isset($stored['audio']['duration']) && is_numeric($stored['audio']['duration'])
+            ? (float) $stored['audio']['duration']
+            : 0.0;
+
+        $status = sanitize_key((string) ($stored['status'] ?? self::STATUS_DRAFT));
+
+        if (! in_array($status, [self::STATUS_DRAFT, self::STATUS_COMPLETE], true)) {
+            $status = self::STATUS_DRAFT;
+        }
+
+        $lines = (
+            $stored_lines
+            && self::line_model_matches($generated_lines, $stored_lines)
+        )
+            ? $stored_lines
+            : $generated_lines;
+
+        return self::sanitize_document_shape(
+            [
+                'version'    => self::SCHEMA_VERSION,
+                'status'     => $status,
+                'trackId'    => $track_id,
+                'lyricsHash' => self::lyrics_hash($lyrics),
+                'audio'      => self::audio_descriptor($track_id, $duration),
+                'updatedAt'  => sanitize_text_field((string) ($stored['updatedAt'] ?? '')),
+                'lines'      => $lines,
+            ]
+        );
+    }
+
+    /**
      * Save a draft or complete document.
      *
      * Return shape:

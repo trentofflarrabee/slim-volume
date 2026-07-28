@@ -21,7 +21,9 @@ if (! defined('ABSPATH')) {
  */
 final class TimedLyricsAdmin
 {
-    public const MENU_SLUG = 'slim-volume-lyrics-sync';
+    public const MENU_SLUG   = 'slim-volume-lyrics-sync';
+    public const AJAX_ACTION = 'slim_volume_save_timed_lyrics';
+    public const NONCE_ACTION = 'slim_volume_timed_lyrics';
 
     public static function register_page(): void
     {
@@ -44,6 +46,108 @@ final class TimedLyricsAdmin
             PostTypes::TRACK,
             'side',
             'high'
+        );
+    }
+
+
+    /**
+     * Save a draft or complete timing document from the synchronization studio.
+     */
+    public static function ajax_save(): void
+    {
+        $track_id = isset($_POST['track_id'])
+            ? absint($_POST['track_id'])
+            : 0;
+
+        check_ajax_referer(self::NONCE_ACTION . ':' . $track_id, 'nonce');
+
+        $track = get_post($track_id);
+
+        if (! $track instanceof WP_Post || $track->post_type !== PostTypes::TRACK) {
+            wp_send_json_error(
+                [
+                    'message' => __('The requested Slim Volume track could not be found.', 'slim-volume'),
+                    'errors'  => [],
+                ],
+                404
+            );
+        }
+
+        if (! current_user_can('edit_post', $track_id)) {
+            wp_send_json_error(
+                [
+                    'message' => __('You are not allowed to edit this track.', 'slim-volume'),
+                    'errors'  => [],
+                ],
+                403
+            );
+        }
+
+        $raw_document = $_POST['document'] ?? '';
+        $document     = [];
+
+        if (is_string($raw_document)) {
+            $decoded = json_decode(wp_unslash($raw_document), true);
+            $document = is_array($decoded) ? $decoded : [];
+        } elseif (is_array($raw_document)) {
+            $document = wp_unslash($raw_document);
+        }
+
+        if (! $document) {
+            wp_send_json_error(
+                [
+                    'message' => __('The timed-lyrics document was missing or invalid.', 'slim-volume'),
+                    'errors'  => [],
+                ],
+                400
+            );
+        }
+
+        $result = TimedLyrics::save_document($track_id, $document);
+
+        if (empty($result['saved'])) {
+            $errors = is_array($result['errors'] ?? null)
+                ? array_values($result['errors'])
+                : [];
+
+            wp_send_json_error(
+                [
+                    'message' => $errors
+                        ? (string) ($errors[0]['message'] ?? __('Timed lyrics could not be saved.', 'slim-volume'))
+                        : __('Timed lyrics could not be saved.', 'slim-volume'),
+                    'errors'  => $errors,
+                    'status'  => (string) ($result['status'] ?? TimedLyrics::STATUS_STALE),
+                ],
+                422
+            );
+        }
+
+        $saved_document = is_array($result['document'] ?? null)
+            ? $result['document']
+            : [];
+        $timed_count = count(
+            array_filter(
+                is_array($saved_document['lines'] ?? null) ? $saved_document['lines'] : [],
+                static fn($line): bool =>
+                    is_array($line)
+                    && ($line['type'] ?? 'line') === 'line'
+                    && isset($line['start'])
+                    && is_numeric($line['start'])
+            )
+        );
+        $status = (string) ($result['status'] ?? TimedLyrics::STATUS_DRAFT);
+
+        wp_send_json_success(
+            [
+                'message'      => $status === TimedLyrics::STATUS_COMPLETE
+                    ? __('Timed lyrics are complete and eligible for public display.', 'slim-volume')
+                    : __('Timed lyrics draft saved.', 'slim-volume'),
+                'status'       => $status,
+                'statusLabel'  => self::status_label($status),
+                'statusClass'  => self::status_class($status),
+                'timedCount'   => $timed_count,
+                'document'     => $saved_document,
+            ]
         );
     }
 
@@ -162,7 +266,7 @@ final class TimedLyricsAdmin
     private static function render_workspace(WP_Post $track): void
     {
         $summary      = self::track_summary($track->ID);
-        $document     = TimedLyrics::get_document($track->ID);
+        $document     = TimedLyrics::get_authoring_document($track->ID);
         $stored_lines = isset($document['lines']) && is_array($document['lines'])
             ? array_values($document['lines'])
             : [];
@@ -227,7 +331,8 @@ final class TimedLyricsAdmin
                 <?php self::render_summary_card(
                     __('Sync status', 'slim-volume'),
                     $summary['status_label'],
-                    $summary['status_class']
+                    $summary['status_class'],
+                    'status'
                 ); ?>
 
                 <?php self::render_summary_card(
@@ -256,7 +361,8 @@ final class TimedLyricsAdmin
                         $summary['timed_count'],
                         $summary['line_count']
                     ),
-                    $summary['timed_count'] > 0 ? 'draft' : 'none'
+                    $summary['timed_count'] > 0 ? 'draft' : 'none',
+                    'timed-count'
                 ); ?>
             </div>
 
@@ -288,9 +394,13 @@ final class TimedLyricsAdmin
             <div class="sv-timed-lyrics-workspace-grid">
                 <main class="sv-timed-lyrics-studio">
                     <section class="sv-timed-lyrics-panel sv-timed-lyrics-panel--current">
-                        <p class="sv-timed-lyrics-panel__eyebrow">
-                            <?php esc_html_e('Current line preview', 'slim-volume'); ?>
-                        </p>
+                        <div class="sv-timed-lyrics-current-line__meta">
+                            <p class="sv-timed-lyrics-panel__eyebrow">
+                                <?php esc_html_e('Current line', 'slim-volume'); ?>
+                            </p>
+                            <span data-sv-current-time>00:00.000</span>
+                        </div>
+
                         <p class="sv-timed-lyrics-current-line" data-sv-current-lyric>
                             <?php
                             echo esc_html(
@@ -300,12 +410,15 @@ final class TimedLyricsAdmin
                             );
                             ?>
                         </p>
-                        <p class="description">
-                            <?php esc_html_e(
-                                'The next phase connects Spacebar timing, undo, review, draft saving, and completion controls to this workspace.',
-                                'slim-volume'
-                            ); ?>
+
+                        <p class="sv-timed-lyrics-next-line">
+                            <span><?php esc_html_e('Next:', 'slim-volume'); ?></span>
+                            <strong data-sv-next-lyric><?php esc_html_e('—', 'slim-volume'); ?></strong>
                         </p>
+
+                        <div class="sv-timed-lyrics-mode" data-sv-sync-mode aria-live="polite">
+                            <?php esc_html_e('Ready. Start Sync when you are prepared to tap each line.', 'slim-volume'); ?>
+                        </div>
                     </section>
 
                     <section class="sv-timed-lyrics-panel">
@@ -321,6 +434,7 @@ final class TimedLyricsAdmin
                         <?php if ($summary['has_audio']) : ?>
                             <audio
                                 class="sv-timed-lyrics-audio"
+                                data-sv-timed-lyrics-audio
                                 controls
                                 preload="metadata"
                                 src="<?php echo esc_url($summary['audio_url']); ?>"
@@ -330,24 +444,77 @@ final class TimedLyricsAdmin
                                 <?php esc_html_e('No playable audio source is assigned to this track.', 'slim-volume'); ?>
                             </p>
                         <?php endif; ?>
+
+                        <div class="sv-timed-lyrics-transport" data-sv-sync-controls>
+                            <button class="button button-primary" type="button" data-sv-start-sync <?php disabled(! $summary['has_audio'] || ! $summary['has_lyrics']); ?>>
+                                <?php esc_html_e('Start Sync', 'slim-volume'); ?>
+                            </button>
+                            <button class="button" type="button" data-sv-toggle-play <?php disabled(! $summary['has_audio'] || ! $summary['has_lyrics']); ?>>
+                                <?php esc_html_e('Play / Pause', 'slim-volume'); ?>
+                            </button>
+                            <button class="button" type="button" data-sv-review <?php disabled(! $summary['has_audio'] || ! $summary['has_lyrics']); ?>>
+                                <?php esc_html_e('Review', 'slim-volume'); ?>
+                            </button>
+                            <button class="button" type="button" data-sv-undo <?php disabled(! $summary['has_audio'] || ! $summary['has_lyrics']); ?>>
+                                <?php esc_html_e('Undo', 'slim-volume'); ?>
+                            </button>
+                        </div>
                     </section>
 
                     <section class="sv-timed-lyrics-panel">
                         <div class="sv-timed-lyrics-panel__header">
                             <div>
                                 <p class="sv-timed-lyrics-panel__eyebrow">
-                                    <?php esc_html_e('Workflow', 'slim-volume'); ?>
+                                    <?php esc_html_e('Selected line', 'slim-volume'); ?>
                                 </p>
-                                <h2><?php esc_html_e('Next implementation phase', 'slim-volume'); ?></h2>
+                                <h2><?php esc_html_e('Timing adjustments', 'slim-volume'); ?></h2>
                             </div>
+                            <strong data-sv-selected-time>—</strong>
                         </div>
 
-                        <ol class="sv-timed-lyrics-next-steps">
-                            <li><?php esc_html_e('Start the audio and arm synchronization mode.', 'slim-volume'); ?></li>
-                            <li><?php esc_html_e('Press Space slightly before each lyric should become active.', 'slim-volume'); ?></li>
-                            <li><?php esc_html_e('Review, seek, undo, and nudge individual timestamps.', 'slim-volume'); ?></li>
-                            <li><?php esc_html_e('Save a draft or mark the timing pass complete.', 'slim-volume'); ?></li>
-                        </ol>
+                        <div class="sv-timed-lyrics-adjustments">
+                            <button class="button" type="button" data-sv-nudge="-0.5" <?php disabled(! $summary['has_audio'] || ! $summary['has_lyrics']); ?>>−0.50s</button>
+                            <button class="button" type="button" data-sv-nudge="-0.1" <?php disabled(! $summary['has_audio'] || ! $summary['has_lyrics']); ?>>−0.10s</button>
+                            <button class="button" type="button" data-sv-clear-line <?php disabled(! $summary['has_audio'] || ! $summary['has_lyrics']); ?>>
+                                <?php esc_html_e('Clear', 'slim-volume'); ?>
+                            </button>
+                            <button class="button" type="button" data-sv-nudge="0.1" <?php disabled(! $summary['has_audio'] || ! $summary['has_lyrics']); ?>>+0.10s</button>
+                            <button class="button" type="button" data-sv-nudge="0.5" <?php disabled(! $summary['has_audio'] || ! $summary['has_lyrics']); ?>>+0.50s</button>
+                        </div>
+
+                        <details class="sv-timed-lyrics-shortcuts">
+                            <summary><?php esc_html_e('Keyboard shortcuts', 'slim-volume'); ?></summary>
+                            <dl>
+                                <div><dt><?php esc_html_e('Space', 'slim-volume'); ?></dt><dd><?php esc_html_e('Mark current line and advance', 'slim-volume'); ?></dd></div>
+                                <div><dt><?php esc_html_e('Enter', 'slim-volume'); ?></dt><dd><?php esc_html_e('Play or pause audio', 'slim-volume'); ?></dd></div>
+                                <div><dt><?php esc_html_e('Backspace', 'slim-volume'); ?></dt><dd><?php esc_html_e('Undo latest timestamp', 'slim-volume'); ?></dd></div>
+                                <div><dt><?php esc_html_e('← / →', 'slim-volume'); ?></dt><dd><?php esc_html_e('Nudge selected line by 0.10 seconds', 'slim-volume'); ?></dd></div>
+                                <div><dt><?php esc_html_e('Shift + ← / →', 'slim-volume'); ?></dt><dd><?php esc_html_e('Nudge selected line by 0.50 seconds', 'slim-volume'); ?></dd></div>
+                            </dl>
+                        </details>
+                    </section>
+
+                    <section class="sv-timed-lyrics-panel sv-timed-lyrics-save-panel">
+                        <div>
+                            <p class="sv-timed-lyrics-panel__eyebrow">
+                                <?php esc_html_e('Save timing pass', 'slim-volume'); ?>
+                            </p>
+                            <p class="sv-timed-lyrics-save-status" data-sv-save-status aria-live="polite">
+                                <?php esc_html_e('No unsaved changes.', 'slim-volume'); ?>
+                            </p>
+                        </div>
+
+                        <div class="sv-timed-lyrics-save-actions">
+                            <button class="button" type="button" data-sv-reset-timings <?php disabled(! $summary['has_audio'] || ! $summary['has_lyrics']); ?>>
+                                <?php esc_html_e('Reset Timings', 'slim-volume'); ?>
+                            </button>
+                            <button class="button button-secondary" type="button" data-sv-save-draft <?php disabled(! $summary['has_audio'] || ! $summary['has_lyrics']); ?>>
+                                <?php esc_html_e('Save Draft', 'slim-volume'); ?>
+                            </button>
+                            <button class="button button-primary" type="button" data-sv-save-complete <?php disabled(! $summary['has_audio'] || ! $summary['has_lyrics']); ?>>
+                                <?php esc_html_e('Mark Complete', 'slim-volume'); ?>
+                            </button>
+                        </div>
                     </section>
                 </main>
 
@@ -388,13 +555,21 @@ final class TimedLyricsAdmin
                                 ?>
                                 <li
                                     class="sv-timed-lyrics-line-list__item sv-timed-lyrics-line-list__item--<?php echo esc_attr($type ?: 'line'); ?>"
+                                    data-sv-lyric-row
                                     data-line-index="<?php echo esc_attr((string) $index); ?>"
+                                    data-line-id="<?php echo esc_attr((string) ($line['id'] ?? '')); ?>"
+                                    data-line-type="<?php echo esc_attr($type ?: 'line'); ?>"
+                                    <?php if ($type === 'line') : ?>
+                                        role="button"
+                                        tabindex="0"
+                                        aria-label="<?php echo esc_attr(sprintf(__('Select lyric line %d', 'slim-volume'), $index + 1)); ?>"
+                                    <?php endif; ?>
                                 >
                                     <span class="sv-timed-lyrics-line-list__number">
                                         <?php echo esc_html(str_pad((string) ($index + 1), 2, '0', STR_PAD_LEFT)); ?>
                                     </span>
 
-                                    <span class="sv-timed-lyrics-line-list__time">
+                                    <span class="sv-timed-lyrics-line-list__time" data-sv-line-time>
                                         <?php echo esc_html(self::format_timestamp($start)); ?>
                                     </span>
 
@@ -580,10 +755,19 @@ final class TimedLyricsAdmin
         <?php
     }
 
-    private static function render_summary_card(string $label, string $value, string $state): void
-    {
+    private static function render_summary_card(
+        string $label,
+        string $value,
+        string $state,
+        string $key = ''
+    ): void {
         ?>
-        <div class="sv-timed-lyrics-summary-card">
+        <div
+            class="sv-timed-lyrics-summary-card"
+            <?php if ($key !== '') : ?>
+                data-sv-summary-card="<?php echo esc_attr($key); ?>"
+            <?php endif; ?>
+        >
             <span><?php echo esc_html($label); ?></span>
             <strong class="sv-timed-lyrics-summary-card__value sv-timed-lyrics-summary-card__value--<?php echo esc_attr($state); ?>">
                 <?php echo esc_html($value); ?>
