@@ -536,17 +536,17 @@ return array_merge(
                     <div class="sv-settings-section">
                         <h2><?php echo esc_html__('Artists & Projects', 'slim-volume'); ?></h2>
                         <p class="description">
-                            <?php echo esc_html__('Enable this only when releases need different artist, band, alias, studio, or project attribution.', 'slim-volume'); ?>
+                            <?php echo esc_html__('Artists & Projects can always be managed under Music. Enable attribution only when releases should use those identities publicly.', 'slim-volume'); ?>
                         </p>
 
                         <table class="form-table" role="presentation">
                             <tbody>
                                 <?php self::render_checkbox_row(
                                     'projects_enabled',
-                                    __('Enable per-release artists/projects', 'slim-volume'),
-                                    __('Add an Artists & Projects manager under Music and a single artist/project selector to each Release editor.', 'slim-volume'),
+                                    __('Use per-release artist/project attribution', 'slim-volume'),
+                                    __('Enable the artist/project selector on Release editors and use assigned identities on the frontend and in music SEO.', 'slim-volume'),
                                     $settings,
-                                    __('Existing releases keep using the global Artist / Project identity until a specific project is assigned. Tracks inherit their release assignment automatically.', 'slim-volume')
+                                    __('The Artists & Projects manager stays available when this is disabled. Existing assignments remain stored, but public pages and SEO use the global Artist / Project identity.', 'slim-volume')
                                 ); ?>
 
                                 <?php self::render_checkbox_row(

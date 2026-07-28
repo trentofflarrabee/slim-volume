@@ -43,8 +43,6 @@ final class ProjectTaxonomy
 
     public static function register(): void
     {
-        $show_ui = self::is_enabled();
-
         register_taxonomy(
             self::TAXONOMY,
             [PostTypes::RELEASE],
@@ -70,8 +68,8 @@ final class ProjectTaxonomy
                 'public'             => false,
                 'publicly_queryable' => false,
                 'hierarchical'       => false,
-                'show_ui'            => $show_ui,
-                'show_in_menu'       => $show_ui,
+                'show_ui'            => true,
+                'show_in_menu'       => true,
                 'show_in_nav_menus'  => false,
                 'show_tagcloud'      => false,
                 'show_admin_column'  => false,
@@ -88,12 +86,14 @@ final class ProjectTaxonomy
 
         self::register_term_meta();
 
-        if ($show_ui) {
-            add_action(self::TAXONOMY . '_add_form_fields', [self::class, 'render_add_fields']);
-            add_action(self::TAXONOMY . '_edit_form_fields', [self::class, 'render_edit_fields']);
-            add_action('created_' . self::TAXONOMY, [self::class, 'save_term_fields']);
-            add_action('edited_' . self::TAXONOMY, [self::class, 'save_term_fields']);
-        }
+        // Keep Artists & Projects manageable in wp-admin even when public
+        // per-release attribution is disabled. The projects_enabled setting
+        // controls resolution, selectors, frontend display, and SEO—not whether
+        // stored artist/project records can be viewed or edited.
+        add_action(self::TAXONOMY . '_add_form_fields', [self::class, 'render_add_fields']);
+        add_action(self::TAXONOMY . '_edit_form_fields', [self::class, 'render_edit_fields']);
+        add_action('created_' . self::TAXONOMY, [self::class, 'save_term_fields']);
+        add_action('edited_' . self::TAXONOMY, [self::class, 'save_term_fields']);
     }
 
     public static function register_term_meta(): void
