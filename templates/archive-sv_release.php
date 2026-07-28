@@ -6,6 +6,8 @@
  */
 
 use SlimVolume\Admin\Settings;
+use SlimVolume\Artists\ArtistResolver;
+use SlimVolume\Artists\ProjectTaxonomy;
 
 if (! defined('ABSPATH')) {
     exit;
@@ -16,6 +18,41 @@ $search_query = isset($_GET['sv_release_q'])
     : '';
 
 $settings = Settings::get_settings();
+
+$projects_enabled        = ! empty($settings['projects_enabled']);
+$show_archive_artist     = $projects_enabled && ! empty($settings['projects_show_archive']);
+$show_project_filter     = $projects_enabled && ! empty($settings['projects_archive_filter']);
+$selected_project_id     = $show_project_filter && isset($_GET['sv_project'])
+    ? absint($_GET['sv_project'])
+    : 0;
+$selected_project        = null;
+$project_filter_terms    = [];
+
+if ($show_project_filter) {
+    $terms = get_terms(
+        [
+            'taxonomy'   => ProjectTaxonomy::TAXONOMY,
+            'hide_empty' => true,
+            'orderby'    => 'name',
+            'order'      => 'ASC',
+        ]
+    );
+
+    if (! is_wp_error($terms)) {
+        $project_filter_terms = $terms;
+    }
+
+    if ($selected_project_id > 0) {
+        $term = get_term($selected_project_id, ProjectTaxonomy::TAXONOMY);
+
+        if ($term instanceof WP_Term) {
+            $selected_project = $term;
+        } else {
+            $selected_project_id = 0;
+        }
+    }
+}
+
 
 $release_card_link_behavior = isset($settings['release_card_link_behavior'])
     ? sanitize_key((string) $settings['release_card_link_behavior'])
@@ -134,6 +171,16 @@ $query_args = [
     'paged'          => $paged,
 ];
 
+if ($selected_project_id > 0) {
+    $query_args['tax_query'] = [
+        [
+            'taxonomy' => ProjectTaxonomy::TAXONOMY,
+            'field'    => 'term_id',
+            'terms'    => [$selected_project_id],
+        ],
+    ];
+}
+
 if ($search_query) {
     $matching_release_ids = $get_matching_release_ids($search_query);
 
@@ -217,7 +264,7 @@ get_header();
             <?php esc_html_e('Browse releases, singles, and track-by-track deep dives.', 'slim-volume'); ?>
         </p>
 
-        <form class="sv-release-archive-controls" method="get" action="<?php echo esc_url($archive_url); ?>">
+        <form class="sv-release-archive-controls<?php echo $show_project_filter && $project_filter_terms ? ' has-project-filter' : ''; ?>" method="get" action="<?php echo esc_url($archive_url); ?>">
             <div class="sv-release-archive-controls__field sv-release-archive-controls__field--search">
                 <label class="sv-release-archive-controls__label" for="sv-release-search">
                     <?php esc_html_e('Search music', 'slim-volume'); ?>
@@ -241,6 +288,35 @@ get_header();
                     >
                 </div>
             </div>
+
+            <?php if ($show_project_filter && $project_filter_terms) : ?>
+                <div class="sv-release-archive-controls__field sv-release-archive-controls__field--project">
+                    <label class="sv-release-archive-controls__label" for="sv-release-project">
+                        <?php esc_html_e('Artist / project', 'slim-volume'); ?>
+                    </label>
+
+                    <div class="sv-release-archive-controls__select-wrap">
+                        <select
+                            id="sv-release-project"
+                            class="sv-release-archive-controls__sort"
+                            name="sv_project"
+                        >
+                            <option value="0">
+                                <?php esc_html_e('All artists/projects', 'slim-volume'); ?>
+                            </option>
+
+                            <?php foreach ($project_filter_terms as $project_term) : ?>
+                                <option
+                                    value="<?php echo esc_attr((string) $project_term->term_id); ?>"
+                                    <?php selected($selected_project_id, (int) $project_term->term_id); ?>
+                                >
+                                    <?php echo esc_html($project_term->name); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                </div>
+            <?php endif; ?>
 
             <div class="sv-release-archive-controls__field sv-release-archive-controls__field--sort">
                 <label class="sv-release-archive-controls__label" for="sv-release-sort">
@@ -274,7 +350,7 @@ get_header();
                     <?php esc_html_e('Apply', 'slim-volume'); ?>
                 </button>
 
-                <?php if ($search_query || 'newest' !== $sort) : ?>
+                <?php if ($search_query || 'newest' !== $sort || $selected_project_id > 0) : ?>
                     <a class="sv-release-archive-controls__clear" href="<?php echo esc_url($archive_url); ?>">
                         <?php esc_html_e('Clear', 'slim-volume'); ?>
                     </a>
@@ -309,6 +385,17 @@ get_header();
                     ?>
                 </span>
             <?php endif; ?>
+
+            <?php if ($selected_project instanceof WP_Term) : ?>
+                <span>
+                    <?php
+                    printf(
+                        esc_html__('by %s', 'slim-volume'),
+                        esc_html($selected_project->name)
+                    );
+                    ?>
+                </span>
+            <?php endif; ?>
         </p>
     </header>
 
@@ -320,6 +407,10 @@ get_header();
 
                 $release_id   = get_the_ID();
                 $release_meta = $format_release_meta($release_id);
+
+                $release_artist = $show_archive_artist
+                    ? ArtistResolver::for_release($release_id, $settings)
+                    : [];
 
                 $external_url     = esc_url_raw((string) get_post_meta($release_id, '_sv_external_url', true));
                 $external_label   = trim((string) get_post_meta($release_id, '_sv_external_label', true));
@@ -360,6 +451,12 @@ get_header();
                         <div class="sv-release-card__body">
                             <h2 class="sv-release-card__title"><?php the_title(); ?></h2>
 
+                            <?php if ($show_archive_artist && ! empty($release_artist['name'])) : ?>
+                                <p class="sv-release-card__artist">
+                                    <?php echo esc_html((string) $release_artist['name']); ?>
+                                </p>
+                            <?php endif; ?>
+
                             <?php if ($release_meta) : ?>
                                 <p class="sv-release-card__meta">
                                     <?php echo esc_html(implode(' · ', $release_meta)); ?>
@@ -391,6 +488,10 @@ get_header();
             $add_args['sv_release_sort'] = $sort;
         }
 
+        if ($selected_project_id > 0) {
+            $add_args['sv_project'] = $selected_project_id;
+        }
+
         if ($add_args) {
             $pagination_args['add_args'] = $add_args;
         }
@@ -407,7 +508,7 @@ get_header();
         <?php wp_reset_postdata(); ?>
     <?php else : ?>
         <p class="sv-release-archive-empty">
-            <?php esc_html_e('No releases matched your search.', 'slim-volume'); ?>
+            <?php esc_html_e('No releases matched the selected filters.', 'slim-volume'); ?>
         </p>
     <?php endif; ?>
 </main>

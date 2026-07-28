@@ -1,6 +1,7 @@
 <?php
 
 use SlimVolume\Admin\Settings;
+use SlimVolume\Artists\ArtistResolver;
 use SlimVolume\Frontend\PlayerData;
 
 if (! defined('ABSPATH')) {
@@ -11,6 +12,13 @@ get_header();
 
 $release_id = get_the_ID();
 $settings   = Settings::get_settings();
+
+$projects_enabled    = ! empty($settings['projects_enabled']);
+$show_release_artist = $projects_enabled && ! empty($settings['projects_show_release']);
+$release_artist      = $show_release_artist
+    ? ArtistResolver::for_release($release_id, $settings)
+    : [];
+
 
 $player_enabled = ! empty($settings['player_enabled']);
 $config         = PlayerData::get_release_page_config($release_id);
@@ -101,6 +109,19 @@ $service_key_from_link = static function (string $label, string $url): string {
 
         <div class="sv-release-hero__content">
             <h1><?php the_title(); ?></h1>
+
+            <?php if ($show_release_artist && ! empty($release_artist['name'])) : ?>
+                <p class="sv-artist-attribution sv-release-hero__artist">
+                    <span><?php esc_html_e('by', 'slim-volume'); ?></span>
+                    <?php if (! empty($release_artist['url'])) : ?>
+                        <a href="<?php echo esc_url((string) $release_artist['url']); ?>">
+                            <?php echo esc_html((string) $release_artist['name']); ?>
+                        </a>
+                    <?php else : ?>
+                        <strong><?php echo esc_html((string) $release_artist['name']); ?></strong>
+                    <?php endif; ?>
+                </p>
+            <?php endif; ?>
 
 <?php
 $release_date_raw     = trim((string) get_post_meta($release_id, '_sv_release_date', true));

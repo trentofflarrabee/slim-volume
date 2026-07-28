@@ -1,0 +1,94 @@
+/* ==========================================================================
+   Slim Volume Artist & Project Attribution
+   ========================================================================== */
+
+.sv-release-card__artist {
+  margin: 0;
+  overflow-wrap: anywhere;
+  font-size: 0.84rem;
+  font-weight: 700;
+  line-height: 1.35;
+  opacity: 0.82;
+}
+
+.sv-artist-attribution {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.32em;
+  align-items: baseline;
+  margin: 0.45rem 0 0;
+  font-size: 0.98rem;
+  line-height: 1.45;
+  opacity: 0.82;
+}
+
+.sv-artist-attribution span {
+  opacity: 0.72;
+}
+
+.sv-artist-attribution strong {
+  font-weight: 700;
+}
+
+.sv-artist-attribution a {
+  color: inherit;
+  font-weight: 700;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.18em;
+}
+
+.sv-artist-attribution a:hover,
+.sv-artist-attribution a:focus {
+  opacity: 1;
+}
+
+.sv-release-archive-controls.has-project-filter {
+  grid-template-columns:
+    minmax(0, 1fr)
+    minmax(170px, 220px)
+    minmax(170px, 220px)
+    auto;
+}
+
+@media (max-width: 900px) {
+  .sv-release-archive-controls.has-project-filter {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+  }
+
+  .sv-release-archive-controls.has-project-filter
+    .sv-release-archive-controls__field--search {
+    grid-column: 1 / -1;
+  }
+
+  .sv-release-archive-controls.has-project-filter
+    .sv-release-archive-controls__field--project {
+    grid-column: 1;
+  }
+
+  .sv-release-archive-controls.has-project-filter
+    .sv-release-archive-controls__field--sort {
+    grid-column: 2;
+  }
+
+  .sv-release-archive-controls.has-project-filter
+    .sv-release-archive-controls__actions {
+    grid-column: 3;
+  }
+}
+
+@media (max-width: 560px) {
+  .sv-release-archive-controls.has-project-filter {
+    grid-template-columns: 1fr;
+  }
+
+  .sv-release-archive-controls.has-project-filter
+    .sv-release-archive-controls__field--search,
+  .sv-release-archive-controls.has-project-filter
+    .sv-release-archive-controls__field--project,
+  .sv-release-archive-controls.has-project-filter
+    .sv-release-archive-controls__field--sort,
+  .sv-release-archive-controls.has-project-filter
+    .sv-release-archive-controls__actions {
+    grid-column: 1;
+  }
+}

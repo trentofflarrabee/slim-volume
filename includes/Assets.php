@@ -38,6 +38,17 @@ final class Assets
             }
         }
 
+        $artist_projects_css_path = SLIM_VOLUME_PATH . 'assets/css/artist-projects.css';
+
+        if (file_exists($artist_projects_css_path)) {
+            wp_enqueue_style(
+                'slim-volume-artist-projects',
+                SLIM_VOLUME_URL . 'assets/css/artist-projects.css',
+                ['slim-volume'],
+                self::asset_version($artist_projects_css_path)
+            );
+        }
+
 $settings = Admin\Settings::get_settings();
 
 if (empty($settings['player_enabled'])) {

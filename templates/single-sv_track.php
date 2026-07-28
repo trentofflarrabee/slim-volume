@@ -1,6 +1,7 @@
 <?php
 
 use SlimVolume\Admin\Settings;
+use SlimVolume\Artists\ArtistResolver;
 use SlimVolume\Frontend\PlayerData;
 use SlimVolume\Rewrite;
 use SlimVolume\TimedLyrics;
@@ -14,6 +15,13 @@ get_header();
 $track_id   = get_the_ID();
 $release_id = Rewrite::get_track_release_id($track_id);
 $settings   = Settings::get_settings();
+
+$projects_enabled  = ! empty($settings['projects_enabled']);
+$show_track_artist = $projects_enabled && ! empty($settings['projects_show_track']);
+$track_artist      = $show_track_artist
+    ? ArtistResolver::for_track($track_id, $settings)
+    : [];
+
 
 $player_enabled = ! empty($settings['player_enabled']);
 $config         = PlayerData::get_track_page_config($track_id);
@@ -174,6 +182,19 @@ $track_links = array_filter($track_links);
                     </p>
 
                     <h1><?php the_title(); ?></h1>
+
+                    <?php if ($show_track_artist && ! empty($track_artist['name'])) : ?>
+                        <p class="sv-artist-attribution sv-track-hero__artist">
+                            <span><?php esc_html_e('by', 'slim-volume'); ?></span>
+                            <?php if (! empty($track_artist['url'])) : ?>
+                                <a href="<?php echo esc_url((string) $track_artist['url']); ?>">
+                                    <?php echo esc_html((string) $track_artist['name']); ?>
+                                </a>
+                            <?php else : ?>
+                                <strong><?php echo esc_html((string) $track_artist['name']); ?></strong>
+                            <?php endif; ?>
+                        </p>
+                    <?php endif; ?>
 
                     <?php if ($release_id) : ?>
                         <?php

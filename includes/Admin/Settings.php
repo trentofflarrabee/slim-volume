@@ -28,6 +28,10 @@ final class Settings
             'player_enabled'             => true,
             'release_card_link_behavior' => 'internal',
             'projects_enabled'             => false,
+            'projects_show_archive'        => false,
+            'projects_show_release'        => true,
+            'projects_show_track'          => true,
+            'projects_archive_filter'      => false,
 
             'ajax_navigation' => true,
             'persistence'    => true,
@@ -308,6 +312,10 @@ return array_merge(
         'player_enabled'             => ! empty($input['player_enabled']),
         'release_card_link_behavior' => $release_card_link_behavior,
         'projects_enabled'             => ! empty($input['projects_enabled']),
+        'projects_show_archive'        => ! empty($input['projects_show_archive']),
+        'projects_show_release'        => ! empty($input['projects_show_release']),
+        'projects_show_track'          => ! empty($input['projects_show_track']),
+        'projects_archive_filter'      => ! empty($input['projects_archive_filter']),
 
         'ajax_navigation' => ! empty($input['ajax_navigation']),
         'persistence'    => ! empty($input['persistence']),
@@ -539,6 +547,38 @@ return array_merge(
                                     __('Add an Artists & Projects manager under Music and a single artist/project selector to each Release editor.', 'slim-volume'),
                                     $settings,
                                     __('Existing releases keep using the global Artist / Project identity until a specific project is assigned. Tracks inherit their release assignment automatically.', 'slim-volume')
+                                ); ?>
+
+                                <?php self::render_checkbox_row(
+                                    'projects_show_archive',
+                                    __('Show artist/project on archive cards', 'slim-volume'),
+                                    __('Display the resolved artist or project name beneath each release title on /music.', 'slim-volume'),
+                                    $settings,
+                                    __('Useful for studios, labels, producers, and mixed-artist catalogs. Leave this off for a cleaner single-artist discography.', 'slim-volume')
+                                ); ?>
+
+                                <?php self::render_checkbox_row(
+                                    'projects_show_release',
+                                    __('Show artist/project on release pages', 'slim-volume'),
+                                    __('Display a “by Artist / Project” attribution beneath the release title.', 'slim-volume'),
+                                    $settings,
+                                    __('Unassigned releases use the global Artist / Project identity from the SEO settings.', 'slim-volume')
+                                ); ?>
+
+                                <?php self::render_checkbox_row(
+                                    'projects_show_track',
+                                    __('Show artist/project on track pages', 'slim-volume'),
+                                    __('Display the inherited release artist/project beneath the track title.', 'slim-volume'),
+                                    $settings,
+                                    __('Tracks inherit the artist/project assigned to their parent release.', 'slim-volume')
+                                ); ?>
+
+                                <?php self::render_checkbox_row(
+                                    'projects_archive_filter',
+                                    __('Show artist/project filter on /music', 'slim-volume'),
+                                    __('Add an artist/project dropdown to the public discography filters.', 'slim-volume'),
+                                    $settings,
+                                    __('The filter lists assigned Artists & Projects. Releases using only the global fallback remain visible under All artists/projects.', 'slim-volume')
                                 ); ?>
                             </tbody>
                         </table>
