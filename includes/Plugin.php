@@ -23,6 +23,7 @@ require_once SLIM_VOLUME_PATH . 'includes/Admin/ReleaseTrackManager.php';
 require_once SLIM_VOLUME_PATH . 'includes/Admin/Settings.php';
 require_once SLIM_VOLUME_PATH . 'includes/Artists/ProjectTaxonomy.php';
 require_once SLIM_VOLUME_PATH . 'includes/Artists/ArtistResolver.php';
+require_once SLIM_VOLUME_PATH . 'includes/Admin/ReleaseProjectMetaBox.php';
 require_once SLIM_VOLUME_PATH . 'includes/Admin/ReleaseDashboardMetaBox.php';
 require_once SLIM_VOLUME_PATH . 'includes/Admin/TrackReleasePrefill.php';
 require_once SLIM_VOLUME_PATH . 'includes/Admin/TrackContextMetaBox.php';
@@ -52,6 +53,7 @@ final class Plugin
         add_action('init', [Rewrite::class, 'register']);
 
         add_action('add_meta_boxes', [Admin\ReleaseMetaBoxes::class, 'register']);
+        add_action('add_meta_boxes', [Admin\ReleaseProjectMetaBox::class, 'register']);
         add_action('add_meta_boxes', [Admin\TrackMetaBoxes::class, 'register']);
         add_action('add_meta_boxes', [Admin\ReleaseTrackManager::class, 'register']);
         add_action('add_meta_boxes', [Admin\ReleaseDashboardMetaBox::class, 'register']);
@@ -61,6 +63,7 @@ final class Plugin
         add_action('add_meta_boxes', [Admin\TimedLyricsAdmin::class, 'register_meta_box']);
 
         add_action('save_post_' . PostTypes::RELEASE, [Admin\ReleaseMetaBoxes::class, 'save']);
+        add_action('save_post_' . PostTypes::RELEASE, [Admin\ReleaseProjectMetaBox::class, 'save'], 20);
         add_action('save_post_' . PostTypes::RELEASE, [Admin\ReleaseTrackManager::class, 'save_order']);
         add_action('save_post_' . PostTypes::TRACK, [Admin\TrackMetaBoxes::class, 'save']);
         add_action('save_post_' . PostTypes::TRACK, [TimedLyrics::class, 'reconcile'], 20);

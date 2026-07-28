@@ -27,6 +27,7 @@ final class Settings
         return [
             'player_enabled'             => true,
             'release_card_link_behavior' => 'internal',
+            'projects_enabled'             => false,
 
             'ajax_navigation' => true,
             'persistence'    => true,
@@ -306,6 +307,7 @@ return array_merge(
     [
         'player_enabled'             => ! empty($input['player_enabled']),
         'release_card_link_behavior' => $release_card_link_behavior,
+        'projects_enabled'             => ! empty($input['projects_enabled']),
 
         'ajax_navigation' => ! empty($input['ajax_navigation']),
         'persistence'    => ! empty($input['persistence']),
@@ -518,6 +520,25 @@ return array_merge(
                                     ],
                                     $settings,
                                     __('External mode uses each release\'s Primary External URL and falls back to the internal release page when that field is empty.', 'slim-volume')
+                                ); ?>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="sv-settings-section">
+                        <h2><?php echo esc_html__('Artists & Projects', 'slim-volume'); ?></h2>
+                        <p class="description">
+                            <?php echo esc_html__('Enable this only when releases need different artist, band, alias, studio, or project attribution.', 'slim-volume'); ?>
+                        </p>
+
+                        <table class="form-table" role="presentation">
+                            <tbody>
+                                <?php self::render_checkbox_row(
+                                    'projects_enabled',
+                                    __('Enable per-release artists/projects', 'slim-volume'),
+                                    __('Add an Artists & Projects manager under Music and a single artist/project selector to each Release editor.', 'slim-volume'),
+                                    $settings,
+                                    __('Existing releases keep using the global Artist / Project identity until a specific project is assigned. Tracks inherit their release assignment automatically.', 'slim-volume')
                                 ); ?>
                             </tbody>
                         </table>

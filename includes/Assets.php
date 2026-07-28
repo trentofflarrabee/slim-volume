@@ -148,6 +148,11 @@ if (file_exists($butterchurn_adapter_path)) {
             return;
         }
 
+        $is_project_taxonomy_screen = (
+            (isset($screen->taxonomy) && $screen->taxonomy === Artists\ProjectTaxonomy::TAXONOMY)
+            || $screen->id === 'edit-' . Artists\ProjectTaxonomy::TAXONOMY
+        );
+
         $is_timed_lyrics_screen = (
             $screen->id === PostTypes::RELEASE . '_page_slim-volume-lyrics-sync'
             || $hook === PostTypes::RELEASE . '_page_slim-volume-lyrics-sync'
@@ -158,7 +163,7 @@ if (file_exists($butterchurn_adapter_path)) {
             && in_array($screen->post_type, [PostTypes::RELEASE, PostTypes::TRACK], true)
         );
 
-        if (! $is_timed_lyrics_screen && ! $is_music_post_screen) {
+        if (! $is_project_taxonomy_screen && ! $is_timed_lyrics_screen && ! $is_music_post_screen) {
             return;
         }
 
@@ -171,6 +176,24 @@ if (file_exists($butterchurn_adapter_path)) {
                 [],
                 self::asset_version($css_path)
             );
+        }
+
+        if ($is_project_taxonomy_screen) {
+            wp_enqueue_media();
+
+            $project_media_path = SLIM_VOLUME_PATH . 'assets/js/admin-project-media.js';
+
+            if (file_exists($project_media_path)) {
+                wp_enqueue_script(
+                    'slim-volume-admin-project-media',
+                    SLIM_VOLUME_URL . 'assets/js/admin-project-media.js',
+                    [],
+                    self::asset_version($project_media_path),
+                    true
+                );
+            }
+
+            return;
         }
 
         if ($is_timed_lyrics_screen) {

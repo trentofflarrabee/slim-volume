@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace SlimVolume\Artists;
 
+use SlimVolume\Admin\Settings;
 use SlimVolume\PostTypes;
 use WP_Error;
 use WP_Post;
@@ -16,12 +17,8 @@ if (! defined('ABSPATH')) {
 /**
  * Registers and manages optional artist/project assignments for releases.
  *
- * The taxonomy is intentionally additive. Existing releases may remain
- * unassigned and continue using Slim Volume's global/default artist identity.
- *
- * Phase one exposes the term-management screen under Music but suppresses the
- * standard taxonomy metabox. A later admin phase will add a controlled,
- * single-select release field that calls assign_to_release().
+ * Existing releases may remain unassigned and continue using Slim Volume's
+ * global/default artist identity.
  */
 final class ProjectTaxonomy
 {
@@ -34,8 +31,20 @@ final class ProjectTaxonomy
     public const ENTITY_GROUP  = 'group';
     public const ENTITY_PERSON = 'person';
 
+    private const NONCE_ACTION = 'sv_save_project_fields';
+    private const NONCE_FIELD  = 'sv_project_fields_nonce';
+
+    public static function is_enabled(): bool
+    {
+        $settings = Settings::get_settings();
+
+        return ! empty($settings['projects_enabled']);
+    }
+
     public static function register(): void
     {
+        $show_ui = self::is_enabled();
+
         register_taxonomy(
             self::TAXONOMY,
             [PostTypes::RELEASE],
@@ -61,8 +70,8 @@ final class ProjectTaxonomy
                 'public'             => false,
                 'publicly_queryable' => false,
                 'hierarchical'       => false,
-                'show_ui'            => true,
-                'show_in_menu'       => true,
+                'show_ui'            => $show_ui,
+                'show_in_menu'       => $show_ui,
                 'show_in_nav_menus'  => false,
                 'show_tagcloud'      => false,
                 'show_admin_column'  => false,
@@ -71,13 +80,20 @@ final class ProjectTaxonomy
                 'rewrite'            => false,
                 'query_var'          => false,
 
-                // One primary project per release will be assigned through a
-                // dedicated Slim Volume control in the next phase.
-                'meta_box_cb'        => false,
+                // Slim Volume enforces one primary project through a dedicated
+                // release metabox rather than WordPress's tag-style metabox.
+                'meta_box_cb' => false,
             ]
         );
 
         self::register_term_meta();
+
+        if ($show_ui) {
+            add_action(self::TAXONOMY . '_add_form_fields', [self::class, 'render_add_fields']);
+            add_action(self::TAXONOMY . '_edit_form_fields', [self::class, 'render_edit_fields']);
+            add_action('created_' . self::TAXONOMY, [self::class, 'save_term_fields']);
+            add_action('edited_' . self::TAXONOMY, [self::class, 'save_term_fields']);
+        }
     }
 
     public static function register_term_meta(): void
@@ -122,6 +138,213 @@ final class ProjectTaxonomy
         );
     }
 
+    public static function render_add_fields(): void
+    {
+        wp_nonce_field(self::NONCE_ACTION, self::NONCE_FIELD);
+        ?>
+        <div class="form-field">
+            <label for="sv_project_entity_type">
+                <?php esc_html_e('Entity type', 'slim-volume'); ?>
+            </label>
+            <?php self::render_entity_type_select(self::ENTITY_GROUP); ?>
+            <p>
+                <?php esc_html_e('Choose whether this credit represents a band/group/project or a solo person.', 'slim-volume'); ?>
+            </p>
+        </div>
+
+        <div class="form-field">
+            <label for="sv_project_url">
+                <?php esc_html_e('Canonical artist/project URL', 'slim-volume'); ?>
+            </label>
+            <input
+                type="url"
+                id="sv_project_url"
+                name="sv_project_url"
+                value=""
+                placeholder="https://example.com/"
+            >
+            <p>
+                <?php esc_html_e('Optional. Used later for artist attribution links and structured data.', 'slim-volume'); ?>
+            </p>
+        </div>
+
+        <div class="form-field">
+            <label><?php esc_html_e('Artist/project image', 'slim-volume'); ?></label>
+            <?php self::render_image_field(0); ?>
+            <p>
+                <?php esc_html_e('Optional logo, portrait, or project artwork.', 'slim-volume'); ?>
+            </p>
+        </div>
+        <?php
+    }
+
+    public static function render_edit_fields(WP_Term $term): void
+    {
+        $entity_type = self::sanitize_entity_type(
+            get_term_meta($term->term_id, self::META_ENTITY_TYPE, true)
+        );
+
+        $url = (string) get_term_meta($term->term_id, self::META_URL, true);
+
+        $image_id = absint(
+            get_term_meta($term->term_id, self::META_IMAGE_ID, true)
+        );
+
+        wp_nonce_field(self::NONCE_ACTION, self::NONCE_FIELD);
+        ?>
+        <tr class="form-field">
+            <th scope="row">
+                <label for="sv_project_entity_type">
+                    <?php esc_html_e('Entity type', 'slim-volume'); ?>
+                </label>
+            </th>
+            <td>
+                <?php self::render_entity_type_select($entity_type); ?>
+                <p class="description">
+                    <?php esc_html_e('Choose whether this credit represents a band/group/project or a solo person.', 'slim-volume'); ?>
+                </p>
+            </td>
+        </tr>
+
+        <tr class="form-field">
+            <th scope="row">
+                <label for="sv_project_url">
+                    <?php esc_html_e('Canonical artist/project URL', 'slim-volume'); ?>
+                </label>
+            </th>
+            <td>
+                <input
+                    type="url"
+                    id="sv_project_url"
+                    name="sv_project_url"
+                    value="<?php echo esc_attr($url); ?>"
+                    class="regular-text code"
+                    placeholder="https://example.com/"
+                >
+                <p class="description">
+                    <?php esc_html_e('Optional. Used later for artist attribution links and structured data.', 'slim-volume'); ?>
+                </p>
+            </td>
+        </tr>
+
+        <tr class="form-field">
+            <th scope="row">
+                <?php esc_html_e('Artist/project image', 'slim-volume'); ?>
+            </th>
+            <td>
+                <?php self::render_image_field($image_id); ?>
+                <p class="description">
+                    <?php esc_html_e('Optional logo, portrait, or project artwork.', 'slim-volume'); ?>
+                </p>
+            </td>
+        </tr>
+        <?php
+    }
+
+    private static function render_entity_type_select(string $selected): void
+    {
+        ?>
+        <select id="sv_project_entity_type" name="sv_project_entity_type">
+            <option value="<?php echo esc_attr(self::ENTITY_GROUP); ?>" <?php selected($selected, self::ENTITY_GROUP); ?>>
+                <?php esc_html_e('Band, group, alias, or project', 'slim-volume'); ?>
+            </option>
+            <option value="<?php echo esc_attr(self::ENTITY_PERSON); ?>" <?php selected($selected, self::ENTITY_PERSON); ?>>
+                <?php esc_html_e('Solo artist / person', 'slim-volume'); ?>
+            </option>
+        </select>
+        <?php
+    }
+
+    private static function render_image_field(int $image_id): void
+    {
+        $image_url = $image_id > 0
+            ? (string) wp_get_attachment_image_url($image_id, 'thumbnail')
+            : '';
+
+        ?>
+        <div data-sv-project-image>
+            <input
+                type="hidden"
+                name="sv_project_image_id"
+                value="<?php echo esc_attr((string) $image_id); ?>"
+                data-sv-project-image-id
+            >
+
+            <div
+                data-sv-project-image-preview-wrap
+                style="margin:0 0 10px;<?php echo $image_url === '' ? 'display:none;' : ''; ?>"
+            >
+                <img
+                    src="<?php echo esc_url($image_url); ?>"
+                    alt=""
+                    data-sv-project-image-preview
+                    style="display:block;width:96px;height:96px;object-fit:cover;border:1px solid #c3c4c7;border-radius:4px;"
+                >
+            </div>
+
+            <button
+                type="button"
+                class="button"
+                data-sv-project-image-select
+            >
+                <?php esc_html_e('Choose image', 'slim-volume'); ?>
+            </button>
+
+            <button
+                type="button"
+                class="button button-link-delete"
+                data-sv-project-image-remove
+                <?php echo $image_id <= 0 ? 'hidden' : ''; ?>
+            >
+                <?php esc_html_e('Remove image', 'slim-volume'); ?>
+            </button>
+        </div>
+        <?php
+    }
+
+    public static function save_term_fields(int $term_id): void
+    {
+        if (! isset($_POST[self::NONCE_FIELD])) {
+            return;
+        }
+
+        $nonce = sanitize_text_field(wp_unslash($_POST[self::NONCE_FIELD]));
+
+        if (! wp_verify_nonce($nonce, self::NONCE_ACTION)) {
+            return;
+        }
+
+        if (! self::can_manage_term_meta()) {
+            return;
+        }
+
+        $entity_type = isset($_POST['sv_project_entity_type'])
+            ? self::sanitize_entity_type(wp_unslash($_POST['sv_project_entity_type']))
+            : self::ENTITY_GROUP;
+
+        $url = isset($_POST['sv_project_url'])
+            ? esc_url_raw(wp_unslash($_POST['sv_project_url']))
+            : '';
+
+        $image_id = isset($_POST['sv_project_image_id'])
+            ? absint($_POST['sv_project_image_id'])
+            : 0;
+
+        update_term_meta($term_id, self::META_ENTITY_TYPE, $entity_type);
+
+        if ($url !== '') {
+            update_term_meta($term_id, self::META_URL, $url);
+        } else {
+            delete_term_meta($term_id, self::META_URL);
+        }
+
+        if ($image_id > 0) {
+            update_term_meta($term_id, self::META_IMAGE_ID, $image_id);
+        } else {
+            delete_term_meta($term_id, self::META_IMAGE_ID);
+        }
+    }
+
     public static function sanitize_entity_type($value): string
     {
         $value = sanitize_key((string) $value);
@@ -146,8 +369,7 @@ final class ProjectTaxonomy
      * Return the single primary project currently assigned to a release.
      *
      * If outside code has assigned multiple terms, the lowest term ID wins so
-     * resolution remains deterministic. The controlled admin selector added in
-     * phase two will enforce a single assignment.
+     * resolution remains deterministic.
      */
     public static function get_release_project_term(int $release_id): ?WP_Term
     {
