@@ -164,16 +164,45 @@ final class TrackReleasePrefill
 
         if (! $should_append) {
             /*
-             * The track already has a valid position. Only repair the
-             * compatibility relationship if post_parent has drifted.
+             * Treat the saved track number as the requested position.
+             *
+             * Remove the current track from the ordered list, insert it at
+             * the requested position, and then rewrite every position. This
+             * prevents duplicate track numbers after a manual edit.
              */
-            if ((int) $post->post_parent !== $release_id) {
-                self::update_track_post_fields(
-                    $post_id,
-                    $release_id,
-                    $current_track_number
-                );
+            $ordered_track_ids = [];
+
+            foreach (
+                self::get_tracks_for_release($release_id)
+                as $release_track
+            ) {
+                $release_track_id = (int) $release_track->ID;
+
+                if ($release_track_id === $post_id) {
+                    continue;
+                }
+
+                $ordered_track_ids[] = $release_track_id;
             }
+
+            $maximum_position = count($ordered_track_ids) + 1;
+
+            $requested_position = min(
+                max(1, $current_track_number),
+                $maximum_position
+            );
+
+            array_splice(
+                $ordered_track_ids,
+                $requested_position - 1,
+                0,
+                [$post_id]
+            );
+
+            self::save_release_order(
+                $release_id,
+                $ordered_track_ids
+            );
 
             return;
         }
@@ -282,113 +311,17 @@ final class TrackReleasePrefill
     private static function get_tracks_for_release(
         int $release_id
     ): array {
-        if ($release_id <= 0) {
-            return [];
-        }
-
-        $query_args = [
-            'post_type'      => 'sv_track',
-            'post_status'    => [
-                'publish',
-                'draft',
-                'pending',
-                'private',
-                'future',
-            ],
-            'posts_per_page' => -1,
-            'orderby'        => [
-                'menu_order' => 'ASC',
-                'title'      => 'ASC',
-            ],
-            'order'          => 'ASC',
-        ];
-
-        $tracks_by_meta = get_posts(
-            array_merge(
-                $query_args,
+        return \SlimVolume\Relationships\TrackReleaseRelationship
+            ::get_tracks_for_release(
+                $release_id,
                 [
-                    'meta_query' => [
-                        [
-                            'key'     => '_sv_release_id',
-                            'value'   => $release_id,
-                            'compare' => '=',
-                            'type'    => 'NUMERIC',
-                        ],
-                    ],
+                    'publish',
+                    'draft',
+                    'pending',
+                    'private',
+                    'future',
                 ]
-            )
-        );
-
-        $tracks_by_parent = get_posts(
-            array_merge(
-                $query_args,
-                [
-                    'post_parent' => $release_id,
-                ]
-            )
-        );
-
-        $tracks_by_id = [];
-
-        foreach (
-            array_merge($tracks_by_meta, $tracks_by_parent)
-            as $release_track
-        ) {
-            if (! $release_track instanceof WP_Post) {
-                continue;
-            }
-
-            $tracks_by_id[(int) $release_track->ID] = $release_track;
-        }
-
-        $tracks = array_values($tracks_by_id);
-
-        usort(
-            $tracks,
-            static function (
-                WP_Post $first,
-                WP_Post $second
-            ): int {
-                $first_number = (int) get_post_meta(
-                    (int) $first->ID,
-                    '_sv_track_number',
-                    true
-                );
-
-                $second_number = (int) get_post_meta(
-                    (int) $second->ID,
-                    '_sv_track_number',
-                    true
-                );
-
-                $first_order = $first_number > 0
-                    ? $first_number
-                    : (
-                        (int) $first->menu_order > 0
-                            ? (int) $first->menu_order
-                            : PHP_INT_MAX
-                    );
-
-                $second_order = $second_number > 0
-                    ? $second_number
-                    : (
-                        (int) $second->menu_order > 0
-                            ? (int) $second->menu_order
-                            : PHP_INT_MAX
-                    );
-
-                if ($first_order !== $second_order) {
-                    return $first_order <=> $second_order;
-                }
-
-                return strcasecmp(
-                    get_the_title((int) $first->ID),
-                    get_the_title((int) $second->ID)
-                );
-            }
-        );
-
-        return $tracks;
+            );
     }
 
     /**
