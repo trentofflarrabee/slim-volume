@@ -57,10 +57,11 @@ final class Plugin
         add_action('add_meta_boxes', [Admin\TrackMetaBoxes::class, 'register']);
         add_action('add_meta_boxes', [Admin\ReleaseTrackManager::class, 'register']);
         add_action('add_meta_boxes', [Admin\ReleaseDashboardMetaBox::class, 'register']);
-        add_action('add_meta_boxes', [Admin\TrackReleasePrefill::class, 'register']);
         add_action('add_meta_boxes', [Admin\TrackContextMetaBox::class, 'register']);
-        add_action('add_meta_boxes', [Admin\TrackReleaseFilter::class, 'register']);
         add_action('add_meta_boxes', [Admin\TimedLyricsAdmin::class, 'register_meta_box']);
+
+        Admin\TrackReleasePrefill::register();
+        Admin\TrackReleaseFilter::register();
 
         add_action('save_post_' . PostTypes::RELEASE, [Admin\ReleaseMetaBoxes::class, 'save']);
         add_action('save_post_' . PostTypes::RELEASE, [Admin\ReleaseProjectMetaBox::class, 'save'], 20);

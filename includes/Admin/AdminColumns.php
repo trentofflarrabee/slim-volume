@@ -22,7 +22,6 @@ final class AdminColumns
         add_action('manage_' . PostTypes::TRACK . '_posts_custom_column', [self::class, 'render_track_column'], 10, 2);
         add_filter('manage_edit-' . PostTypes::TRACK . '_sortable_columns', [self::class, 'track_sortable_columns']);
 
-        add_action('restrict_manage_posts', [self::class, 'render_track_release_filter']);
         add_action('pre_get_posts', [self::class, 'handle_admin_sorting_and_filters']);
     }
 
@@ -172,47 +171,6 @@ final class AdminColumns
         return $columns;
     }
 
-    public static function render_track_release_filter(): void
-    {
-        global $typenow;
-
-        if ($typenow !== PostTypes::TRACK) {
-            return;
-        }
-
-        $selected = isset($_GET['sv_release_filter'])
-            ? absint($_GET['sv_release_filter'])
-            : 0;
-
-        $releases = get_posts(
-            [
-                'post_type'      => PostTypes::RELEASE,
-                'post_status'    => ['publish', 'draft', 'private'],
-                'posts_per_page' => -1,
-                'orderby'        => 'title',
-                'order'          => 'ASC',
-            ]
-        );
-
-        if (! $releases) {
-            return;
-        }
-
-        echo '<select name="sv_release_filter">';
-        echo '<option value="0">' . esc_html__('All releases', 'slim-volume') . '</option>';
-
-        foreach ($releases as $release) {
-            printf(
-                '<option value="%s" %s>%s</option>',
-                esc_attr((string) $release->ID),
-                selected($selected, (int) $release->ID, false),
-                esc_html(get_the_title($release))
-            );
-        }
-
-        echo '</select>';
-    }
-
     public static function handle_admin_sorting_and_filters(\WP_Query $query): void
     {
         if (! is_admin() || ! $query->is_main_query()) {
@@ -239,24 +197,6 @@ final class AdminColumns
 
         if ($post_type !== PostTypes::TRACK) {
             return;
-        }
-
-        $release_filter = isset($_GET['sv_release_filter'])
-            ? absint($_GET['sv_release_filter'])
-            : 0;
-
-        if ($release_filter > 0) {
-            $query->set(
-                'meta_query',
-                [
-                    [
-                        'key'     => '_sv_release_id',
-                        'value'   => $release_filter,
-                        'compare' => '=',
-                        'type'    => 'NUMERIC',
-                    ],
-                ]
-            );
         }
 
         $orderby = $query->get('orderby');
