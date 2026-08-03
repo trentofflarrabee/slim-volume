@@ -1341,10 +1341,54 @@
       }
     },
 
-    previous() {
-      if (!this.playlist.length || this.currentIndex <= 0) return;
+    /**
+     * Find the next playable track in either direction.
+     *
+     * Tracks without audio remain visible in album tracklists, but transport
+     * controls and automatic advancement skip them.
+     *
+     * @param {number} startIndex
+     * @param {number} direction Use 1 for next or -1 for previous.
+     * @returns {number}
+     * get or -1 for previous.
+     * @returns {number}
+     */
+    getAdjacentPlayableIndex(startIndex, direction) {
+      if (!Array.isArray(this.playlist) || !this.playlist.length) {
+        return -1;
+      }
 
-      this.currentIndex -= 1;
+      const step = direction < 0 ? -1 : 1;
+      let index = Number.isFinite(startIndex)
+        ? startIndex + step
+        : step > 0
+          ? 0
+          : this.playlist.length - 1;
+
+      while (index >= 0 && index < this.playlist.length) {
+        const track = this.playlist[index];
+
+        if (track && track.audioUrl) {
+          return index;
+        }
+
+        index += step;
+      }
+
+      return -1;
+    },
+
+    previous() {
+      const previousIndex = this.getAdjacentPlayableIndex(
+        this.currentIndex,
+        -1,
+      );
+
+      if (previousIndex < 0) {
+        return;
+      }
+
+      this.currentIndex = previousIndex;
 
       this.loadTrack(this.playlist[this.currentIndex], {
         autoplay: true,
@@ -1353,11 +1397,16 @@
     },
 
     next() {
-      if (!this.playlist.length) return;
-      if (this.currentIndex < 0) return;
-      if (this.currentIndex >= this.playlist.length - 1) return;
+      const nextIndex = this.getAdjacentPlayableIndex(
+        this.currentIndex,
+        1,
+      );
 
-      this.currentIndex += 1;
+      if (nextIndex < 0) {
+        return;
+      }
+
+      this.currentIndex = nextIndex;
 
       this.loadTrack(this.playlist[this.currentIndex], {
         autoplay: true,
@@ -1851,15 +1900,48 @@ button.classList.remove("is-current", "is-playing");
         this.els.playToggleIcon.textContent = isPlaying ? "⏸" : "▶";
       }
 
+      const previousPlayableIndex = this.getAdjacentPlayableIndex(
+        this.currentIndex,
+        -1,
+      );
+
+      const nextPlayableIndex = this.getAdjacentPlayableIndex(
+        this.currentIndex,
+        1,
+      );
+
       if (this.els.prev) {
-        this.els.prev.disabled = this.currentIndex <= 0;
+        const canGoPrevious = previousPlayableIndex >= 0;
+
+        this.els.prev.disabled = !canGoPrevious;
+        this.els.prev.classList.toggle(
+          "is-disabled",
+          !canGoPrevious,
+        );
+
+        this.els.prev.setAttribute(
+          "aria-label",
+          canGoPrevious
+            ? "Previous track"
+            : "No previous playable track",
+        );
       }
 
       if (this.els.next) {
-        this.els.next.disabled =
-          !this.playlist.length ||
-          this.currentIndex < 0 ||
-          this.currentIndex >= this.playlist.length - 1;
+        const canGoNext = nextPlayableIndex >= 0;
+
+        this.els.next.disabled = !canGoNext;
+        this.els.next.classList.toggle(
+          "is-disabled",
+          !canGoNext,
+        );
+
+        this.els.next.setAttribute(
+          "aria-label",
+          canGoNext
+            ? "Next track"
+            : "No next playable track",
+        );
       }
 
       this.syncTrackPlayButtons(this.getCurrentTrack());

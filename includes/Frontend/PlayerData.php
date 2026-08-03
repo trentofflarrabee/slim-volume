@@ -60,52 +60,13 @@ final class PlayerData
         ];
     }
 
-    public static function get_release_playlist(int $release_id): array
+     public static function get_release_playlist(int $release_id): array
     {
-        /*
-        * Primary relationship: _sv_release_id.
-        */
-        $tracks = get_posts(
-            [
-                'post_type'      => PostTypes::TRACK,
-                'post_status'    => 'publish',
-                'posts_per_page' => -1,
-                'meta_key'       => '_sv_track_number',
-                'orderby'        => [
-                    'meta_value_num' => 'ASC',
-                    'menu_order'     => 'ASC',
-                    'title'          => 'ASC',
-                ],
-                'order'          => 'ASC',
-                'meta_query'     => [
-                    [
-                        'key'     => '_sv_release_id',
-                        'value'   => $release_id,
-                        'compare' => '=',
-                        'type'    => 'NUMERIC',
-                    ],
-                ],
-            ]
-        );
-
-        /*
-        * Fallback relationship: post_parent.
-        */
-        if (! $tracks) {
-            $tracks = get_posts(
-                [
-                    'post_type'      => PostTypes::TRACK,
-                    'post_status'    => 'publish',
-                    'post_parent'    => $release_id,
-                    'posts_per_page' => -1,
-                    'orderby'        => [
-                        'menu_order' => 'ASC',
-                        'title'      => 'ASC',
-                    ],
-                    'order'          => 'ASC',
-                ]
+        $tracks = \SlimVolume\Relationships\TrackReleaseRelationship
+            ::get_tracks_for_release(
+                $release_id,
+                ['publish']
             );
-        }
 
         $playlist = [];
 

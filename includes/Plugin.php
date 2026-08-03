@@ -11,6 +11,7 @@ if (! defined('ABSPATH')) {
 require_once SLIM_VOLUME_PATH . 'includes/PostTypes.php';
 require_once SLIM_VOLUME_PATH . 'includes/TimedLyrics.php';
 require_once SLIM_VOLUME_PATH . 'includes/Meta.php';
+require_once SLIM_VOLUME_PATH . 'includes/Relationships/TrackReleaseRelationship.php';
 require_once SLIM_VOLUME_PATH . 'includes/Rewrite.php';
 require_once SLIM_VOLUME_PATH . 'includes/Assets.php';
 require_once SLIM_VOLUME_PATH . 'includes/Frontend/TemplateLoader.php';
