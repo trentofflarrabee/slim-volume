@@ -131,11 +131,16 @@ final class TrackReleasePrefill
             return;
         }
 
-        update_post_meta(
-            $post_id,
-            '_sv_release_id',
-            $release_id
-        );
+        $relationship_saved =
+            \SlimVolume\Relationships\TrackReleaseRelationship
+                ::set_release_id(
+                    $post_id,
+                    $release_id
+                );
+
+        if (! $relationship_saved) {
+            return;
+        }
 
         $current_track_number = (int) get_post_meta(
             $post_id,
