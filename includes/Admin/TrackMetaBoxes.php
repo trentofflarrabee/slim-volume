@@ -69,8 +69,25 @@ final class TrackMetaBoxes
         $download_attachment_id = (int) get_post_meta($post->ID, '_sv_download_attachment_id', true);
         $can_download           = (bool) get_post_meta($post->ID, '_sv_can_download', true);
 
-        $audio_attachment_url = $audio_attachment_id > 0 ? wp_get_attachment_url($audio_attachment_id) : '';
-        $download_attachment_url = $download_attachment_id > 0 ? wp_get_attachment_url($download_attachment_id) : '';
+        $audio_attachment_url = $audio_attachment_id > 0
+            ? wp_get_attachment_url($audio_attachment_id)
+            : '';
+
+        $download_attachment_url = $download_attachment_id > 0
+            ? wp_get_attachment_url($download_attachment_id)
+            : '';
+
+        $attachment_duration = self::get_audio_attachment_duration(
+            $audio_attachment_id
+        );
+
+        $duration_is_derived = $attachment_duration['seconds'] > 0;
+
+        if ($duration_is_derived) {
+            $duration         = $attachment_duration['label'];
+            $duration_seconds = $attachment_duration['seconds'];
+        }        
+        
         $releases = get_posts(
             [
                 'post_type'      => PostTypes::RELEASE,
@@ -142,6 +159,7 @@ final class TrackMetaBoxes
                 value="<?php echo esc_attr($duration); ?>"
                 placeholder="3:42"
                 style="width:100%;max-width:160px;"
+                <?php wp_readonly($duration_is_derived); ?>
             >
         </p>
 
@@ -159,11 +177,26 @@ final class TrackMetaBoxes
                 step="1"
                 placeholder="222"
                 style="width:100%;max-width:160px;"
+                <?php wp_readonly($duration_is_derived); ?>
             >
         </p>
 
-        <div class="sv-admin-media-field" data-sv-media-field>
-            <label for="sv_audio_attachment_id">
+        <p class="description">
+            <?php
+            esc_html_e(
+                'Selecting a WordPress audio file fills both duration fields from its media metadata. Without an uploaded audio attachment, you can enter the duration manually for previews or external audio.',
+                'slim-volume'
+            );
+            ?>
+        </p>
+
+        <div
+            class="sv-admin-media-field"
+            data-sv-media-field
+            data-sv-duration-source
+        >
+        
+        <label for="sv_audio_attachment_id">
                 <strong><?php esc_html_e('Streaming Audio File', 'slim-volume'); ?></strong>
             </label>
 
@@ -389,11 +422,10 @@ final class TrackMetaBoxes
         }
 
         $integer_fields = [
-            'sv_release_id'          => '_sv_release_id',
-            'sv_track_number'        => '_sv_track_number',
-            'sv_disc_number'         => '_sv_disc_number',
-            'sv_duration_seconds'    => '_sv_duration_seconds',
-            'sv_audio_attachment_id' => '_sv_audio_attachment_id',
+            'sv_release_id'             => '_sv_release_id',
+            'sv_track_number'           => '_sv_track_number',
+            'sv_disc_number'            => '_sv_disc_number',
+            'sv_audio_attachment_id'    => '_sv_audio_attachment_id',
             'sv_download_attachment_id' => '_sv_download_attachment_id',
         ];
 
@@ -409,7 +441,29 @@ final class TrackMetaBoxes
             ? sanitize_text_field(wp_unslash($_POST['sv_duration']))
             : '';
 
+        $duration_seconds = isset($_POST['sv_duration_seconds'])
+            ? absint($_POST['sv_duration_seconds'])
+            : 0;
+
+        $audio_attachment_id = isset($_POST['sv_audio_attachment_id'])
+            ? absint($_POST['sv_audio_attachment_id'])
+            : 0;
+
+        $attachment_duration = self::get_audio_attachment_duration(
+            $audio_attachment_id
+        );
+
+        if ($attachment_duration['seconds'] > 0) {
+            $duration         = $attachment_duration['label'];
+            $duration_seconds = $attachment_duration['seconds'];
+        }
+
         update_post_meta($post_id, '_sv_duration', $duration);
+        update_post_meta(
+            $post_id,
+            '_sv_duration_seconds',
+            $duration_seconds
+        );
 
         $url_fields = [
             'sv_audio_url'       => '_sv_audio_url',
@@ -460,5 +514,83 @@ final class TrackMetaBoxes
 
             add_action('save_post_' . PostTypes::TRACK, [self::class, 'save']);
         }
+    }
+
+    /**
+     * Read an audio attachment's duration from WordPress attachment metadata.
+     *
+     * @return array{label:string,seconds:int}
+     */
+    private static function get_audio_attachment_duration(int $attachment_id): array
+    {
+        $empty = [
+            'label'   => '',
+            'seconds' => 0,
+        ];
+
+        if ($attachment_id <= 0) {
+            return $empty;
+        }
+
+        if ('attachment' !== get_post_type($attachment_id)) {
+            return $empty;
+        }
+
+        $mime_type = (string) get_post_mime_type($attachment_id);
+
+        if (0 !== strpos($mime_type, 'audio/')) {
+            return $empty;
+        }
+
+        $metadata = wp_get_attachment_metadata($attachment_id);
+
+        if (! is_array($metadata)) {
+            return $empty;
+        }
+
+        $seconds = isset($metadata['length'])
+            ? max(0, (int) round((float) $metadata['length']))
+            : 0;
+
+        if ($seconds <= 0) {
+            return $empty;
+        }
+
+        $label = isset($metadata['length_formatted'])
+            ? sanitize_text_field((string) $metadata['length_formatted'])
+            : '';
+
+        if ('' === $label) {
+            $label = self::format_duration($seconds);
+        }
+
+        return [
+            'label'   => $label,
+            'seconds' => $seconds,
+        ];
+    }
+
+    private static function format_duration(int $total_seconds): string
+    {
+        $total_seconds = max(0, $total_seconds);
+
+        $hours   = intdiv($total_seconds, 3600);
+        $minutes = intdiv($total_seconds % 3600, 60);
+        $seconds = $total_seconds % 60;
+
+        if ($hours > 0) {
+            return sprintf(
+                '%d:%02d:%02d',
+                $hours,
+                $minutes,
+                $seconds
+            );
+        }
+
+        return sprintf(
+            '%d:%02d',
+            $minutes,
+            $seconds
+        );
     }
 }
