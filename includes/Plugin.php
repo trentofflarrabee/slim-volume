@@ -60,6 +60,11 @@ final class Plugin
         add_action('add_meta_boxes', [Admin\TrackContextMetaBox::class, 'register']);
         add_action('add_meta_boxes', [Admin\TimedLyricsAdmin::class, 'register_meta_box']);
 
+        add_action(
+            'admin_post_sv_move_track',
+            [Admin\TrackContextMetaBox::class, 'handle_reorder']
+        );
+        
         Admin\TrackReleasePrefill::register();
         Admin\TrackReleaseFilter::register();
 

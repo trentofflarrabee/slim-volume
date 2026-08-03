@@ -41,20 +41,47 @@ final class TrackContextMetaBox
         $track_id   = (int) $post->ID;
         $release_id = self::get_release_id($post);
         $track_url  = self::get_track_url($post);
-
         ?>
         <div class="sv-admin-track-context">
             <?php if ($release_id <= 0) : ?>
                 <p>
-                    <?php echo esc_html__('This track is not attached to a release yet.', 'slim-volume'); ?>
+                    <?php
+                    echo esc_html__(
+                        'This track is not attached to a release yet.',
+                        'slim-volume'
+                    );
+                    ?>
+                </p>
+
+                <p class="description">
+                    <?php
+                    echo esc_html__(
+                        'Select a release in Track Details to see its current tracklist and this track’s expected position.',
+                        'slim-volume'
+                    );
+                    ?>
                 </p>
             <?php else : ?>
                 <?php
                 $release          = get_post($release_id);
-                $release_title    = $release instanceof WP_Post ? get_the_title($release_id) : '';
+                $release_title    = $release instanceof WP_Post
+                    ? get_the_title($release_id)
+                    : '';
                 $release_edit_url = get_edit_post_link($release_id, '');
                 $release_view_url = self::get_release_url($release_id);
                 $route_preview    = self::get_route_preview($post, $release);
+                $release_tracks   = self::get_tracks_for_release($release_id);
+
+                $current_track_is_listed = false;
+
+                foreach ($release_tracks as $release_track) {
+                    if ((int) $release_track->ID === $track_id) {
+                        $current_track_is_listed = true;
+                        break;
+                    }
+                }
+
+                $append_position = count($release_tracks) + 1;
                 ?>
 
                 <p class="sv-admin-track-context__label">
@@ -65,10 +92,20 @@ final class TrackContextMetaBox
                     <strong>
                         <?php if ($release_edit_url) : ?>
                             <a href="<?php echo esc_url($release_edit_url); ?>">
-                                <?php echo esc_html($release_title ?: __('Untitled release', 'slim-volume')); ?>
+                                <?php
+                                echo esc_html(
+                                    $release_title
+                                        ?: __('Untitled release', 'slim-volume')
+                                );
+                                ?>
                             </a>
                         <?php else : ?>
-                            <?php echo esc_html($release_title ?: __('Untitled release', 'slim-volume')); ?>
+                            <?php
+                            echo esc_html(
+                                $release_title
+                                    ?: __('Untitled release', 'slim-volume')
+                            );
+                            ?>
                         <?php endif; ?>
                     </strong>
                 </p>
@@ -87,39 +124,597 @@ final class TrackContextMetaBox
                     >
                 <?php endif; ?>
 
+                <div class="sv-admin-track-context__tracklist">
+                    <p class="sv-admin-track-context__label">
+                        <?php
+                        echo esc_html__(
+                            'Current Release Tracklist',
+                            'slim-volume'
+                        );
+                        ?>
+                    </p>
+
+                    <?php if (! $release_tracks) : ?>
+                        <p class="description">
+                            <?php
+                            echo esc_html__(
+                                'No saved tracks are currently attached to this release.',
+                                'slim-volume'
+                            );
+                            ?>
+                        </p>
+                    <?php else : ?>
+                        <ol class="sv-admin-track-context__track-list">
+                            <?php
+                            foreach ($release_tracks as $index => $release_track) :
+                                $release_track_id = (int) $release_track->ID;
+                                $is_current       = $release_track_id === $track_id;
+                                $edit_url         = get_edit_post_link(
+                                    $release_track_id,
+                                    ''
+                                );
+
+                                $stored_number = (int) get_post_meta(
+                                    $release_track_id,
+                                    '_sv_track_number',
+                                    true
+                                );
+
+                                $display_number = $stored_number > 0
+                                    ? $stored_number
+                                    : $index + 1;
+                                ?>
+                                <li
+                                    class="<?php echo $is_current ? 'is-current' : ''; ?>"
+                                    value="<?php echo esc_attr((string) $display_number); ?>"
+                                >
+                                    <?php if ($is_current) : ?>
+                                        <strong>
+                                            <?php
+                                            echo esc_html(
+                                                get_the_title($release_track_id)
+                                            );
+                                            ?>
+                                        </strong>
+
+                                        <span class="screen-reader-text">
+                                            <?php
+                                            echo esc_html__(
+                                                'Current track',
+                                                'slim-volume'
+                                            );
+                                            ?>
+                                        </span>
+
+                                        <span aria-hidden="true">
+                                            <?php
+                                            echo esc_html__(
+                                                ' — Current',
+                                                'slim-volume'
+                                            );
+                                            ?>
+                                        </span>
+                                    <?php elseif ($edit_url) : ?>
+                                        <a href="<?php echo esc_url($edit_url); ?>">
+                                            <?php
+                                            echo esc_html(
+                                                get_the_title($release_track_id)
+                                            );
+                                            ?>
+                                        </a>
+                                    <?php else : ?>
+                                        <?php
+                                        echo esc_html(
+                                            get_the_title($release_track_id)
+                                        );
+                                        ?>
+                                    <?php endif; ?>
+                                </li>
+                            <?php endforeach; ?>
+                        </ol>
+                    <?php endif; ?>
+
+                    <?php
+                    $release_track_ids = array_map(
+                        static function (WP_Post $release_track): int {
+                            return (int) $release_track->ID;
+                        },
+                        $release_tracks
+                    );
+
+                    $current_track_index = array_search(
+                        $track_id,
+                        $release_track_ids,
+                        true
+                    );
+
+                    $can_move_up = (
+                        false !== $current_track_index
+                        && $current_track_index > 0
+                    );
+
+                    $can_move_down = (
+                        false !== $current_track_index
+                        && $current_track_index < count($release_track_ids) - 1
+                    );
+
+                    $move_up_url = '';
+
+                    if ($can_move_up) {
+                        $move_up_url = wp_nonce_url(
+                            add_query_arg(
+                                [
+                                    'action'    => 'sv_move_track',
+                                    'track_id'  => $track_id,
+                                    'direction' => 'up',
+                                ],
+                                admin_url('admin-post.php')
+                            ),
+                            'sv_move_track_' . $track_id
+                        );
+                    }
+
+                    $move_down_url = '';
+
+                    if ($can_move_down) {
+                        $move_down_url = wp_nonce_url(
+                            add_query_arg(
+                                [
+                                    'action'    => 'sv_move_track',
+                                    'track_id'  => $track_id,
+                                    'direction' => 'down',
+                                ],
+                                admin_url('admin-post.php')
+                            ),
+                            'sv_move_track_' . $track_id
+                        );
+                    }
+                    ?>
+
+                    <?php if ($current_track_is_listed) : ?>
+                        <div class="sv-admin-track-context__reorder">
+                            <p class="sv-admin-track-context__label">
+                                <?php
+                                echo esc_html__(
+                                    'Track Position',
+                                    'slim-volume'
+                                );
+                                ?>
+                            </p>
+
+                            <div class="sv-admin-track-context__reorder-actions">
+                                <?php if ($can_move_up) : ?>
+                                    <a
+                                        class="button"
+                                        href="<?php echo esc_url($move_up_url); ?>"
+                                    >
+                                        <?php
+                                        echo esc_html__(
+                                            'Move Up',
+                                            'slim-volume'
+                                        );
+                                        ?>
+                                    </a>
+                                <?php else : ?>
+                                    <span
+                                        class="button disabled"
+                                        aria-disabled="true"
+                                    >
+                                        <?php
+                                        echo esc_html__(
+                                            'Move Up',
+                                            'slim-volume'
+                                        );
+                                        ?>
+                                    </span>
+                                <?php endif; ?>
+
+                                <?php if ($can_move_down) : ?>
+                                    <a
+                                        class="button"
+                                        href="<?php echo esc_url($move_down_url); ?>"
+                                    >
+                                        <?php
+                                        echo esc_html__(
+                                            'Move Down',
+                                            'slim-volume'
+                                        );
+                                        ?>
+                                    </a>
+                                <?php else : ?>
+                                    <span
+                                        class="button disabled"
+                                        aria-disabled="true"
+                                    >
+                                        <?php
+                                        echo esc_html__(
+                                            'Move Down',
+                                            'slim-volume'
+                                        );
+                                        ?>
+                                    </span>
+                                <?php endif; ?>
+                            </div>
+
+                            <p class="description">
+                                <?php
+                                echo esc_html__(
+                                    'Moving this track updates and renumbers the complete release tracklist.',
+                                    'slim-volume'
+                                );
+                                ?>
+                            </p>
+                        </div>
+                    <?php else : ?>
+                        <p class="description">
+                            <?php
+                            echo esc_html(
+                                sprintf(
+                                    /* translators: %d is the expected track position. */
+                                    __(
+                                        'When saved, this track will be appended as track %d.',
+                                        'slim-volume'
+                                    ),
+                                    $append_position
+                                )
+                            );
+                            ?>
+                        </p>
+                    <?php endif; ?>
+                </div>
+
                 <div class="sv-admin-track-context__actions">
                     <?php if ($release_edit_url) : ?>
-                        <a class="button button-primary button-large" href="<?php echo esc_url($release_edit_url); ?>">
-                            <?php echo esc_html__('Back to Release', 'slim-volume'); ?>
+                        <a
+                            class="button button-primary button-large"
+                            href="<?php echo esc_url($release_edit_url); ?>"
+                        >
+                            <?php
+                            echo esc_html__(
+                                'Back to Release',
+                                'slim-volume'
+                            );
+                            ?>
                         </a>
                     <?php endif; ?>
 
                     <?php if ($track_url) : ?>
-                        <a class="button button-large" href="<?php echo esc_url($track_url); ?>" target="_blank" rel="noopener noreferrer">
-                            <?php echo esc_html(self::is_published($track_id) ? __('View Track', 'slim-volume') : __('Preview Track', 'slim-volume')); ?>
+                        <a
+                            class="button button-large"
+                            href="<?php echo esc_url($track_url); ?>"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                        >
+                            <?php
+                            echo esc_html(
+                                self::is_published($track_id)
+                                    ? __('View Track', 'slim-volume')
+                                    : __('Preview Track', 'slim-volume')
+                            );
+                            ?>
                         </a>
                     <?php endif; ?>
 
                     <?php if ($release_view_url) : ?>
-                        <a class="button button-large" href="<?php echo esc_url($release_view_url); ?>" target="_blank" rel="noopener noreferrer">
-                            <?php echo esc_html__('View Release', 'slim-volume'); ?>
+                        <a
+                            class="button button-large"
+                            href="<?php echo esc_url($release_view_url); ?>"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                        >
+                            <?php
+                            echo esc_html__(
+                                'View Release',
+                                'slim-volume'
+                            );
+                            ?>
                         </a>
                     <?php endif; ?>
                 </div>
             <?php endif; ?>
         </div>
+
         <?php
+    }
+
+    /**
+     * Move the current track one position up or down within its release.
+     */
+    public static function handle_reorder(): void
+    {
+        $track_id = isset($_GET['track_id'])
+            ? absint(wp_unslash($_GET['track_id']))
+            : 0;
+
+        $direction = isset($_GET['direction'])
+            ? sanitize_key(wp_unslash($_GET['direction']))
+            : '';
+
+        if (
+            $track_id <= 0
+            || 'sv_track' !== get_post_type($track_id)
+        ) {
+            wp_die(
+                esc_html__(
+                    'The requested track could not be found.',
+                    'slim-volume'
+                )
+            );
+        }
+
+        check_admin_referer('sv_move_track_' . $track_id);
+
+        if (! current_user_can('edit_post', $track_id)) {
+            wp_die(
+                esc_html__(
+                    'You are not allowed to reorder this track.',
+                    'slim-volume'
+                )
+            );
+        }
+
+        if (! in_array($direction, ['up', 'down'], true)) {
+            wp_die(
+                esc_html__(
+                    'The requested track movement is invalid.',
+                    'slim-volume'
+                )
+            );
+        }
+
+        $track = get_post($track_id);
+
+        if (! $track instanceof WP_Post) {
+            wp_die(
+                esc_html__(
+                    'The requested track could not be loaded.',
+                    'slim-volume'
+                )
+            );
+        }
+
+        $release_id = self::get_release_id($track);
+
+        if (
+            $release_id <= 0
+            || 'sv_release' !== get_post_type($release_id)
+        ) {
+            wp_die(
+                esc_html__(
+                    'This track is not attached to a valid release.',
+                    'slim-volume'
+                )
+            );
+        }
+
+        if (! current_user_can('edit_post', $release_id)) {
+            wp_die(
+                esc_html__(
+                    'You are not allowed to reorder tracks on this release.',
+                    'slim-volume'
+                )
+            );
+        }
+
+        $tracks        = self::get_tracks_for_release($release_id);
+        $current_index = null;
+
+        foreach ($tracks as $index => $release_track) {
+            if ((int) $release_track->ID === $track_id) {
+                $current_index = $index;
+                break;
+            }
+        }
+
+        if (null === $current_index) {
+            wp_die(
+                esc_html__(
+                    'This track could not be found in the release tracklist.',
+                    'slim-volume'
+                )
+            );
+        }
+
+        $target_index = 'up' === $direction
+            ? $current_index - 1
+            : $current_index + 1;
+
+        if (
+            $target_index >= 0
+            && $target_index < count($tracks)
+        ) {
+            $current_track       = $tracks[$current_index];
+            $tracks[$current_index] = $tracks[$target_index];
+            $tracks[$target_index]  = $current_track;
+
+            foreach ($tracks as $index => $release_track) {
+                $release_track_id = (int) $release_track->ID;
+                $track_number     = $index + 1;
+
+                update_post_meta(
+                    $release_track_id,
+                    '_sv_release_id',
+                    $release_id
+                );
+
+                update_post_meta(
+                    $release_track_id,
+                    '_sv_track_number',
+                    $track_number
+                );
+
+                wp_update_post(
+                    [
+                        'ID'          => $release_track_id,
+                        'menu_order'  => $track_number,
+                        'post_parent' => $release_id,
+                    ]
+                );
+            }
+        }
+
+        $redirect_url = get_edit_post_link($track_id, '');
+
+        if (! is_string($redirect_url) || '' === $redirect_url) {
+            $redirect_url = add_query_arg(
+                [
+                    'post'   => $track_id,
+                    'action' => 'edit',
+                ],
+                admin_url('post.php')
+            );
+        }
+
+        $redirect_url = add_query_arg(
+            'sv_track_moved',
+            $direction,
+            $redirect_url
+        );
+
+        wp_safe_redirect($redirect_url);
+        exit;
+    }
+
+    /**
+     * Return all tracks attached to a release through either supported
+     * relationship field.
+     *
+     * @return WP_Post[]
+     */
+
+    private static function get_tracks_for_release(int $release_id): array
+    {
+        if ($release_id <= 0) {
+            return [];
+        }
+
+        $query_args = [
+            'post_type'      => 'sv_track',
+            'post_status'    => [
+                'publish',
+                'draft',
+                'pending',
+                'private',
+                'future',
+            ],
+            'posts_per_page' => -1,
+            'orderby'        => [
+                'menu_order' => 'ASC',
+                'title'      => 'ASC',
+            ],
+            'order'          => 'ASC',
+        ];
+
+        $tracks_by_meta = get_posts(
+            array_merge(
+                $query_args,
+                [
+                    'meta_query' => [
+                        [
+                            'key'     => '_sv_release_id',
+                            'value'   => $release_id,
+                            'compare' => '=',
+                            'type'    => 'NUMERIC',
+                        ],
+                    ],
+                ]
+            )
+        );
+
+        $tracks_by_parent = get_posts(
+            array_merge(
+                $query_args,
+                [
+                    'post_parent' => $release_id,
+                ]
+            )
+        );
+
+        $tracks_by_id = [];
+
+        foreach (array_merge($tracks_by_meta, $tracks_by_parent) as $track) {
+            if (! $track instanceof WP_Post) {
+                continue;
+            }
+
+            $tracks_by_id[(int) $track->ID] = $track;
+        }
+
+        $tracks = array_values($tracks_by_id);
+
+        usort(
+            $tracks,
+            static function (WP_Post $first, WP_Post $second): int {
+                $first_number = (int) get_post_meta(
+                    (int) $first->ID,
+                    '_sv_track_number',
+                    true
+                );
+
+                $second_number = (int) get_post_meta(
+                    (int) $second->ID,
+                    '_sv_track_number',
+                    true
+                );
+
+                $first_order = $first_number > 0
+                    ? $first_number
+                    : (
+                        (int) $first->menu_order > 0
+                            ? (int) $first->menu_order
+                            : PHP_INT_MAX
+                    );
+
+                $second_order = $second_number > 0
+                    ? $second_number
+                    : (
+                        (int) $second->menu_order > 0
+                            ? (int) $second->menu_order
+                            : PHP_INT_MAX
+                    );
+
+                if ($first_order !== $second_order) {
+                    return $first_order <=> $second_order;
+                }
+
+                return strcasecmp(
+                    get_the_title((int) $first->ID),
+                    get_the_title((int) $second->ID)
+                );
+            }
+        );
+
+        return $tracks;
     }
 
     private static function get_release_id(WP_Post $post): int
     {
-        $release_id = (int) get_post_meta((int) $post->ID, '_sv_release_id', true);
+        $release_id = (int) get_post_meta(
+            (int) $post->ID,
+            '_sv_release_id',
+            true
+        );
 
         if ($release_id > 0) {
             return $release_id;
         }
 
-        return (int) $post->post_parent;
+        if ((int) $post->post_parent > 0) {
+            return (int) $post->post_parent;
+        }
+
+        $requested_release_id = isset($_GET['sv_release_id'])
+            ? absint(wp_unslash($_GET['sv_release_id']))
+            : 0;
+
+        if (
+            $requested_release_id > 0
+            && 'sv_release' === get_post_type($requested_release_id)
+        ) {
+            return $requested_release_id;
+        }
+
+        return 0;
     }
 
     private static function get_track_url(WP_Post $post): string
