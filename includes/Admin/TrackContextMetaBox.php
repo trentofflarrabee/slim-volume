@@ -38,11 +38,49 @@ final class TrackContextMetaBox
 
     public static function render(WP_Post $post): void
     {
-        $track_id   = (int) $post->ID;
+        $track_id = (int) $post->ID;
+
+        $relationship_state =
+            \SlimVolume\Relationships\TrackReleaseRelationship
+                ::get_state($track_id);
+
         $release_id = self::get_release_id($post);
         $track_url  = self::get_track_url($post);
         ?>
         <div class="sv-admin-track-context">
+            <?php if ($relationship_state['needs_repair']) : ?>
+                <div class="notice notice-warning inline">
+                    <p>
+                        <strong>
+                            <?php
+                            echo esc_html__(
+                                'Release relationship needs repair.',
+                                'slim-volume'
+                            );
+                            ?>
+                        </strong>
+                    </p>
+
+                    <p>
+                        <?php if ($relationship_state['has_conflict']) : ?>
+                            <?php
+                            echo esc_html__(
+                                'The Slim Volume release selection and WordPress parent value point to different releases. The Slim Volume release selection will be retained when repaired.',
+                                'slim-volume'
+                            );
+                            ?>
+                        <?php else : ?>
+                            <?php
+                            echo esc_html__(
+                                'One of the stored release relationship values is missing or invalid. Repairing it will synchronize both relationship fields.',
+                                'slim-volume'
+                            );
+                            ?>
+                        <?php endif; ?>
+                    </p>
+                </div>
+            <?php endif; ?>
+
             <?php if ($release_id <= 0) : ?>
                 <p>
                     <?php
