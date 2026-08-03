@@ -87,15 +87,21 @@ final class TrackReleasePrefill
         <?php
     }
 
-    public static function save_release_relationship(int $post_id, WP_Post $post, bool $update): void
-    {
+    public static function save_release_relationship(
+        int $post_id,
+        WP_Post $post,
+        bool $update
+    ): void {
         unset($update);
 
         if ('sv_track' !== $post->post_type) {
             return;
         }
 
-        if (wp_is_post_autosave($post_id) || wp_is_post_revision($post_id)) {
+        if (
+            wp_is_post_autosave($post_id)
+            || wp_is_post_revision($post_id)
+        ) {
             return;
         }
 
@@ -103,30 +109,395 @@ final class TrackReleasePrefill
             return;
         }
 
+        /*
+         * post_parent still represents the release relationship that existed
+         * before this save request. TrackMetaBoxes has already saved the newly
+         * selected _sv_release_id before this callback runs.
+         */
+        $previous_release_id = (int) $post->post_parent;
+
         $release_id = self::get_release_id_from_post();
 
         if (null === $release_id) {
-            $release_id = self::get_int_from_post('_sv_initial_release_id');
+            $release_id = self::get_int_from_post(
+                '_sv_initial_release_id'
+            );
         }
 
-        if ($release_id <= 0 || ! self::is_valid_release($release_id)) {
+        if (
+            $release_id <= 0
+            || ! self::is_valid_release($release_id)
+        ) {
             return;
         }
 
-        update_post_meta($post_id, '_sv_release_id', $release_id);
+        update_post_meta(
+            $post_id,
+            '_sv_release_id',
+            $release_id
+        );
 
-        if ((int) $post->post_parent !== $release_id) {
-            remove_action('save_post_sv_track', [self::class, 'save_release_relationship'], 20);
+        $current_track_number = (int) get_post_meta(
+            $post_id,
+            '_sv_track_number',
+            true
+        );
 
-            wp_update_post(
+        $release_changed = (
+            $previous_release_id !== $release_id
+        );
+
+        $current_track_is_listed = self::release_contains_track(
+            $release_id,
+            $post_id
+        );
+
+        /*
+         * A new track, a track moved to another release, or a track without
+         * an established position should be appended to the target release.
+         */
+        $should_append = (
+            $release_changed
+            || $current_track_number <= 0
+            || ! $current_track_is_listed
+        );
+
+        if (! $should_append) {
+            /*
+             * The track already has a valid position. Only repair the
+             * compatibility relationship if post_parent has drifted.
+             */
+            if ((int) $post->post_parent !== $release_id) {
+                self::update_track_post_fields(
+                    $post_id,
+                    $release_id,
+                    $current_track_number
+                );
+            }
+
+            return;
+        }
+
+        /*
+         * Remove the track from its former release and close any numbering
+         * gap left behind.
+         */
+        if (
+            $previous_release_id > 0
+            && $previous_release_id !== $release_id
+            && self::is_valid_release($previous_release_id)
+        ) {
+            self::renumber_release(
+                $previous_release_id,
+                $post_id
+            );
+        }
+
+        /*
+         * Add the current track to the end of the selected release and
+         * renumber the complete target tracklist.
+         */
+        self::append_track_to_release(
+            $post_id,
+            $release_id
+        );
+    }
+
+    private static function release_contains_track(
+        int $release_id,
+        int $track_id
+    ): bool {
+        foreach (
+            self::get_tracks_for_release($release_id)
+            as $release_track
+        ) {
+            if ((int) $release_track->ID === $track_id) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static function append_track_to_release(
+        int $track_id,
+        int $release_id
+    ): void {
+        $ordered_track_ids = [];
+
+        foreach (
+            self::get_tracks_for_release($release_id)
+            as $release_track
+        ) {
+            $release_track_id = (int) $release_track->ID;
+
+            if ($release_track_id === $track_id) {
+                continue;
+            }
+
+            $ordered_track_ids[] = $release_track_id;
+        }
+
+        $ordered_track_ids[] = $track_id;
+
+        self::save_release_order(
+            $release_id,
+            $ordered_track_ids
+        );
+    }
+
+    private static function renumber_release(
+        int $release_id,
+        int $excluded_track_id = 0
+    ): void {
+        $ordered_track_ids = [];
+
+        foreach (
+            self::get_tracks_for_release($release_id)
+            as $release_track
+        ) {
+            $release_track_id = (int) $release_track->ID;
+
+            if (
+                $excluded_track_id > 0
+                && $release_track_id === $excluded_track_id
+            ) {
+                continue;
+            }
+
+            $ordered_track_ids[] = $release_track_id;
+        }
+
+        self::save_release_order(
+            $release_id,
+            $ordered_track_ids
+        );
+    }
+
+    /**
+     * Return tracks attached through either supported relationship field.
+     *
+     * @return WP_Post[]
+     */
+    private static function get_tracks_for_release(
+        int $release_id
+    ): array {
+        if ($release_id <= 0) {
+            return [];
+        }
+
+        $query_args = [
+            'post_type'      => 'sv_track',
+            'post_status'    => [
+                'publish',
+                'draft',
+                'pending',
+                'private',
+                'future',
+            ],
+            'posts_per_page' => -1,
+            'orderby'        => [
+                'menu_order' => 'ASC',
+                'title'      => 'ASC',
+            ],
+            'order'          => 'ASC',
+        ];
+
+        $tracks_by_meta = get_posts(
+            array_merge(
+                $query_args,
                 [
-                    'ID'          => $post_id,
+                    'meta_query' => [
+                        [
+                            'key'     => '_sv_release_id',
+                            'value'   => $release_id,
+                            'compare' => '=',
+                            'type'    => 'NUMERIC',
+                        ],
+                    ],
+                ]
+            )
+        );
+
+        $tracks_by_parent = get_posts(
+            array_merge(
+                $query_args,
+                [
                     'post_parent' => $release_id,
                 ]
+            )
+        );
+
+        $tracks_by_id = [];
+
+        foreach (
+            array_merge($tracks_by_meta, $tracks_by_parent)
+            as $release_track
+        ) {
+            if (! $release_track instanceof WP_Post) {
+                continue;
+            }
+
+            $tracks_by_id[(int) $release_track->ID] = $release_track;
+        }
+
+        $tracks = array_values($tracks_by_id);
+
+        usort(
+            $tracks,
+            static function (
+                WP_Post $first,
+                WP_Post $second
+            ): int {
+                $first_number = (int) get_post_meta(
+                    (int) $first->ID,
+                    '_sv_track_number',
+                    true
+                );
+
+                $second_number = (int) get_post_meta(
+                    (int) $second->ID,
+                    '_sv_track_number',
+                    true
+                );
+
+                $first_order = $first_number > 0
+                    ? $first_number
+                    : (
+                        (int) $first->menu_order > 0
+                            ? (int) $first->menu_order
+                            : PHP_INT_MAX
+                    );
+
+                $second_order = $second_number > 0
+                    ? $second_number
+                    : (
+                        (int) $second->menu_order > 0
+                            ? (int) $second->menu_order
+                            : PHP_INT_MAX
+                    );
+
+                if ($first_order !== $second_order) {
+                    return $first_order <=> $second_order;
+                }
+
+                return strcasecmp(
+                    get_the_title((int) $first->ID),
+                    get_the_title((int) $second->ID)
+                );
+            }
+        );
+
+        return $tracks;
+    }
+
+    /**
+     * @param int[] $ordered_track_ids
+     */
+    private static function save_release_order(
+        int $release_id,
+        array $ordered_track_ids
+    ): void {
+        /*
+         * wp_update_post() fires the track save hooks again. Temporarily
+         * suspend the handlers that read the current editor's POST payload so
+         * sibling tracks cannot accidentally receive the current track's
+         * metadata.
+         */
+        remove_action(
+            'save_post_sv_track',
+            [TrackMetaBoxes::class, 'save']
+        );
+
+        remove_action(
+            'save_post_sv_track',
+            [self::class, 'save_release_relationship'],
+            20
+        );
+
+        remove_action(
+            'save_post_sv_track',
+            [\SlimVolume\TimedLyrics::class, 'reconcile'],
+            20
+        );
+
+        try {
+            foreach ($ordered_track_ids as $index => $track_id) {
+                $track_id = absint($track_id);
+
+                if (
+                    $track_id <= 0
+                    || 'sv_track' !== get_post_type($track_id)
+                ) {
+                    continue;
+                }
+
+                $track_number = $index + 1;
+
+                update_post_meta(
+                    $track_id,
+                    '_sv_release_id',
+                    $release_id
+                );
+
+                update_post_meta(
+                    $track_id,
+                    '_sv_track_number',
+                    $track_number
+                );
+
+                self::update_track_post_fields(
+                    $track_id,
+                    $release_id,
+                    $track_number
+                );
+            }
+        } finally {
+            add_action(
+                'save_post_sv_track',
+                [TrackMetaBoxes::class, 'save']
             );
 
-            add_action('save_post_sv_track', [self::class, 'save_release_relationship'], 20, 3);
+            add_action(
+                'save_post_sv_track',
+                [self::class, 'save_release_relationship'],
+                20,
+                3
+            );
+
+            add_action(
+                'save_post_sv_track',
+                [\SlimVolume\TimedLyrics::class, 'reconcile'],
+                20
+            );
         }
+    }
+
+    private static function update_track_post_fields(
+        int $track_id,
+        int $release_id,
+        int $track_number
+    ): void {
+        $track = get_post($track_id);
+
+        if (! $track instanceof WP_Post) {
+            return;
+        }
+
+        if (
+            (int) $track->post_parent === $release_id
+            && (int) $track->menu_order === $track_number
+        ) {
+            return;
+        }
+
+        wp_update_post(
+            [
+                'ID'          => $track_id,
+                'post_parent' => $release_id,
+                'menu_order'  => $track_number,
+            ]
+        );
     }
 
     private static function get_release_id_from_post(): ?int
