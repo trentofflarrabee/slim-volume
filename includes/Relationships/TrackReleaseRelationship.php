@@ -373,6 +373,39 @@ final class TrackReleaseRelationship
         return false;
     }
 
+    /**
+     * Repair a track whose canonical meta relationship and compatibility
+     * post_parent value have drifted apart.
+     *
+     * The existing resolution policy determines the relationship to retain:
+     *
+     * - A valid _sv_release_id wins.
+     * - A valid post_parent is used when canonical meta is missing or invalid.
+     * - Invalid relationship values are cleared when neither source resolves.
+     */
+    public static function repair_track(int $track_id): bool
+    {
+        $track = get_post($track_id);
+
+        if (
+            ! $track instanceof WP_Post
+            || PostTypes::TRACK !== $track->post_type
+        ) {
+            return false;
+        }
+
+        $state = self::get_state($track_id);
+
+        if (! $state['needs_repair']) {
+            return true;
+        }
+
+        return self::set_release_id(
+            $track_id,
+            $state['resolved_release_id']
+        );
+    }
+
     public static function is_valid_release(int $release_id): bool
     {
         if ($release_id <= 0) {
