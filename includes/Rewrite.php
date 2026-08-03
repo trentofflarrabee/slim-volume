@@ -155,20 +155,15 @@ final class Rewrite
         );
     }
 
+    /**
+     * Resolve the release associated with a track.
+     *
+     * This public method remains available for backward compatibility while
+     * the shared relationship service owns the canonical resolution rules.
+     */
     public static function get_track_release_id(int $track_id): int
     {
-        $release_id = (int) get_post_meta($track_id, '_sv_release_id', true);
-
-        if ($release_id > 0) {
-            return $release_id;
-        }
-
-        $track = get_post($track_id);
-
-        if ($track && $track->post_parent > 0) {
-            return (int) $track->post_parent;
-        }
-
-        return 0;
+        return \SlimVolume\Relationships\TrackReleaseRelationship
+            ::get_release_id($track_id);
     }
 }

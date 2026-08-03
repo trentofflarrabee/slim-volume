@@ -581,135 +581,44 @@ final class TrackContextMetaBox
      *
      * @return WP_Post[]
      */
-
-    private static function get_tracks_for_release(int $release_id): array
-    {
-        if ($release_id <= 0) {
-            return [];
-        }
-
-        $query_args = [
-            'post_type'      => 'sv_track',
-            'post_status'    => [
-                'publish',
-                'draft',
-                'pending',
-                'private',
-                'future',
-            ],
-            'posts_per_page' => -1,
-            'orderby'        => [
-                'menu_order' => 'ASC',
-                'title'      => 'ASC',
-            ],
-            'order'          => 'ASC',
-        ];
-
-        $tracks_by_meta = get_posts(
-            array_merge(
-                $query_args,
+    private static function get_tracks_for_release(
+        int $release_id
+    ): array {
+        return \SlimVolume\Relationships\TrackReleaseRelationship
+            ::get_tracks_for_release(
+                $release_id,
                 [
-                    'meta_query' => [
-                        [
-                            'key'     => '_sv_release_id',
-                            'value'   => $release_id,
-                            'compare' => '=',
-                            'type'    => 'NUMERIC',
-                        ],
-                    ],
+                    'publish',
+                    'draft',
+                    'pending',
+                    'private',
+                    'future',
                 ]
-            )
-        );
-
-        $tracks_by_parent = get_posts(
-            array_merge(
-                $query_args,
-                [
-                    'post_parent' => $release_id,
-                ]
-            )
-        );
-
-        $tracks_by_id = [];
-
-        foreach (array_merge($tracks_by_meta, $tracks_by_parent) as $track) {
-            if (! $track instanceof WP_Post) {
-                continue;
-            }
-
-            $tracks_by_id[(int) $track->ID] = $track;
-        }
-
-        $tracks = array_values($tracks_by_id);
-
-        usort(
-            $tracks,
-            static function (WP_Post $first, WP_Post $second): int {
-                $first_number = (int) get_post_meta(
-                    (int) $first->ID,
-                    '_sv_track_number',
-                    true
-                );
-
-                $second_number = (int) get_post_meta(
-                    (int) $second->ID,
-                    '_sv_track_number',
-                    true
-                );
-
-                $first_order = $first_number > 0
-                    ? $first_number
-                    : (
-                        (int) $first->menu_order > 0
-                            ? (int) $first->menu_order
-                            : PHP_INT_MAX
-                    );
-
-                $second_order = $second_number > 0
-                    ? $second_number
-                    : (
-                        (int) $second->menu_order > 0
-                            ? (int) $second->menu_order
-                            : PHP_INT_MAX
-                    );
-
-                if ($first_order !== $second_order) {
-                    return $first_order <=> $second_order;
-                }
-
-                return strcasecmp(
-                    get_the_title((int) $first->ID),
-                    get_the_title((int) $second->ID)
-                );
-            }
-        );
-
-        return $tracks;
+            );
     }
 
     private static function get_release_id(WP_Post $post): int
     {
-        $release_id = (int) get_post_meta(
-            (int) $post->ID,
-            '_sv_release_id',
-            true
-        );
+        $release_id =
+            \SlimVolume\Relationships\TrackReleaseRelationship
+                ::get_release_id((int) $post->ID);
 
         if ($release_id > 0) {
             return $release_id;
         }
 
-        if ((int) $post->post_parent > 0) {
-            return (int) $post->post_parent;
-        }
-
+        /*
+         * A newly created track may not have a saved relationship yet.
+         * Preserve the release-prefill URL behavior for that editor state.
+         */
         $requested_release_id = isset($_GET['sv_release_id'])
             ? absint(wp_unslash($_GET['sv_release_id']))
             : 0;
 
         if (
             $requested_release_id > 0
-            && 'sv_release' === get_post_type($requested_release_id)
+            && \SlimVolume\Relationships\TrackReleaseRelationship
+                ::is_valid_release($requested_release_id)
         ) {
             return $requested_release_id;
         }
