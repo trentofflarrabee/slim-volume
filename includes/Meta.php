@@ -23,13 +23,7 @@ final class Meta
             '_sv_release_type',
             '_sv_label',
             '_sv_catalog_number',
-            '_sv_external_url',
             '_sv_external_label',
-            '_sv_spotify_url',
-            '_sv_apple_music_url',
-            '_sv_youtube_url',
-            '_sv_bandcamp_url',
-            '_sv_purchase_url',
         ];
 
         foreach ($string_fields as $key) {
@@ -46,6 +40,29 @@ final class Meta
             );
         }
 
+        $url_fields = [
+            '_sv_external_url',
+            '_sv_spotify_url',
+            '_sv_apple_music_url',
+            '_sv_youtube_url',
+            '_sv_bandcamp_url',
+            '_sv_purchase_url',
+        ];
+
+        foreach ($url_fields as $key) {
+            register_post_meta(
+                PostTypes::RELEASE,
+                $key,
+                [
+                    'single'            => true,
+                    'type'              => 'string',
+                    'show_in_rest'      => true,
+                    'sanitize_callback' => 'esc_url_raw',
+                    'auth_callback'     => [self::class, 'can_edit_post_meta'],
+                ]
+            );
+        }
+
         register_post_meta(
             PostTypes::RELEASE,
             '_sv_release_credits',
@@ -57,7 +74,6 @@ final class Meta
                 'auth_callback'     => [self::class, 'can_edit_post_meta'],
             ]
         );
-
 
         register_post_meta(
             PostTypes::RELEASE,
@@ -88,8 +104,19 @@ final class Meta
 
     private static function register_track_meta(): void
     {
-        $string_fields = [
+        register_post_meta(
+            PostTypes::TRACK,
             '_sv_duration',
+            [
+                'single'            => true,
+                'type'              => 'string',
+                'show_in_rest'      => true,
+                'sanitize_callback' => [self::class, 'sanitize_string'],
+                'auth_callback'     => [self::class, 'can_edit_post_meta'],
+            ]
+        );
+
+        $url_fields = [
             '_sv_audio_url',
             '_sv_spotify_url',
             '_sv_apple_music_url',
@@ -99,7 +126,7 @@ final class Meta
             '_sv_download_url',
         ];
 
-        foreach ($string_fields as $key) {
+        foreach ($url_fields as $key) {
             register_post_meta(
                 PostTypes::TRACK,
                 $key,
@@ -107,34 +134,114 @@ final class Meta
                     'single'            => true,
                     'type'              => 'string',
                     'show_in_rest'      => true,
-                    'sanitize_callback' => [self::class, 'sanitize_string'],
+                    'sanitize_callback' => 'esc_url_raw',
                     'auth_callback'     => [self::class, 'can_edit_post_meta'],
                 ]
             );
         }
 
-        $integer_fields = [
-            '_sv_release_id',
+        $numeric_fields = [
             '_sv_track_number',
             '_sv_disc_number',
             '_sv_duration_seconds',
-            '_sv_audio_attachment_id',
-            '_sv_download_attachment_id',
         ];
 
-        foreach ($integer_fields as $key) {
+        foreach ($numeric_fields as $key) {
             register_post_meta(
                 PostTypes::TRACK,
                 $key,
                 [
                     'single'            => true,
                     'type'              => 'integer',
+                    'default'           => 0,
                     'show_in_rest'      => true,
                     'sanitize_callback' => 'absint',
                     'auth_callback'     => [self::class, 'can_edit_post_meta'],
                 ]
             );
         }
+
+        register_post_meta(
+            PostTypes::TRACK,
+            '_sv_release_id',
+            [
+                'single'       => true,
+                'type'         => 'integer',
+                'default'      => 0,
+                'show_in_rest' => true,
+                'sanitize_callback' => static function ($value): int {
+                    $release_id = absint($value);
+
+                    if ($release_id <= 0) {
+                        return 0;
+                    }
+
+                    return PostTypes::RELEASE === get_post_type($release_id)
+                        ? $release_id
+                        : 0;
+                },
+                'auth_callback' => [self::class, 'can_edit_post_meta'],
+            ]
+        );
+
+        register_post_meta(
+            PostTypes::TRACK,
+            '_sv_audio_attachment_id',
+            [
+                'single'       => true,
+                'type'         => 'integer',
+                'default'      => 0,
+                'show_in_rest' => true,
+                'sanitize_callback' => static function ($value): int {
+                    $attachment_id = absint($value);
+
+                    if (
+                        $attachment_id <= 0
+                        || 'attachment' !== get_post_type($attachment_id)
+                    ) {
+                        return 0;
+                    }
+
+                    $mime_type = (string) get_post_mime_type(
+                        $attachment_id
+                    );
+
+                    return 0 === strpos($mime_type, 'audio/')
+                        ? $attachment_id
+                        : 0;
+                },
+                'auth_callback' => [self::class, 'can_edit_post_meta'],
+            ]
+        );
+
+        register_post_meta(
+            PostTypes::TRACK,
+            '_sv_download_attachment_id',
+            [
+                'single'       => true,
+                'type'         => 'integer',
+                'default'      => 0,
+                'show_in_rest' => true,
+                'sanitize_callback' => static function ($value): int {
+                    $attachment_id = absint($value);
+
+                    if (
+                        $attachment_id <= 0
+                        || 'attachment' !== get_post_type($attachment_id)
+                    ) {
+                        return 0;
+                    }
+
+                    /*
+                     * Download attachments may intentionally be audio,
+                     * archives, PDFs, or other downloadable media, so only
+                     * validate that the ID belongs to a real attachment.
+                     */
+                    return $attachment_id;
+                },
+                'auth_callback' => [self::class, 'can_edit_post_meta'],
+            ]
+        );
 
         register_post_meta(
             PostTypes::TRACK,
@@ -209,8 +316,29 @@ final class Meta
         return filter_var($value, FILTER_VALIDATE_BOOLEAN);
     }
 
-    public static function can_edit_post_meta(): bool
-    {
-        return current_user_can('edit_posts');
+    public static function can_edit_post_meta(
+        bool $allowed,
+        string $meta_key,
+        int $object_id,
+        int $user_id,
+        string $capability,
+        array $required_capabilities
+    ): bool {
+        unset(
+            $allowed,
+            $meta_key,
+            $capability,
+            $required_capabilities
+        );
+
+        if ($object_id <= 0 || $user_id <= 0) {
+            return false;
+        }
+
+        return user_can(
+            $user_id,
+            'edit_post',
+            $object_id
+        );
     }
 }
