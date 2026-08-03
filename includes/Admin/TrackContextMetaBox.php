@@ -531,11 +531,21 @@ final class TrackContextMetaBox
                 $release_track_id = (int) $release_track->ID;
                 $track_number     = $index + 1;
 
-                update_post_meta(
-                    $release_track_id,
-                    '_sv_release_id',
-                    $release_id
-                );
+                $relationship_saved =
+                    \SlimVolume\Relationships\TrackReleaseRelationship
+                        ::set_release_id(
+                            $release_track_id,
+                            $release_id
+                        );
+
+                if (! $relationship_saved) {
+                    wp_die(
+                        esc_html__(
+                            'The track relationship could not be updated.',
+                            'slim-volume'
+                        )
+                    );
+                }
 
                 update_post_meta(
                     $release_track_id,
@@ -543,13 +553,22 @@ final class TrackContextMetaBox
                     $track_number
                 );
 
-                wp_update_post(
+                $post_update = wp_update_post(
                     [
-                        'ID'          => $release_track_id,
-                        'menu_order'  => $track_number,
-                        'post_parent' => $release_id,
-                    ]
+                        'ID'         => $release_track_id,
+                        'menu_order' => $track_number,
+                    ],
+                    true
                 );
+
+                if (is_wp_error($post_update)) {
+                    wp_die(
+                        esc_html__(
+                            'The track order could not be updated.',
+                            'slim-volume'
+                        )
+                    );
+                }
             }
         }
 
