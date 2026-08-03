@@ -261,6 +261,118 @@ final class TrackReleaseRelationship
         );
     }
 
+    /**
+     * Store a track-to-release relationship in both supported fields.
+     *
+     * Passing zero clears the relationship. A positive release ID must belong
+     * to a valid Slim Volume release.
+     */
+    public static function set_release_id(
+        int $track_id,
+        int $release_id
+    ): bool {
+        $track = get_post($track_id);
+
+        if (
+            ! $track instanceof WP_Post
+            || PostTypes::TRACK !== $track->post_type
+        ) {
+            return false;
+        }
+
+        if (
+            $release_id < 0
+            || (
+                $release_id > 0
+                && ! self::is_valid_release($release_id)
+            )
+        ) {
+            return false;
+        }
+
+        $previous_parent = (int) $track->post_parent;
+
+        $previous_meta_exists = metadata_exists(
+            'post',
+            $track_id,
+            self::META_KEY
+        );
+
+        $previous_meta_value = get_post_meta(
+            $track_id,
+            self::META_KEY,
+            true
+        );
+
+        if ($release_id > 0) {
+            update_post_meta(
+                $track_id,
+                self::META_KEY,
+                $release_id
+            );
+
+            if (
+                (int) get_post_meta(
+                    $track_id,
+                    self::META_KEY,
+                    true
+                ) !== $release_id
+            ) {
+                return false;
+            }
+        } else {
+            delete_post_meta(
+                $track_id,
+                self::META_KEY
+            );
+
+            if (
+                metadata_exists(
+                    'post',
+                    $track_id,
+                    self::META_KEY
+                )
+            ) {
+                return false;
+            }
+        }
+
+        if ($previous_parent === $release_id) {
+            return true;
+        }
+
+        $result = wp_update_post(
+            [
+                'ID'          => $track_id,
+                'post_parent' => $release_id,
+            ],
+            true
+        );
+
+        if (! is_wp_error($result)) {
+            return true;
+        }
+
+        /*
+         * Restore the canonical meta value when WordPress cannot update the
+         * compatibility post_parent field.
+         */
+        if ($previous_meta_exists) {
+            update_post_meta(
+                $track_id,
+                self::META_KEY,
+                $previous_meta_value
+            );
+        } else {
+            delete_post_meta(
+                $track_id,
+                self::META_KEY
+            );
+        }
+
+        return false;
+    }
+
     public static function is_valid_release(int $release_id): bool
     {
         if ($release_id <= 0) {
