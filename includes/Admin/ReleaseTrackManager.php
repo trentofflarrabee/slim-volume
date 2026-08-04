@@ -219,24 +219,51 @@ final class ReleaseTrackManager
             return;
         }
 
-        foreach ($track_ids as $index => $track_id) {
+        $track_number = 0;
+
+        foreach ($track_ids as $track_id) {
             $track = get_post($track_id);
 
-            if (! $track || $track->post_type !== PostTypes::TRACK) {
+            if (
+                ! $track instanceof \WP_Post
+                || PostTypes::TRACK !== $track->post_type
+                || ! current_user_can('edit_post', $track_id)
+                || \SlimVolume\Relationships\TrackReleaseRelationship
+                    ::get_release_id($track_id) !== $release_id
+            ) {
                 continue;
             }
 
-            $track_number = $index + 1;
+            $relationship_saved =
+                \SlimVolume\Relationships\TrackReleaseRelationship
+                    ::set_release_id(
+                        $track_id,
+                        $release_id
+                    );
 
-            update_post_meta($track_id, '_sv_release_id', $release_id);
-            update_post_meta($track_id, '_sv_track_number', $track_number);
+            if (! $relationship_saved) {
+                continue;
+            }
 
-            wp_update_post(
+            $track_number++;
+
+            $post_update = wp_update_post(
                 [
-                    'ID'          => $track_id,
-                    'menu_order'  => $track_number,
-                    'post_parent' => $release_id,
-                ]
+                    'ID'         => $track_id,
+                    'menu_order' => $track_number,
+                ],
+                true
+            );
+
+            if (is_wp_error($post_update)) {
+                $track_number--;
+                continue;
+            }
+
+            update_post_meta(
+                $track_id,
+                '_sv_track_number',
+                $track_number
             );
         }
     }
