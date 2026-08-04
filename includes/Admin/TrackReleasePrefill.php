@@ -372,11 +372,16 @@ final class TrackReleasePrefill
 
                 $track_number = $index + 1;
 
-                update_post_meta(
-                    $track_id,
-                    '_sv_release_id',
-                    $release_id
-                );
+                $relationship_saved =
+                    \SlimVolume\Relationships\TrackReleaseRelationship
+                        ::set_release_id(
+                            $track_id,
+                            $release_id
+                        );
+
+                if (! $relationship_saved) {
+                    continue;
+                }
 
                 update_post_meta(
                     $track_id,

@@ -44,10 +44,43 @@ final class TrackContextMetaBox
             \SlimVolume\Relationships\TrackReleaseRelationship
                 ::get_state($track_id);
 
+        $repair_result = (
+            isset($_GET['sv_relationship_repaired'])
+            && is_string($_GET['sv_relationship_repaired'])
+        )
+            ? sanitize_key(
+                wp_unslash($_GET['sv_relationship_repaired'])
+            )
+            : '';
+
         $release_id = self::get_release_id($post);
         $track_url  = self::get_track_url($post);
         ?>
         <div class="sv-admin-track-context">
+            <?php if ('success' === $repair_result) : ?>
+                <div class="notice notice-success inline">
+                    <p>
+                        <?php
+                        echo esc_html__(
+                            'Release relationship repaired successfully.',
+                            'slim-volume'
+                        );
+                        ?>
+                    </p>
+                </div>
+            <?php elseif ('error' === $repair_result) : ?>
+                <div class="notice notice-error inline">
+                    <p>
+                        <?php
+                        echo esc_html__(
+                            'Slim Volume could not repair the release relationship.',
+                            'slim-volume'
+                        );
+                        ?>
+                    </p>
+                </div>
+            <?php endif; ?>
+
             <?php if ($relationship_state['needs_repair']) : ?>
                 <div class="notice notice-warning inline">
                     <p>
@@ -78,6 +111,40 @@ final class TrackContextMetaBox
                             ?>
                         <?php endif; ?>
                     </p>
+
+                    <?php if (current_user_can('edit_post', $track_id)) : ?>
+                        <form
+                            method="post"
+                            action="<?php echo esc_url(admin_url('admin-post.php')); ?>"
+                        >
+                            <input
+                                type="hidden"
+                                name="action"
+                                value="sv_repair_track_relationship"
+                            >
+
+                            <input
+                                type="hidden"
+                                name="track_id"
+                                value="<?php echo esc_attr((string) $track_id); ?>"
+                            >
+
+                            <?php
+                            wp_nonce_field(
+                                'sv_repair_track_relationship_' . $track_id
+                            );
+                            ?>
+
+                            <?php
+                            submit_button(
+                                __('Repair Relationship', 'slim-volume'),
+                                'secondary',
+                                'submit',
+                                false
+                            );
+                            ?>
+                        </form>
+                    <?php endif; ?>
                 </div>
             <?php endif; ?>
 
@@ -453,6 +520,80 @@ final class TrackContextMetaBox
         </div>
 
         <?php
+    }
+
+    /**
+     * Repair drift between canonical release meta and post_parent.
+     */
+    public static function handle_repair(): void
+    {
+        $track_id = (
+            isset($_POST['track_id'])
+            && is_string($_POST['track_id'])
+        )
+            ? absint(wp_unslash($_POST['track_id']))
+            : 0;
+
+        if (
+            $track_id <= 0
+            || 'sv_track' !== get_post_type($track_id)
+        ) {
+            wp_die(
+                esc_html__(
+                    'The requested track could not be found.',
+                    'slim-volume'
+                )
+            );
+        }
+
+        check_admin_referer(
+            'sv_repair_track_relationship_' . $track_id
+        );
+
+        if (! current_user_can('edit_post', $track_id)) {
+            wp_die(
+                esc_html__(
+                    'You are not allowed to repair this track relationship.',
+                    'slim-volume'
+                )
+            );
+        }
+
+        $repaired =
+            \SlimVolume\Relationships\TrackReleaseRelationship
+                ::repair_track($track_id);
+
+        if ($repaired) {
+            $updated_state =
+                \SlimVolume\Relationships\TrackReleaseRelationship
+                    ::get_state($track_id);
+
+            $repaired = ! $updated_state['needs_repair'];
+        }
+
+        $redirect_url = get_edit_post_link($track_id, '');
+
+        if (
+            ! is_string($redirect_url)
+            || '' === $redirect_url
+        ) {
+            $redirect_url = add_query_arg(
+                [
+                    'post'   => $track_id,
+                    'action' => 'edit',
+                ],
+                admin_url('post.php')
+            );
+        }
+
+        $redirect_url = add_query_arg(
+            'sv_relationship_repaired',
+            $repaired ? 'success' : 'error',
+            $redirect_url
+        );
+
+        wp_safe_redirect($redirect_url);
+        exit;
     }
 
     /**

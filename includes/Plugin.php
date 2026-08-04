@@ -65,6 +65,11 @@ final class Plugin
             'admin_post_sv_move_track',
             [Admin\TrackContextMetaBox::class, 'handle_reorder']
         );
+
+        add_action(
+            'admin_post_sv_repair_track_relationship',
+            [Admin\TrackContextMetaBox::class, 'handle_repair']
+        );
         
         Admin\TrackReleasePrefill::register();
         Admin\TrackReleaseFilter::register();
