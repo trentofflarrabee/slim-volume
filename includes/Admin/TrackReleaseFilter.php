@@ -123,41 +123,20 @@ final class TrackReleaseFilter
     /**
      * @return int[]
      */
-    private static function get_track_ids_for_release(int $release_id): array
-    {
-        $meta_track_ids = get_posts(
-            [
-                'post_type'      => 'sv_track',
-                'post_status'    => 'any',
-                'posts_per_page' => -1,
-                'fields'         => 'ids',
-                'no_found_rows'  => true,
-                'meta_key'       => '_sv_release_id',
-                'meta_value'     => (string) $release_id,
-            ]
-        );
-
-        $parent_track_ids = get_posts(
-            [
-                'post_type'      => 'sv_track',
-                'post_status'    => 'any',
-                'posts_per_page' => -1,
-                'fields'         => 'ids',
-                'no_found_rows'  => true,
-                'post_parent'    => $release_id,
-            ]
-        );
-
-        $track_ids = array_map(
-            'absint',
-            array_merge($meta_track_ids, $parent_track_ids)
-        );
-
-        $track_ids = array_values(array_unique(array_filter($track_ids)));
-
-        sort($track_ids);
-
-        return $track_ids;
+    private static function get_track_ids_for_release(
+        int $release_id
+    ): array {
+        return \SlimVolume\Relationships\TrackReleaseRelationship
+            ::get_track_ids_for_release(
+                $release_id,
+                [
+                    'publish',
+                    'draft',
+                    'pending',
+                    'private',
+                    'future',
+                ]
+            );
     }
 
     private static function get_selected_release_id(): int
