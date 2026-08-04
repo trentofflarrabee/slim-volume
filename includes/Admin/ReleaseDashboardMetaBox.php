@@ -154,63 +154,23 @@ final class ReleaseDashboardMetaBox
     }
 
     /**
+     * Return tracks that canonically belong to the release.
+     *
      * @return WP_Post[]
      */
-    private static function get_release_tracks(int $release_id): array
-    {
-        $meta_tracks = get_posts(
-            [
-                'post_type'      => 'sv_track',
-                'post_status'    => ['publish', 'draft', 'pending', 'private', 'future'],
-                'posts_per_page' => -1,
-                'meta_key'       => '_sv_release_id',
-                'meta_value'     => $release_id,
-                'orderby'        => [
-                    'menu_order' => 'ASC',
-                    'title'      => 'ASC',
-                ],
-                'order'          => 'ASC',
-            ]
-        );
-
-        $parent_tracks = get_posts(
-            [
-                'post_type'      => 'sv_track',
-                'post_status'    => ['publish', 'draft', 'pending', 'private', 'future'],
-                'posts_per_page' => -1,
-                'post_parent'    => $release_id,
-                'orderby'        => [
-                    'menu_order' => 'ASC',
-                    'title'      => 'ASC',
-                ],
-                'order'          => 'ASC',
-            ]
-        );
-
-        $tracks_by_id = [];
-
-        foreach (array_merge($meta_tracks, $parent_tracks) as $track) {
-            if ($track instanceof WP_Post) {
-                $tracks_by_id[(int) $track->ID] = $track;
-            }
-        }
-
-        $tracks = array_values($tracks_by_id);
-
-        usort(
-            $tracks,
-            static function (WP_Post $a, WP_Post $b): int {
-                $order_a = (int) $a->menu_order;
-                $order_b = (int) $b->menu_order;
-
-                if ($order_a !== $order_b) {
-                    return $order_a <=> $order_b;
-                }
-
-                return strcasecmp($a->post_title, $b->post_title);
-            }
-        );
-
-        return $tracks;
+    private static function get_release_tracks(
+        int $release_id
+    ): array {
+        return \SlimVolume\Relationships\TrackReleaseRelationship
+            ::get_tracks_for_release(
+                $release_id,
+                [
+                    'publish',
+                    'draft',
+                    'pending',
+                    'private',
+                    'future',
+                ]
+            );
     }
 }
