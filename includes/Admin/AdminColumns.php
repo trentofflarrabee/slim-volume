@@ -293,56 +293,22 @@ final class AdminColumns
 
     private static function count_tracks_for_release(int $release_id): int
     {
-        $tracks = get_posts(
-            [
-                'post_type'      => PostTypes::TRACK,
-                'post_status'    => ['publish', 'draft', 'private'],
-                'fields'         => 'ids',
-                'posts_per_page' => -1,
-                'no_found_rows'  => true,
-                'meta_query'     => [
+        return count(
+            \SlimVolume\Relationships\TrackReleaseRelationship
+                ::get_track_ids_for_release(
+                    $release_id,
                     [
-                        'key'     => '_sv_release_id',
-                        'value'   => $release_id,
-                        'compare' => '=',
-                        'type'    => 'NUMERIC',
-                    ],
-                ],
-            ]
+                        'publish',
+                        'draft',
+                        'private',
+                    ]
+                )
         );
-
-        if ($tracks) {
-            return count($tracks);
-        }
-
-        $tracks = get_posts(
-            [
-                'post_type'      => PostTypes::TRACK,
-                'post_status'    => ['publish', 'draft', 'private'],
-                'fields'         => 'ids',
-                'posts_per_page' => -1,
-                'no_found_rows'  => true,
-                'post_parent'    => $release_id,
-            ]
-        );
-
-        return $tracks ? count($tracks) : 0;
     }
 
     private static function get_track_release_id(int $track_id): int
     {
-        $release_id = (int) get_post_meta($track_id, '_sv_release_id', true);
-
-        if ($release_id > 0) {
-            return $release_id;
-        }
-
-        $track = get_post($track_id);
-
-        if ($track && $track->post_parent > 0) {
-            return (int) $track->post_parent;
-        }
-
-        return 0;
+        return \SlimVolume\Relationships\TrackReleaseRelationship
+            ::get_release_id($track_id);
     }
 }
