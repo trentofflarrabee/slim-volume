@@ -422,7 +422,6 @@ final class TrackMetaBoxes
         }
 
         $integer_fields = [
-            'sv_release_id'             => '_sv_release_id',
             'sv_track_number'           => '_sv_track_number',
             'sv_disc_number'            => '_sv_disc_number',
             'sv_audio_attachment_id'    => '_sv_audio_attachment_id',
