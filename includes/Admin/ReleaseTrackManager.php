@@ -241,48 +241,25 @@ final class ReleaseTrackManager
         }
     }
 
-    private static function get_tracks_for_release(int $release_id): array
-    {
-        $tracks = get_posts(
-            [
-                'post_type'      => PostTypes::TRACK,
-                'post_status'    => ['publish', 'draft', 'pending', 'private', 'future'],
-                'posts_per_page' => -1,
-                'meta_key'       => '_sv_track_number',
-                'orderby'        => [
-                    'meta_value_num' => 'ASC',
-                    'menu_order'     => 'ASC',
-                    'title'          => 'ASC',
-                ],
-                'order'          => 'ASC',
-                'meta_query'     => [
-                    [
-                        'key'     => '_sv_release_id',
-                        'value'   => $release_id,
-                        'compare' => '=',
-                        'type'    => 'NUMERIC',
-                    ],
-                ],
-            ]
-        );
-
-        if ($tracks) {
-            return $tracks;
-        }
-
-        return get_posts(
-            [
-                'post_type'      => PostTypes::TRACK,
-                'post_status'    => ['publish', 'draft', 'pending', 'private', 'future'],
-                'post_parent'    => $release_id,
-                'posts_per_page' => -1,
-                'orderby'        => [
-                    'menu_order' => 'ASC',
-                    'title'      => 'ASC',
-                ],
-                'order'          => 'ASC',
-            ]
-        );
+    /**
+     * Return all editable tracks that canonically belong to a release.
+     *
+     * @return \WP_Post[]
+     */
+    private static function get_tracks_for_release(
+        int $release_id
+    ): array {
+        return \SlimVolume\Relationships\TrackReleaseRelationship
+            ::get_tracks_for_release(
+                $release_id,
+                [
+                    'publish',
+                    'draft',
+                    'pending',
+                    'private',
+                    'future',
+                ]
+            );
     }
 
     private static function render_artwork(int $track_id, int $release_id): void
