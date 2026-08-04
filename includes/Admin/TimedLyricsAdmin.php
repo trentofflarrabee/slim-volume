@@ -836,15 +836,9 @@ final class TimedLyricsAdmin
 
     private static function release_title(int $track_id): string
     {
-        $release_id = (int) get_post_meta($track_id, '_sv_release_id', true);
-
-        if ($release_id <= 0) {
-            $track = get_post($track_id);
-
-            if ($track instanceof WP_Post) {
-                $release_id = (int) $track->post_parent;
-            }
-        }
+        $release_id =
+            \SlimVolume\Relationships\TrackReleaseRelationship
+                ::get_release_id($track_id);
 
         return $release_id > 0
             ? (string) get_the_title($release_id)
