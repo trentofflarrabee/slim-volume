@@ -122,12 +122,53 @@ final class TrackReleasePrefill
             $release_id = self::get_int_from_post(
                 '_sv_initial_release_id'
             );
+
+            /*
+             * A save request without either relationship field should not
+             * modify an existing track relationship.
+             */
+            if ($release_id <= 0) {
+                return;
+            }
         }
 
-        if (
-            $release_id <= 0
-            || ! self::is_valid_release($release_id)
-        ) {
+        /*
+         * An explicitly submitted zero means the editor selected
+         * "Select a release". Clear both supported relationship fields and
+         * close the numbering gap in the former release.
+         */
+        if ($release_id <= 0) {
+            $relationship_cleared =
+                \SlimVolume\Relationships\TrackReleaseRelationship
+                    ::set_release_id(
+                        $post_id,
+                        0
+                    );
+
+            if (! $relationship_cleared) {
+                return;
+            }
+
+            update_post_meta(
+                $post_id,
+                '_sv_track_number',
+                0
+            );
+
+            if (
+                $previous_release_id > 0
+                && self::is_valid_release($previous_release_id)
+            ) {
+                self::renumber_release(
+                    $previous_release_id,
+                    $post_id
+                );
+            }
+
+            return;
+        }
+
+        if (! self::is_valid_release($release_id)) {
             return;
         }
 
