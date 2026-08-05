@@ -132,11 +132,9 @@ $get_matching_release_ids = static function (string $search_query): array {
     );
 
     foreach ($track_ids as $track_id) {
-        $release_id = (int) get_post_meta($track_id, '_sv_release_id', true);
-
-        if ($release_id <= 0) {
-            $release_id = (int) get_post_field('post_parent', $track_id);
-        }
+        $release_id =
+            \SlimVolume\Relationships\TrackReleaseRelationship
+                ::get_release_id($track_id);
 
         if ($release_id <= 0) {
             continue;
