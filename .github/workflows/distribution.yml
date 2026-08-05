@@ -16,25 +16,22 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v6
 
-      - name: Set up PHP and WP-CLI
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: '8.0'
-          coverage: none
-          tools: wp-cli
-
-      - name: Install the distribution command
-        shell: bash
-        run: wp package install wp-cli/dist-archive-command:v3.1.0
-        
       - name: Build distribution archive
         shell: bash
         run: |
-          mkdir -p build
+          rm -rf build
+          mkdir -p build/staging/slim-volume
 
-          wp dist-archive . build/slim-volume.zip \
-            --plugin-dirname=slim-volume \
-            --force
+          rsync -a \
+            --exclude-from='.distignore' \
+            --exclude='/build/' \
+            ./ \
+            build/staging/slim-volume/
+
+          (
+            cd build/staging
+            zip -qr ../slim-volume.zip slim-volume
+          )
 
       - name: Verify distribution archive
         shell: bash
