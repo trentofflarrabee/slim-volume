@@ -63,7 +63,8 @@ final class Plugin
         );
 
         add_action('after_setup_theme', [PostTypes::class, 'add_theme_support']);
-        add_action('init', [PostTypes::class, 'register']);        add_action('init', [Artists\ProjectTaxonomy::class, 'register']);
+        add_action('init', [PostTypes::class, 'register']);
+        add_action('init', [Artists\ProjectTaxonomy::class, 'register']);
         add_action('init', [Meta::class, 'register']);
         add_action('init', [Rewrite::class, 'register']);
         add_action('add_meta_boxes', [Admin\ReleaseMetaBoxes::class, 'register']);
