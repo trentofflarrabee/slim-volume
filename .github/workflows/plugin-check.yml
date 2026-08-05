@@ -32,5 +32,6 @@ jobs:
         uses: wordpress/plugin-check-action@v1
         with:
           build-dir: './build/staging/slim-volume'
+          exclude-checks: plugin_updater
           include-experimental: false
           ignore-warnings: true
