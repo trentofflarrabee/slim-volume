@@ -228,6 +228,149 @@ final class TimedLyrics
     }
 
     /**
+     * Preserve existing timestamps when a normal Track edit changes lyric
+     * text without changing the line structure.
+     *
+     * Text changes are copied into the stored timed records while IDs,
+     * record types, and timestamps remain intact. Added, removed, or moved
+     * lines are not merged automatically; the existing document is retained
+     * and will be marked stale by reconcile().
+     */
+    public static function reconcile_lyrics_edit(
+        int $track_id,
+        string $previous_lyrics,
+        string $current_lyrics
+    ): string {
+        if (
+            ! self::is_track($track_id)
+            || wp_is_post_revision($track_id)
+        ) {
+            return self::STATUS_NONE;
+        }
+
+        if (
+            self::normalize_lyrics($previous_lyrics)
+            === self::normalize_lyrics($current_lyrics)
+        ) {
+            return self::reconcile($track_id);
+        }
+
+        $document = self::get_document($track_id);
+
+        if (! $document) {
+            return self::reconcile($track_id);
+        }
+
+        $stored_lines = is_array($document['lines'] ?? null)
+            ? array_values($document['lines'])
+            : [];
+
+        $previous_lines = self::generate_lines($previous_lyrics);
+        $current_lines  = self::generate_lines($current_lyrics);
+
+        /*
+         * Only update a document that still accurately represents the lyrics
+         * that existed before this Track save.
+         */
+        if (
+            ! $stored_lines
+            || ! self::line_model_matches(
+                $previous_lines,
+                $stored_lines
+            )
+        ) {
+            return self::reconcile($track_id);
+        }
+
+        $same_structure = (
+            count($previous_lines) === count($current_lines)
+        );
+
+        if ($same_structure) {
+            foreach (
+                $previous_lines
+                as $index => $previous_line
+            ) {
+                $current_line = $current_lines[$index] ?? null;
+
+                if (! is_array($current_line)) {
+                    $same_structure = false;
+                    break;
+                }
+
+                $previous_is_spacer = (
+                    ($previous_line['type'] ?? '') === 'spacer'
+                );
+
+                $current_is_spacer = (
+                    ($current_line['type'] ?? '') === 'spacer'
+                );
+
+                if ($previous_is_spacer !== $current_is_spacer) {
+                    $same_structure = false;
+                    break;
+                }
+            }
+        }
+
+        if (! $same_structure) {
+            return self::reconcile($track_id);
+        }
+
+        foreach ($stored_lines as $index => &$stored_line) {
+            if (! is_array($stored_line)) {
+                unset($stored_line);
+
+                return self::reconcile($track_id);
+            }
+
+            $current_line = $current_lines[$index] ?? null;
+
+            if (! is_array($current_line)) {
+                unset($stored_line);
+
+                return self::reconcile($track_id);
+            }
+
+            $stored_line['text'] = (
+                ($current_line['type'] ?? '') === 'spacer'
+            )
+                ? ''
+                : (string) ($current_line['text'] ?? '');
+        }
+        unset($stored_line);
+
+        $document['lyricsHash'] = self::lyrics_hash(
+            $current_lyrics
+        );
+
+        $document['updatedAt'] = gmdate('c');
+        $document['lines']     = $stored_lines;
+
+        $document = self::sanitize_document_shape($document);
+
+        $encoded = wp_json_encode(
+            $document,
+            JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE
+        );
+
+        if (
+            ! is_string($encoded)
+            || strlen($encoded) > self::MAX_JSON_BYTES
+        ) {
+            return self::reconcile($track_id);
+        }
+
+        update_post_meta(
+            $track_id,
+            self::META_KEY,
+            $encoded
+        );
+
+        return self::reconcile($track_id);
+    }
+
+    /**
      * Recompute and cache status after normal Track saves.
      */
     public static function reconcile(int $track_id): string
