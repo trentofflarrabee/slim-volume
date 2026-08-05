@@ -222,6 +222,7 @@ $release_meta = array_filter([$release_type, $release_date_display]);
                     <?php
                     printf(
                         esc_html(
+                            /* translators: %d: number of tracks in the release. */
                             _n(
                                 '%d track',
                                 '%d tracks',
@@ -285,8 +286,15 @@ $release_meta = array_filter([$release_type, $release_date_display]);
                         type="button"
                         class="sv-track-row__play"
                         data-sv-play-button="true"
-                        aria-label="<?php echo esc_attr(sprintf(__('Play %s', 'slim-volume'), $track['title'] ?? 'track')); ?>"
-                    >
+                        aria-label="<?php
+                        echo esc_attr(
+                            sprintf(
+                                /* translators: %s: track title. */
+                                __('Play %s', 'slim-volume'),
+                                (string) ($track['title'] ?? 'track')
+                            )
+                        );
+                        ?>"                    >
                         <?php esc_html_e('Play', 'slim-volume'); ?>
                     </button>
                     <?php endif; ?>

@@ -361,6 +361,7 @@ get_header();
                 <?php
                 printf(
                     esc_html(
+                        /* translators: %s: formatted number of releases found. */
                         _n(
                             '%s release',
                             '%s releases',
@@ -377,6 +378,7 @@ get_header();
                 <span>
                     <?php
                     printf(
+                        /* translators: %s: music archive search query. */
                         esc_html__('matching “%s”', 'slim-volume'),
                         esc_html($search_query)
                     );
@@ -388,6 +390,7 @@ get_header();
                 <span>
                     <?php
                     printf(
+                        /* translators: %s: selected artist or project name. */
                         esc_html__('by %s', 'slim-volume'),
                         esc_html($selected_project->name)
                     );
