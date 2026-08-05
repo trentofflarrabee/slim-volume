@@ -110,12 +110,13 @@ final class TrackReleasePrefill
         }
 
         /*
-         * post_parent still represents the release relationship that existed
-         * before this save request. TrackMetaBoxes has already saved the newly
-         * selected _sv_release_id before this callback runs.
+         * Resolve the stored relationship before applying the submitted
+         * release selection. This applies the canonical-meta/parent-fallback
+         * policy consistently when moving or unassigning legacy tracks.
          */
-        $previous_release_id = (int) $post->post_parent;
-
+        $previous_release_id =
+            \SlimVolume\Relationships\TrackReleaseRelationship
+                ::get_release_id($post_id);
         $release_id = self::get_release_id_from_post();
 
         if (null === $release_id) {
