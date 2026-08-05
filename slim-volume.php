@@ -1,9 +1,13 @@
 <?php
 /**
  * Plugin Name: Slim Volume
+ * Plugin URI: https://github.com/trentofflarrabee/slim-volume
  * Description: A WordPress-native music catalog, release archive, track deep-dive system, and global audio player foundation.
  * Version: 0.1.0
+ * Requires at least: 6.0
+ * Requires PHP: 8.0
  * Author: Slim Volume
+ * Update URI: https://github.com/trentofflarrabee/slim-volume
  * Text Domain: slim-volume
  */
 
