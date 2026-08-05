@@ -58,6 +58,7 @@ Clean music URLs should use formats such as:
 /music/
 /music/{release-slug}/
 /music/{release-slug}/{track-slug}/
+```
 
 ## Butterchurn Visualizer
 
