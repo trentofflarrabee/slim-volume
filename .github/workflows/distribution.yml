@@ -1,0 +1,83 @@
+name: Distribution Package
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    name: Build plugin ZIP
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up PHP and WP-CLI
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.0'
+          coverage: none
+          tools: wp-cli
+
+      - name: Install the distribution command
+        shell: bash
+        run: wp package install wp-cli/dist-archive-command
+
+      - name: Build distribution archive
+        shell: bash
+        run: |
+          mkdir -p build
+
+          wp dist-archive . build/slim-volume.zip \
+            --plugin-dirname=slim-volume \
+            --force
+
+      - name: Verify distribution archive
+        shell: bash
+        run: |
+          archive_entries="$(unzip -Z1 build/slim-volume.zip)"
+
+          required_paths=(
+            "slim-volume/slim-volume.php"
+            "slim-volume/uninstall.php"
+            "slim-volume/readme.txt"
+            "slim-volume/LICENSE"
+          )
+
+          for required_path in "${required_paths[@]}"; do
+            if ! grep -Fxq "$required_path" <<< "$archive_entries"; then
+              echo "Required package file is missing: $required_path"
+              exit 1
+            fi
+          done
+
+          forbidden_paths=(
+            "slim-volume/.git"
+            "slim-volume/.github"
+            "slim-volume/.gitattributes"
+            "slim-volume/.distignore"
+            "slim-volume/docs"
+            "slim-volume/README.md"
+          )
+
+          for forbidden_path in "${forbidden_paths[@]}"; do
+            if grep -Fq "$forbidden_path" <<< "$archive_entries"; then
+              echo "Development file was included: $forbidden_path"
+              exit 1
+            fi
+          done
+
+          echo "Distribution package contents passed validation."
+          unzip -l build/slim-volume.zip
+
+      - name: Upload distribution package
+        uses: actions/upload-artifact@v4
+        with:
+          name: slim-volume-${{ github.sha }}
+          path: build/slim-volume.zip
+          if-no-files-found: error
+          retention-days: 14
