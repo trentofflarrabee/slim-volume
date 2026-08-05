@@ -31,18 +31,30 @@ final class PlayerData
 
         return [
             'id'              => $track_id,
-            'title'           => get_the_title($track_id),
+            'title'           => (string) $track->post_title,
             'slug'            => $track->post_name,
-            'trackNumber'     => (int) get_post_meta($track_id, '_sv_track_number', true),
-            'duration'        => (string) get_post_meta($track_id, '_sv_duration', true),
-            'durationSeconds' => (int) get_post_meta($track_id, '_sv_duration_seconds', true),
+            'trackNumber'     => (int) get_post_meta(
+                $track_id,
+                '_sv_track_number',
+                true
+            ),
+            'duration'        => (string) get_post_meta(
+                $track_id,
+                '_sv_duration',
+                true
+            ),
+            'durationSeconds' => (int) get_post_meta(
+                $track_id,
+                '_sv_duration_seconds',
+                true
+            ),
             'audioUrl'        => $audio_url,
             'trackUrl'        => get_permalink($track_id),
 
             'release' => $release instanceof WP_Post
                 ? [
                     'id'    => $release_id,
-                    'title' => get_the_title($release_id),
+                    'title' => (string) $release->post_title,
                     'slug'  => $release->post_name,
                     'url'   => get_permalink($release_id),
                 ]
@@ -53,9 +65,16 @@ final class PlayerData
             'links' => $links,
 
             'availability' => [
-                'canPlay'     => $audio_url !== '',
-                'canDownload' => (bool) get_post_meta($track_id, '_sv_can_download', true),
-                'canPurchase' => ! empty($links['purchase']) || ! empty($links['bandcamp']),
+                'canPlay'     => '' !== $audio_url,
+                'canDownload' => (bool) get_post_meta(
+                    $track_id,
+                    '_sv_can_download',
+                    true
+                ),
+                'canPurchase' => (
+                    ! empty($links['purchase'])
+                    || ! empty($links['bandcamp'])
+                ),
             ],
         ];
     }
