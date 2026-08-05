@@ -5,6 +5,7 @@
 .distignore
 docs
 README.md
+build
 *.zip
 *.tar.gz
 *.log

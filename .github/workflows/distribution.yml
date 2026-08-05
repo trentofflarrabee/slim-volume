@@ -16,6 +16,28 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v6
 
+      - name: Read plugin version
+        id: version
+        shell: bash
+        run: |
+          version="$(
+            sed -n "s/^[[:space:]]*\* Version:[[:space:]]*\([^[:space:]]*\).*/\1/p" slim-volume.php |
+              head -n 1
+          )"
+
+          if [[ -z "$version" ]]; then
+            echo "Could not read the plugin version."
+            exit 1
+          fi
+
+          if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z.-]+)?$ ]]; then
+            echo "Invalid plugin version: $version"
+            exit 1
+          fi
+
+          echo "Package version: $version"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
       - name: Build distribution archive
         shell: bash
         run: |
@@ -24,19 +46,19 @@ jobs:
 
           rsync -a \
             --exclude-from='.distignore' \
-            --exclude='/build/' \
             ./ \
             build/staging/slim-volume/
 
           (
             cd build/staging
-            zip -qr ../slim-volume.zip slim-volume
+            zip -qr "../slim-volume-${{ steps.version.outputs.version }}.zip" slim-volume
           )
 
       - name: Verify distribution archive
         shell: bash
         run: |
-          archive_entries="$(unzip -Z1 build/slim-volume.zip)"
+          archive="build/slim-volume-${{ steps.version.outputs.version }}.zip"
+          archive_entries="$(unzip -Z1 "$archive")"
 
           required_paths=(
             "slim-volume/slim-volume.php"
@@ -57,6 +79,7 @@ jobs:
             "slim-volume/.github"
             "slim-volume/.gitattributes"
             "slim-volume/.distignore"
+            "slim-volume/build"
             "slim-volume/docs"
             "slim-volume/README.md"
           )
@@ -69,12 +92,29 @@ jobs:
           done
 
           echo "Distribution package contents passed validation."
-          unzip -l build/slim-volume.zip
+          unzip -l "$archive"
+
+      - name: Generate and verify checksum
+        shell: bash
+        run: |
+          (
+            cd build
+
+            sha256sum \
+              "slim-volume-${{ steps.version.outputs.version }}.zip" \
+              > "slim-volume-${{ steps.version.outputs.version }}.zip.sha256"
+
+            sha256sum \
+              --check \
+              "slim-volume-${{ steps.version.outputs.version }}.zip.sha256"
+          )
 
       - name: Upload distribution package
         uses: actions/upload-artifact@v4
         with:
-          name: slim-volume-${{ github.sha }}
-          path: build/slim-volume.zip
+          name: slim-volume-${{ steps.version.outputs.version }}-${{ github.sha }}
+          path: |
+            build/slim-volume-${{ steps.version.outputs.version }}.zip
+            build/slim-volume-${{ steps.version.outputs.version }}.zip.sha256
           if-no-files-found: error
           retention-days: 14
