@@ -1548,8 +1548,15 @@ private static function render_appearance_preview(string $preview_style): void
                             type="color"
                             value="<?php echo esc_attr(self::color_picker_value($key, $settings)); ?>"
                             data-sv-color-picker="<?php echo esc_attr($key); ?>"
-                            aria-label="<?php echo esc_attr(sprintf(__('%s color picker', 'slim-volume'), $label)); ?>"
-                        >
+                            aria-label="<?php
+                            echo esc_attr(
+                                sprintf(
+                                    /* translators: %s: settings field label */
+                                    __('%s color picker', 'slim-volume'),
+                                    $label
+                                )
+                            );
+                            ?>"                        >
 
                         <input
                             id="slim-volume-<?php echo esc_attr($key); ?>"
@@ -1579,6 +1586,7 @@ private static function render_appearance_preview(string $preview_style): void
                     <?php
                     printf(
                         wp_kses(
+                            /* translators: %s: CSS custom property name wrapped in a code element */
                             __('CSS variable: %s', 'slim-volume'),
                             ['code' => []]
                         ),

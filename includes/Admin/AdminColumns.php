@@ -247,8 +247,7 @@ final class AdminColumns
 
         if ($attachment_id > 0) {
             $url = wp_get_attachment_url($attachment_id);
-            $filename = $url ? basename(parse_url($url, PHP_URL_PATH) ?: $url) : __('Attachment', 'slim-volume');
-
+            $filename = $url ? basename(wp_parse_url($url, PHP_URL_PATH) ?: $url) : __('Attachment', 'slim-volume');
             echo '<span class="sv-admin-status sv-admin-status--yes">';
             echo esc_html($filename);
             echo '</span>';

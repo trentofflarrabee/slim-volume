@@ -56,6 +56,7 @@ final class ReleaseDashboardMetaBox
                         <?php
                         printf(
                             esc_html(
+                                /* translators: %d: number of tracks attached to the release */
                                 _n(
                                     '%d attached track',
                                     '%d attached tracks',
