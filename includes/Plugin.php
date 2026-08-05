@@ -125,7 +125,8 @@ final class Plugin
             }
         );
 
-        add_filter('query_vars', [Rewrite::class, 'add_query_vars']);        add_action('pre_get_posts', [Rewrite::class, 'resolve_nested_track_query']);
+        add_filter('query_vars', [Rewrite::class, 'add_query_vars']);
+        add_action('pre_get_posts', [Rewrite::class, 'resolve_nested_track_query']); 
         add_filter('post_type_link', [Rewrite::class, 'filter_track_permalink'], 10, 2);
 
         add_filter('template_include', [Frontend\TemplateLoader::class, 'template_include']);

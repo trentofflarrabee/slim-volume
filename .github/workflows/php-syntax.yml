@@ -35,3 +35,36 @@ jobs:
         run: |
           find . -type f -name '*.php' -not -path './.git/*' -print0 |
             xargs -0 -n1 php -l
+
+      - name: Verify release version consistency
+        shell: bash
+        run: |
+          plugin_header_version="$(
+            sed -n "s/^[[:space:]]*\* Version:[[:space:]]*\([^[:space:]]*\).*/\1/p" slim-volume.php |
+              head -n 1
+          )"
+
+          plugin_constant_version="$(
+            sed -n "s/.*define('SLIM_VOLUME_VERSION', '\([^']*\)').*/\1/p" slim-volume.php |
+              head -n 1
+          )"
+
+          readme_stable_tag="$(
+            sed -n "s/^Stable tag:[[:space:]]*\([^[:space:]]*\).*/\1/p" readme.txt |
+              head -n 1
+          )"
+
+          if [[ -z "$plugin_header_version" || -z "$plugin_constant_version" || -z "$readme_stable_tag" ]]; then
+            echo "Could not read all required version values."
+            exit 1
+          fi
+
+          printf 'Plugin header: %s\nVersion constant: %s\nReadme stable tag: %s\n' \
+            "$plugin_header_version" \
+            "$plugin_constant_version" \
+            "$readme_stable_tag"
+
+          if [[ "$plugin_header_version" != "$plugin_constant_version" || "$plugin_header_version" != "$readme_stable_tag" ]]; then
+            echo "Slim Volume release versions do not match."
+            exit 1
+          fi
