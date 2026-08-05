@@ -1,0 +1,36 @@
+name: WordPress Plugin Check
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  plugin-check:
+    name: Plugin Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Stage distribution files
+        shell: bash
+        run: |
+          rm -rf build
+          mkdir -p build/staging/slim-volume
+
+          rsync -a \
+            --exclude-from='.distignore' \
+            --exclude='/build/' \
+            ./ \
+            build/staging/slim-volume/
+
+      - name: Run WordPress Plugin Check
+        uses: wordpress/plugin-check-action@v1
+        with:
+          build-dir: './build/staging/slim-volume'
+          include-experimental: false
+          ignore-warnings: true

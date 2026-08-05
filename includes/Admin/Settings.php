@@ -230,12 +230,18 @@ final class Settings
         );
     }
 
-    public static function sanitize_settings(array $input): array
+    /**
+     * Sanitize the complete settings payload.
+     *
+     * @param mixed $input Raw option value supplied by the Settings API.
+     */
+    public static function sanitize_settings($input): array
     {
+        $input = is_array($input) ? $input : [];
+
         $defaults = self::defaults();
-
-        $presets = self::appearance_presets();
-
+        $presets  = self::appearance_presets();
+        
         $preset_key = isset($input['appearance_preset'])
             ? sanitize_key((string) $input['appearance_preset'])
             : 'custom';
