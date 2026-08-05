@@ -1,0 +1,13 @@
+.git
+.github
+.gitattributes
+.gitignore
+.distignore
+docs
+README.md
+*.zip
+*.tar.gz
+*.log
+*~
+.DS_Store
+Thumbs.db
