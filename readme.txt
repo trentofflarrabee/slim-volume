@@ -37,8 +37,7 @@ Version 0.1.0 is a beta release intended for controlled production use and early
 5. Create a release, then create or assign its tracks.
 6. Visit `/music/` to view the public archive.
 
-If music URLs return a 404 after activation, open Settings > Permalinks and save the current permalink structure once.
-
+For clean music URLs such as `/music/`, open Settings > Permalinks and select a pretty permalink structure such as Post name (`/%postname%/`). The structure should not contain `/index.php/`. Save the permalink settings after making a change. On servers where URL rewriting is unavailable, WordPress may instead use URLs such as `/index.php/music/`.
 == Frequently Asked Questions ==
 
 = Does uninstalling Slim Volume delete releases and tracks? =
@@ -56,6 +55,12 @@ No. Tracks can use an uploaded audio attachment, an external audio or destinatio
 Tracks use nested URLs in this format:
 
 `/music/{release-slug}/{track-slug}/`
+
+= Why do my music URLs contain index.php or return a 404? =
+
+Open Settings > Permalinks and select a pretty permalink structure such as Post name (`/%postname%/`), then save the settings.
+
+If the permalink structure contains `/index.php/`, WordPress will generate music URLs such as `/index.php/music/`. This is a WordPress or web-server permalink configuration rather than a Slim Volume routing error.
 
 = Can a theme override Slim Volume templates? =
 

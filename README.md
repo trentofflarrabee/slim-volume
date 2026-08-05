@@ -39,10 +39,25 @@ Slim Volume is ready for controlled production use and early customer projects. 
 
 ## Requirements
 
-- WordPress 6.x
+- WordPress 6.0+
 - PHP 8.0+
 - A theme that supports featured images
 - Optional: Butterchurn vendor files for Butterchurn visualizer mode
+
+## Installation and Permalinks
+
+1. Upload the packaged Slim Volume ZIP through **Plugins → Add Plugin → Upload Plugin**.
+2. Activate Slim Volume.
+3. Open **Music → Settings** to configure the plugin.
+4. Open **Settings → Permalinks** and select a pretty permalink structure such as **Post name** (`/%postname%/`).
+5. Save the permalink settings.
+
+Clean music URLs should use formats such as:
+
+```text
+/music/
+/music/{release-slug}/
+/music/{release-slug}/{track-slug}/
 
 ## Butterchurn Visualizer
 
