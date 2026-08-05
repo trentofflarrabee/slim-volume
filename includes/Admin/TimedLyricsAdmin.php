@@ -562,8 +562,15 @@ final class TimedLyricsAdmin
                                     <?php if ($type === 'line') : ?>
                                         role="button"
                                         tabindex="0"
-                                        aria-label="<?php echo esc_attr(sprintf(__('Select lyric line %d', 'slim-volume'), $index + 1)); ?>"
-                                    <?php endif; ?>
+                                        aria-label="<?php
+                                        echo esc_attr(
+                                            sprintf(
+                                                /* translators: %d: lyric line number */
+                                                __('Select lyric line %d', 'slim-volume'),
+                                                $index + 1
+                                            )
+                                        );
+                                        ?>"                                    <?php endif; ?>
                                 >
                                     <span class="sv-timed-lyrics-line-list__number">
                                         <?php echo esc_html(str_pad((string) ($index + 1), 2, '0', STR_PAD_LEFT)); ?>
@@ -685,11 +692,16 @@ final class TimedLyricsAdmin
                                         echo esc_html(
                                             $summary['has_lyrics']
                                                 ? sprintf(
-                                                    _n('%d line', '%d lines', $summary['line_count'], 'slim-volume'),
+                                                    /* translators: %d: number of lyric lines */
+                                                    _n(
+                                                        '%d line',
+                                                        '%d lines',
+                                                        $summary['line_count'],
+                                                        'slim-volume'
+                                                    ),
                                                     $summary['line_count']
                                                 )
-                                                : __('Missing', 'slim-volume')
-                                        );
+                                                : __('Missing', 'slim-volume')                                        );
                                         ?>
                                     </td>
                                     <td>

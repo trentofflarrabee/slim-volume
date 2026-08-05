@@ -241,7 +241,7 @@ final class Settings
 
         $defaults = self::defaults();
         $presets  = self::appearance_presets();
-        
+
         $preset_key = isset($input['appearance_preset'])
             ? sanitize_key((string) $input['appearance_preset'])
             : 'custom';
@@ -1116,10 +1116,17 @@ private static function render_appearance_preview(string $preview_style): void
                     return;
                 }
 
-                const optionName = <?php echo $option_name_json; ?>;
-                const presets = <?php echo $presets_json; ?>;
-                const defaults = <?php echo $defaults_json; ?>;
-
+                <?php
+                /*
+                 * These values were encoded with wp_json_encode() and the
+                 * JSON_HEX_TAG, JSON_HEX_AMP, JSON_HEX_APOS, and JSON_HEX_QUOT
+                 * flags before being embedded into this inline script.
+                 */
+                ?>
+                const optionName = <?php echo $option_name_json; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Safely JSON-encoded above. ?>;
+                const presets = <?php echo $presets_json; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Safely JSON-encoded above. ?>;
+                const defaults = <?php echo $defaults_json; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Safely JSON-encoded above. ?>;
+                
                 const map = {
                     player_bg: '--sv-player-bg',
                     player_text: '--sv-player-text',
