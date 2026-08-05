@@ -431,9 +431,8 @@ final class TrackReleasePrefill
                     $track_number
                 );
 
-                self::update_track_post_fields(
+                self::update_track_menu_order(
                     $track_id,
-                    $release_id,
                     $track_number
                 );
             }
@@ -458,9 +457,8 @@ final class TrackReleasePrefill
         }
     }
 
-    private static function update_track_post_fields(
+    private static function update_track_menu_order(
         int $track_id,
-        int $release_id,
         int $track_number
     ): void {
         $track = get_post($track_id);
@@ -469,18 +467,14 @@ final class TrackReleasePrefill
             return;
         }
 
-        if (
-            (int) $track->post_parent === $release_id
-            && (int) $track->menu_order === $track_number
-        ) {
+        if ((int) $track->menu_order === $track_number) {
             return;
         }
 
         wp_update_post(
             [
-                'ID'          => $track_id,
-                'post_parent' => $release_id,
-                'menu_order'  => $track_number,
+                'ID'         => $track_id,
+                'menu_order' => $track_number,
             ]
         );
     }
