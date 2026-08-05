@@ -6,9 +6,9 @@ It provides release archives, single release pages, track deep-dive pages, admin
 
 ## Current Status
 
-`v0.1.0-alpha`
+`v0.1.0-beta`
 
-This plugin is in active development. The current alpha is usable for local testing and early project builds, but APIs, templates, settings, and markup may still change.
+Slim Volume is ready for controlled production use and early customer projects. APIs, templates, settings, and markup may still change before the first stable release.
 
 ## Features
 
@@ -114,8 +114,8 @@ JS global: window.SVPlayer
 
 ## Version
 
-Current alpha checkpoint:
+Current beta release:
 
 ```text
-v0.1.0-alpha
+v0.1.0
 ```

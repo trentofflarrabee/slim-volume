@@ -26,7 +26,7 @@ It provides:
 * Theme, player, and visualizer settings.
 * Theme template overrides.
 
-Version 0.1.0 is an alpha release intended for controlled testing and early project builds. Back up the WordPress site before installing an update.
+Version 0.1.0 is a beta release intended for controlled production use and early customer projects. Back up the WordPress site before installing an update.
 
 == Installation ==
 
