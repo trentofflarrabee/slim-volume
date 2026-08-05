@@ -1,0 +1,166 @@
+name: Draft Release
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    name: Build release candidate
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+    env:
+      GH_TOKEN: ${{ github.token }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Read and validate release version
+        id: version
+        shell: bash
+        run: |
+          plugin_header_version="$(
+            sed -n "s/^[[:space:]]*\* Version:[[:space:]]*\([^[:space:]]*\).*/\1/p" slim-volume.php |
+              head -n 1
+          )"
+
+          plugin_constant_version="$(
+            sed -n "s/.*define('SLIM_VOLUME_VERSION', '\([^']*\)').*/\1/p" slim-volume.php |
+              head -n 1
+          )"
+
+          readme_stable_tag="$(
+            sed -n "s/^Stable tag:[[:space:]]*\([^[:space:]]*\).*/\1/p" readme.txt |
+              head -n 1
+          )"
+
+          if [[ -z "$plugin_header_version" || -z "$plugin_constant_version" || -z "$readme_stable_tag" ]]; then
+            echo "Could not read all required version values."
+            exit 1
+          fi
+
+          if [[ "$plugin_header_version" != "$plugin_constant_version" || "$plugin_header_version" != "$readme_stable_tag" ]]; then
+            echo "Slim Volume release versions do not match."
+            exit 1
+          fi
+
+          if [[ ! "$plugin_header_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z.-]+)?$ ]]; then
+            echo "Invalid plugin version: $plugin_header_version"
+            exit 1
+          fi
+
+          if [[ "$GITHUB_REF_TYPE" == "tag" ]]; then
+            expected_tag="v${plugin_header_version}"
+
+            if [[ "$GITHUB_REF_NAME" != "$expected_tag" ]]; then
+              echo "Release tag $GITHUB_REF_NAME does not match expected tag $expected_tag."
+              exit 1
+            fi
+          fi
+
+          echo "Release version: $plugin_header_version"
+          echo "version=$plugin_header_version" >> "$GITHUB_OUTPUT"
+
+      - name: Build release archive
+        shell: bash
+        run: |
+          rm -rf build
+          mkdir -p build/staging/slim-volume
+
+          rsync -a \
+            --exclude-from='.distignore' \
+            ./ \
+            build/staging/slim-volume/
+
+          (
+            cd build/staging
+            zip -qr "../slim-volume-${{ steps.version.outputs.version }}.zip" slim-volume
+          )
+
+      - name: Verify release archive
+        shell: bash
+        run: |
+          archive="build/slim-volume-${{ steps.version.outputs.version }}.zip"
+          archive_entries="$(unzip -Z1 "$archive")"
+
+          required_paths=(
+            "slim-volume/slim-volume.php"
+            "slim-volume/uninstall.php"
+            "slim-volume/readme.txt"
+            "slim-volume/LICENSE"
+            "slim-volume/includes/"
+            "slim-volume/assets/"
+            "slim-volume/templates/"
+          )
+
+          for required_path in "${required_paths[@]}"; do
+            if ! grep -Fq "$required_path" <<< "$archive_entries"; then
+              echo "Required package path is missing: $required_path"
+              exit 1
+            fi
+          done
+
+          forbidden_paths=(
+            "slim-volume/.git"
+            "slim-volume/.github"
+            "slim-volume/.gitattributes"
+            "slim-volume/.distignore"
+            "slim-volume/build"
+            "slim-volume/docs"
+            "slim-volume/README.md"
+          )
+
+          for forbidden_path in "${forbidden_paths[@]}"; do
+            if grep -Fq "$forbidden_path" <<< "$archive_entries"; then
+              echo "Development path was included: $forbidden_path"
+              exit 1
+            fi
+          done
+
+          echo "Release package contents passed validation."
+
+      - name: Generate and verify checksum
+        shell: bash
+        run: |
+          (
+            cd build
+
+            sha256sum \
+              "slim-volume-${{ steps.version.outputs.version }}.zip" \
+              > "slim-volume-${{ steps.version.outputs.version }}.zip.sha256"
+
+            sha256sum \
+              --check \
+              "slim-volume-${{ steps.version.outputs.version }}.zip.sha256"
+          )
+
+      - name: Upload release candidate artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: slim-volume-${{ steps.version.outputs.version }}-release-candidate
+          path: |
+            build/slim-volume-${{ steps.version.outputs.version }}.zip
+            build/slim-volume-${{ steps.version.outputs.version }}.zip.sha256
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Create draft GitHub Release
+        if: github.ref_type == 'tag'
+        shell: bash
+        run: |
+          gh release create "$GITHUB_REF_NAME" \
+            "build/slim-volume-${{ steps.version.outputs.version }}.zip#Slim Volume plugin ZIP" \
+            "build/slim-volume-${{ steps.version.outputs.version }}.zip.sha256#SHA-256 checksum" \
+            --verify-tag \
+            --draft \
+            --generate-notes \
+            --title "Slim Volume ${{ steps.version.outputs.version }}"
