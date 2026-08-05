@@ -27,8 +27,8 @@ jobs:
         shell: bash
         run: php -l slim-volume.php
 
-  lint:    name: PHP ${{ matrix.php }}
-    runs-on: ubuntu-latest
+  lint:
+    name: PHP ${{ matrix.php }}    runs-on: ubuntu-latest
 
     strategy:
       fail-fast: false
