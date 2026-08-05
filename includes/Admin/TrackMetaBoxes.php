@@ -501,12 +501,27 @@ final class TrackMetaBoxes
             update_post_meta($post_id, $meta_key, $value);
         }
 
+        $previous_lyrics = (string) get_post_meta(
+            $post_id,
+            '_sv_lyrics',
+            true
+        );
+
         $lyrics = isset($_POST['sv_lyrics'])
             ? wp_kses_post(wp_unslash($_POST['sv_lyrics']))
             : '';
 
-        update_post_meta($post_id, '_sv_lyrics', $lyrics);
+        update_post_meta(
+            $post_id,
+            '_sv_lyrics',
+            $lyrics
+        );
 
+        \SlimVolume\TimedLyrics::reconcile_lyrics_edit(
+            $post_id,
+            $previous_lyrics,
+            $lyrics
+        );
         $credits = isset($_POST['sv_track_credits'])
             ? wp_kses_post(wp_unslash($_POST['sv_track_credits']))
             : '';

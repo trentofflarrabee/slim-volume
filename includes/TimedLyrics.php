@@ -61,9 +61,9 @@ final class TimedLyrics
     /**
      * Return a current, saveable authoring document for the admin workspace.
      *
-     * Existing timestamps are retained only while the stored line model still
-     * matches the current plain lyrics. When lyrics changed, the workspace
-     * receives a fresh draft model instead of an unsaveable stale document.
+     * Existing timestamps are retained whenever stored lines can still be
+     * matched to the current plain lyrics. New, changed, or moved lines are
+     * returned without timestamps so only those lines require review.
      */
     public static function get_authoring_document(int $track_id): array
     {
@@ -71,29 +71,172 @@ final class TimedLyrics
             return [];
         }
 
-        $lyrics          = (string) get_post_meta($track_id, '_sv_lyrics', true);
+        $lyrics = (string) get_post_meta(
+            $track_id,
+            '_sv_lyrics',
+            true
+        );
+
         $generated_lines = self::generate_lines($lyrics);
         $stored          = self::get_document($track_id);
-        $stored_lines    = is_array($stored['lines'] ?? null)
+
+        $stored_lines = is_array($stored['lines'] ?? null)
             ? array_values($stored['lines'])
             : [];
 
-        $duration = isset($stored['audio']['duration']) && is_numeric($stored['audio']['duration'])
+        $duration = (
+            isset($stored['audio']['duration'])
+            && is_numeric($stored['audio']['duration'])
+        )
             ? (float) $stored['audio']['duration']
             : 0.0;
 
-        $status = sanitize_key((string) ($stored['status'] ?? self::STATUS_DRAFT));
+        $status = sanitize_key(
+            (string) ($stored['status'] ?? self::STATUS_DRAFT)
+        );
 
-        if (! in_array($status, [self::STATUS_DRAFT, self::STATUS_COMPLETE], true)) {
+        if (
+            ! in_array(
+                $status,
+                [
+                    self::STATUS_DRAFT,
+                    self::STATUS_COMPLETE,
+                ],
+                true
+            )
+        ) {
             $status = self::STATUS_DRAFT;
         }
 
-        $lines = (
+        $line_model_matches = (
             $stored_lines
-            && self::line_model_matches($generated_lines, $stored_lines)
-        )
-            ? $stored_lines
-            : $generated_lines;
+            && self::line_model_matches(
+                $generated_lines,
+                $stored_lines
+            )
+        );
+
+        if ($line_model_matches) {
+            $lines = $stored_lines;
+        } elseif ($stored_lines) {
+            /*
+             * Index stored records by their exact lyric content. Line and
+             * section records share a signature so section formatting and
+             * timestamps can survive a normal plain-lyrics edit.
+             */
+            $stored_positions = [];
+
+            foreach (
+                $stored_lines
+                as $stored_index => $stored_line
+            ) {
+                if (! is_array($stored_line)) {
+                    continue;
+                }
+
+                $stored_type = sanitize_key(
+                    (string) ($stored_line['type'] ?? '')
+                );
+
+                if ('spacer' === $stored_type) {
+                    $signature = 'spacer:';
+                } elseif (
+                    in_array(
+                        $stored_type,
+                        ['line', 'section'],
+                        true
+                    )
+                ) {
+                    $signature = 'line:' . hash(
+                        'sha256',
+                        (string) ($stored_line['text'] ?? '')
+                    );
+                } else {
+                    continue;
+                }
+
+                $stored_positions[$signature][] = (int) $stored_index;
+            }
+
+            $position_cursors  = [];
+            $last_stored_index = -1;
+            $lines             = [];
+
+            foreach ($generated_lines as $generated_line) {
+                $generated_type = sanitize_key(
+                    (string) ($generated_line['type'] ?? '')
+                );
+
+                if ('spacer' === $generated_type) {
+                    $signature = 'spacer:';
+                } else {
+                    $signature = 'line:' . hash(
+                        'sha256',
+                        (string) ($generated_line['text'] ?? '')
+                    );
+                }
+
+                $matched_index = null;
+
+                if (isset($stored_positions[$signature])) {
+                    $cursor = (int) (
+                        $position_cursors[$signature] ?? 0
+                    );
+
+                    $candidate_positions =
+                        $stored_positions[$signature];
+
+                    $candidate_count = count(
+                        $candidate_positions
+                    );
+
+                    while (
+                        $cursor < $candidate_count
+                        && $candidate_positions[$cursor]
+                            <= $last_stored_index
+                    ) {
+                        $cursor++;
+                    }
+
+                    if ($cursor < $candidate_count) {
+                        $matched_index =
+                            $candidate_positions[$cursor];
+
+                        $cursor++;
+                    }
+
+                    $position_cursors[$signature] = $cursor;
+                }
+
+                if (
+                    null !== $matched_index
+                    && isset($stored_lines[$matched_index])
+                    && is_array($stored_lines[$matched_index])
+                ) {
+                    $lines[] = $stored_lines[$matched_index];
+                    $last_stored_index = $matched_index;
+
+                    continue;
+                }
+
+                /*
+                 * A genuinely new or moved line needs a fresh timestamp.
+                 */
+                $generated_line['start'] = null;
+                $lines[]                 = $generated_line;
+            }
+        } else {
+            $lines = $generated_lines;
+        }
+
+        /*
+         * A changed line structure always returns to draft authoring status.
+         * Existing timing remains available, but the document must be
+         * reviewed before it can become complete again.
+         */
+        if (! $line_model_matches) {
+            $status = self::STATUS_DRAFT;
+        }
 
         return self::sanitize_document_shape(
             [
@@ -101,8 +244,13 @@ final class TimedLyrics
                 'status'     => $status,
                 'trackId'    => $track_id,
                 'lyricsHash' => self::lyrics_hash($lyrics),
-                'audio'      => self::audio_descriptor($track_id, $duration),
-                'updatedAt'  => sanitize_text_field((string) ($stored['updatedAt'] ?? '')),
+                'audio'      => self::audio_descriptor(
+                    $track_id,
+                    $duration
+                ),
+                'updatedAt'  => sanitize_text_field(
+                    (string) ($stored['updatedAt'] ?? '')
+                ),
                 'lines'      => $lines,
             ]
         );
