@@ -98,8 +98,33 @@ final class Plugin
         );
 
         Admin\Settings::init();
-        add_filter('query_vars', [Rewrite::class, 'add_query_vars']);
-        add_action('pre_get_posts', [Rewrite::class, 'resolve_nested_track_query']);
+
+        add_filter(
+            'plugin_action_links_' . plugin_basename(SLIM_VOLUME_FILE),
+            static function (array $links): array {
+                if (! current_user_can('manage_options')) {
+                    return $links;
+                }
+
+                $settings_url = add_query_arg(
+                    [
+                        'post_type' => PostTypes::RELEASE,
+                        'page'      => Admin\Settings::MENU_SLUG,
+                    ],
+                    admin_url('edit.php')
+                );
+
+                $settings_link = sprintf(
+                    '<a href="%1$s">%2$s</a>',
+                    esc_url($settings_url),
+                    esc_html__('Settings', 'slim-volume')
+                );
+
+                return ['settings' => $settings_link] + $links;
+            }
+        );
+
+        add_filter('query_vars', [Rewrite::class, 'add_query_vars']);        add_action('pre_get_posts', [Rewrite::class, 'resolve_nested_track_query']);
         add_filter('post_type_link', [Rewrite::class, 'filter_track_permalink'], 10, 2);
 
         add_filter('template_include', [Frontend\TemplateLoader::class, 'template_include']);
