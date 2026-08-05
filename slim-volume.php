@@ -11,6 +11,7 @@
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
  * Update URI: https://github.com/trentofflarrabee/slim-volume
  * Text Domain: slim-volume
+ * Domain Path: /languages
  */
 
 declare(strict_types=1);
