@@ -55,9 +55,28 @@ final class TrackMetaBoxes
     {
         wp_nonce_field('sv_save_track_details', 'sv_track_details_nonce');
 
-        $release_id = (int) get_post_meta($post->ID, '_sv_release_id', true);
-        if ($release_id <= 0 && isset($_GET['sv_release_id'])) {
-            $release_id = absint($_GET['sv_release_id']);
+        $release_id =
+            \SlimVolume\Relationships\TrackReleaseRelationship
+                ::get_release_id((int) $post->ID);
+
+        /*
+         * A newly created track may not have a persisted relationship yet.
+         * Preserve the release-prefill URL for that unsaved editor state.
+         */
+        $requested_release_id = (
+            isset($_GET['sv_release_id'])
+            && is_string($_GET['sv_release_id'])
+        )
+            ? absint(wp_unslash($_GET['sv_release_id']))
+            : 0;
+
+        if (
+            $release_id <= 0
+            && $requested_release_id > 0
+            && \SlimVolume\Relationships\TrackReleaseRelationship
+                ::is_valid_release($requested_release_id)
+        ) {
+            $release_id = $requested_release_id;
         }
         
         $track_number        = (int) get_post_meta($post->ID, '_sv_track_number', true);
