@@ -76,54 +76,52 @@ final class Rewrite
         $query->is_404      = false;
     }
 
-    public static function find_track_for_release(int $release_id, string $track_slug): int
-    {
-        if ($release_id <= 0 || $track_slug === '') {
+    public static function find_track_for_release(
+        int $release_id,
+        string $track_slug
+    ): int {
+        if (
+            $release_id <= 0
+            || ! \SlimVolume\Relationships\TrackReleaseRelationship
+                ::is_valid_release($release_id)
+        ) {
             return 0;
         }
 
-        /*
-         * Primary relationship: _sv_release_id.
-         */
-        $tracks = get_posts(
-            [
-                'post_type'      => PostTypes::TRACK,
-                'post_status'    => 'publish',
-                'name'           => $track_slug,
-                'posts_per_page' => 1,
-                'fields'         => 'ids',
-                'no_found_rows'  => true,
-                'meta_query'     => [
-                    [
-                        'key'     => '_sv_release_id',
-                        'value'   => $release_id,
-                        'compare' => '=',
-                        'type'    => 'NUMERIC',
-                    ],
-                ],
-            ]
-        );
+        $track_slug = sanitize_title($track_slug);
 
-        if ($tracks) {
-            return (int) $tracks[0];
+        if ('' === $track_slug) {
+            return 0;
         }
 
-        /*
-         * Fallback relationship: post_parent.
-         */
         $tracks = get_posts(
             [
-                'post_type'      => PostTypes::TRACK,
-                'post_status'    => 'publish',
-                'name'           => $track_slug,
-                'post_parent'    => $release_id,
-                'posts_per_page' => 1,
-                'fields'         => 'ids',
-                'no_found_rows'  => true,
+                'post_type'              => PostTypes::TRACK,
+                'post_status'            => 'publish',
+                'name'                   => $track_slug,
+                'posts_per_page'         => -1,
+                'orderby'                => 'ID',
+                'order'                  => 'ASC',
+                'no_found_rows'          => true,
+                'update_post_meta_cache' => true,
+                'update_post_term_cache' => false,
             ]
         );
 
-        return $tracks ? (int) $tracks[0] : 0;
+        foreach ($tracks as $track) {
+            if (! $track instanceof \WP_Post) {
+                continue;
+            }
+
+            if (
+                \SlimVolume\Relationships\TrackReleaseRelationship
+                    ::get_release_id((int) $track->ID) === $release_id
+            ) {
+                return (int) $track->ID;
+            }
+        }
+
+        return 0;
     }
 
     public static function filter_track_permalink(string $permalink, \WP_Post $post): string
