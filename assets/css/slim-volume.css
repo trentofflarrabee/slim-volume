@@ -1641,6 +1641,7 @@ body.sv-ajax-loading [data-sv-page-content] {
   opacity: 0.42;
 }
 
+
 @media (max-width: 760px) {
   body.sv-player-ready {
     padding-bottom: calc(154px + env(safe-area-inset-bottom));
@@ -1648,27 +1649,38 @@ body.sv-ajax-loading [data-sv-page-content] {
 
   .sv-player__bar {
     grid-template-columns: 42px minmax(0, 1fr) auto;
-    grid-template-rows: auto auto auto;
+    grid-template-rows: 6px auto auto;
     column-gap: 10px;
-    row-gap: 8px;
-    width: min(560px, calc(100% - 20px));
+    row-gap: 9px;
+    width: 100%;
     min-height: 132px;
+    box-sizing: border-box;
     padding:
-      8px
-      0
-      calc(8px + env(safe-area-inset-bottom));
+      10px
+      max(18px, env(safe-area-inset-right))
+      calc(10px + env(safe-area-inset-bottom))
+      max(18px, env(safe-area-inset-left));
+  }
+
+  .sv-player__progress {
+    grid-column: 1 / -1;
+    grid-row: 1;
+    width: calc(100% - 8px);
+    height: 6px;
+    justify-self: center;
+    align-self: center;
   }
 
   .sv-player__art {
     grid-column: 1;
-    grid-row: 1;
+    grid-row: 2;
     width: 42px;
     height: 42px;
   }
 
   .sv-player__meta {
     grid-column: 2;
-    grid-row: 1;
+    grid-row: 2;
     align-self: center;
     min-width: 0;
   }
@@ -1686,7 +1698,7 @@ body.sv-ajax-loading [data-sv-page-content] {
 
   .sv-player__drawer-toggle {
     grid-column: 3;
-    grid-row: 1;
+    grid-row: 2;
     justify-self: end;
     align-self: center;
     padding-inline: 10px;
@@ -1699,7 +1711,7 @@ body.sv-ajax-loading [data-sv-page-content] {
 
   .sv-player__controls {
     grid-column: 1 / -1;
-    grid-row: 2;
+    grid-row: 3;
     justify-self: center;
     gap: 12px;
   }
@@ -1716,19 +1728,8 @@ body.sv-ajax-loading [data-sv-page-content] {
     height: 46px;
   }
 
-  .sv-player__drawer-toggle [data-sv-drawer-toggle-label] {
-    display: inline;
-  }
-
-  .sv-player__progress {
-    grid-column: 1 / 3;
-    grid-row: 3;
-    align-self: center;
-    height: 6px;
-  }
-
   .sv-player__time {
-    grid-column: 3;
+    grid-column: 1 / -1;
     grid-row: 3;
     justify-self: end;
     align-self: center;
