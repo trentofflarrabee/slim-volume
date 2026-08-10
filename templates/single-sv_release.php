@@ -110,47 +110,79 @@ $service_key_from_link = static function (string $label, string $url): string {
         <div class="sv-release-hero__content">
             <h1><?php the_title(); ?></h1>
 
-            <?php if ($show_release_artist && ! empty($release_artist['name'])) : ?>
-                <p class="sv-artist-attribution sv-release-hero__artist">
-                    <span><?php esc_html_e('by', 'slim-volume'); ?></span>
-                    <?php if (! empty($release_artist['url'])) : ?>
-                        <a href="<?php echo esc_url((string) $release_artist['url']); ?>">
-                            <?php echo esc_html((string) $release_artist['name']); ?>
-                        </a>
-                    <?php else : ?>
-                        <strong><?php echo esc_html((string) $release_artist['name']); ?></strong>
-                    <?php endif; ?>
-                </p>
-            <?php endif; ?>
-
-<?php
-$release_date_raw     = trim((string) get_post_meta($release_id, '_sv_release_date', true));
-$release_date_display = $release_date_raw;
-$release_type         = trim((string) get_post_meta($release_id, '_sv_release_type', true));
-
-if ($release_date_raw) {
-    $release_date_object = DateTimeImmutable::createFromFormat(
-        '!Y-m-d',
-        $release_date_raw,
-        wp_timezone()
-    );
-
-    if ($release_date_object instanceof DateTimeImmutable) {
-        $release_date_display = wp_date(
-            get_option('date_format'),
-            $release_date_object->getTimestamp()
+        <?php
+        $release_date_raw = trim(
+            (string) get_post_meta(
+                $release_id,
+                '_sv_release_date',
+                true
+            )
         );
-    }
-}
 
-$release_meta = array_filter([$release_type, $release_date_display]);
-?>
+        $release_date_display = $release_date_raw;
 
-<?php if ($release_meta) : ?>
-<p class="sv-release-hero__meta">
-    <?php echo esc_html(implode(' · ', $release_meta)); ?>
-</p>
-<?php endif; ?>
+        $release_type = trim(
+            (string) get_post_meta(
+                $release_id,
+                '_sv_release_type',
+                true
+            )
+        );
+
+        if ($release_date_raw) {
+            $release_date_object =
+                DateTimeImmutable::createFromFormat(
+                    '!Y-m-d',
+                    $release_date_raw,
+                    wp_timezone()
+                );
+
+            if ($release_date_object instanceof DateTimeImmutable) {
+                $release_date_display = wp_date(
+                    get_option('date_format'),
+                    $release_date_object->getTimestamp()
+                );
+            }
+        }
+
+        $release_meta = array_filter(
+            [
+                $release_type,
+                $release_date_display,
+            ]
+        );
+
+        $has_release_artist = (
+            $show_release_artist
+            && ! empty($release_artist['name'])
+        );
+        ?>
+
+        <?php if ($has_release_artist || $release_meta) : ?>
+            <div class="sv-hero-byline sv-release-hero__byline">
+
+                <?php if ($has_release_artist) : ?>
+                    <span class="sv-hero-byline__item sv-artist-attribution sv-release-hero__artist">
+                        <span><?php esc_html_e('by', 'slim-volume'); ?></span>
+
+                        <?php if (! empty($release_artist['url'])) : ?>
+                            <a href="<?php echo esc_url((string) $release_artist['url']); ?>">
+                                <?php echo esc_html((string) $release_artist['name']); ?>
+                            </a>
+                        <?php else : ?>
+                            <strong><?php echo esc_html((string) $release_artist['name']); ?></strong>
+                        <?php endif; ?>
+                    </span>
+                <?php endif; ?>
+
+                <?php if ($release_meta) : ?>
+                    <span class="sv-hero-byline__item sv-release-hero__meta">
+                        <?php echo esc_html(implode(' · ', $release_meta)); ?>
+                    </span>
+                <?php endif; ?>
+
+            </div>
+        <?php endif; ?>
 
             <?php
                     $release_links = [];

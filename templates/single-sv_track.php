@@ -183,31 +183,42 @@ $track_links = array_filter($track_links);
 
                     <h1><?php the_title(); ?></h1>
 
-                    <?php if ($show_track_artist && ! empty($track_artist['name'])) : ?>
-                        <p class="sv-artist-attribution sv-track-hero__artist">
-                            <span><?php esc_html_e('by', 'slim-volume'); ?></span>
-                            <?php if (! empty($track_artist['url'])) : ?>
-                                <a href="<?php echo esc_url((string) $track_artist['url']); ?>">
-                                    <?php echo esc_html((string) $track_artist['name']); ?>
-                                </a>
-                            <?php else : ?>
-                                <strong><?php echo esc_html((string) $track_artist['name']); ?></strong>
+                    <?php if (
+                        ($show_track_artist && ! empty($track_artist['name']))
+                        || $release_id
+                    ) : ?>
+                        <div class="sv-hero-byline sv-track-hero__byline">
+
+                            <?php if ($show_track_artist && ! empty($track_artist['name'])) : ?>
+                                <span class="sv-hero-byline__item sv-artist-attribution sv-track-hero__artist">
+                                    <span><?php esc_html_e('by', 'slim-volume'); ?></span>
+
+                                    <?php if (! empty($track_artist['url'])) : ?>
+                                        <a href="<?php echo esc_url((string) $track_artist['url']); ?>">
+                                            <?php echo esc_html((string) $track_artist['name']); ?>
+                                        </a>
+                                    <?php else : ?>
+                                        <strong><?php echo esc_html((string) $track_artist['name']); ?></strong>
+                                    <?php endif; ?>
+                                </span>
                             <?php endif; ?>
-                        </p>
-                    <?php endif; ?>
 
-                    <?php if ($release_id) : ?>
-                        <?php
-                        $release_url   = get_permalink($release_id);
-                        $release_title = get_the_title($release_id);
-                        ?>
+                            <?php if ($release_id) : ?>
+                                <?php
+                                $release_url = get_permalink($release_id);
+                                $release_title = get_the_title($release_id);
+                                ?>
 
-                        <p class="sv-track-hero__release">
-                            <?php esc_html_e('From', 'slim-volume'); ?>
-                            <a href="<?php echo esc_url($release_url); ?>">
-                                <?php echo esc_html($release_title); ?>
-                            </a>
-                        </p>
+                                <span class="sv-hero-byline__item sv-track-hero__release">
+                                    <span><?php esc_html_e('from', 'slim-volume'); ?></span>
+
+                                    <a href="<?php echo esc_url($release_url); ?>">
+                                        <?php echo esc_html($release_title); ?>
+                                    </a>
+                                </span>
+                            <?php endif; ?>
+
+                        </div>
                     <?php endif; ?>
 
                     <?php if ($track_meta) : ?>
