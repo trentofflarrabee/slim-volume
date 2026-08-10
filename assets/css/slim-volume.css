@@ -632,6 +632,16 @@ body.sv-player-ready {
   align-items: baseline;
   gap: 0.45em;
   margin-top: 12px;
+  color: inherit;
+  opacity: 0.9;
+}
+
+.sv-hero-byline__item,
+.sv-hero-byline__item > span,
+.sv-hero-byline .sv-artist-attribution,
+.sv-hero-byline a {
+  color: inherit;
+  opacity: 1;
 }
 
 .sv-hero-byline__item {
@@ -640,20 +650,22 @@ body.sv-player-ready {
 
 .sv-hero-byline__item + .sv-hero-byline__item::before {
   content: "·";
-  margin-right: 0.45em;
-  opacity: 0.52;
+  font-size: 1rem;
+  margin-right: 0.15em;
+  margin-left: 0.15em;
+  color: inherit;
+  opacity: 1;
 }
 
 .sv-hero-byline a {
-  color: inherit;
-  font-weight: 800;
+  font-weight: 700;
   text-decoration-thickness: 1px;
   text-underline-offset: 4px;
 }
 
 .sv-release-hero__meta {
   margin: 0;
-    opacity: 0.72;
+  opacity: 1;
   font-size: 0.95rem;
   font-weight: 700;
   letter-spacing: 0.05em;
@@ -1013,7 +1025,7 @@ body.sv-player-ready {
 }
 
 .sv-track-hero__byline {
-  font-size: 1.05rem;
+  /* font-size: 1.05rem; */
 }
 
 .sv-track-hero__meta {
