@@ -50,6 +50,8 @@
     playerTitleResizeObserver: null,
     playerTitlePanFrame: null,
 
+    nativeMobileAudioMode: false,
+
     els: {},
 
     init() {
@@ -63,12 +65,18 @@
       if (!this.audio) return;
 
       this.cacheEls();
+      this.setupPlaybackEnvironment();
       this.setupMediaSession();
       this.setupPlayerTitlePanHandling();
-      this.setupVisualizerController();
-      this.restoreVisualizerVisibility();
-      this.setupVisualizerResizeHandling();
-      this.setupVisualizerFullscreenHandling();
+
+      if (!this.nativeMobileAudioMode) {
+        this.setupVisualizerController();
+        this.restoreVisualizerVisibility();
+        this.setupVisualizerResizeHandling();
+        this.setupVisualizerFullscreenHandling();
+      } else {
+        this.visualizerVisible = false;
+      }
       this.bindCoreControls();
       this.bindAudioEvents();
 
@@ -173,6 +181,45 @@
 
       this.refreshVisualizerEls();
     },
+
+        setupPlaybackEnvironment() {
+      this.nativeMobileAudioMode =
+        this.isNativeMobileAudioEnvironment();
+
+      if (this.root) {
+        this.root.classList.toggle(
+          "sv-player--native-mobile-audio",
+          this.nativeMobileAudioMode,
+        );
+      }
+    },
+
+    isNativeMobileAudioEnvironment() {
+      const userAgent = String(
+        navigator.userAgent || "",
+      );
+
+      const platform = String(
+        navigator.platform || "",
+      );
+
+      const maxTouchPoints = Number(
+        navigator.maxTouchPoints || 0,
+      );
+
+      const isIOS =
+        /iPhone|iPad|iPod/i.test(userAgent)
+        || (
+          platform === "MacIntel"
+          && maxTouchPoints > 1
+        );
+
+      const isAndroid =
+        /Android/i.test(userAgent);
+
+      return isIOS || isAndroid;
+    },
+
 
     setupPlayerTitlePanHandling() {
       if (!this.els.title) {
@@ -3059,13 +3106,16 @@ button.classList.remove("is-current", "is-playing");
       }
     },
 
-    startVisualizer() {
-      if (!this.isVisualizerVisible()) {
-        this.stopVisualizer();
+       startVisualizer() {
+      if (
+        !this.isVisualizerEnabled()
+        || !this.isVisualizerVisible()
+      ) {
         return;
       }
 
-      const controller = this.getVisualizerController();
+      const controller =
+        this.getVisualizerController();
 
       if (controller) {
         controller.start();
@@ -3073,7 +3123,12 @@ button.classList.remove("is-current", "is-playing");
     },
 
     stopVisualizer() {
-      const controller = this.getVisualizerController();
+      if (!this.isVisualizerEnabled()) {
+        return;
+      }
+
+      const controller =
+        this.getVisualizerController();
 
       if (controller) {
         controller.stop();
@@ -3687,7 +3742,14 @@ if (this.els.visualizerPresetName) {
     },
 
     isVisualizerEnabled() {
-      return !(window.SVConfig && window.SVConfig.visualizer === false);
+      if (this.nativeMobileAudioMode) {
+        return false;
+      }
+
+      return !(
+        window.SVConfig
+        && window.SVConfig.visualizer === false
+      );
     },
 
     getDebugSnapshot() {

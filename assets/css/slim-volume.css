@@ -2318,6 +2318,10 @@ body.sv-player-drawer-open {
    Visualizer
    ========================================================================== */
 
+   .sv-player.sv-player--native-mobile-audio .sv-player__visualizer {
+  display: none !important;
+}
+
 .sv-player__visualizer {
   grid-column: 1 / -1;
   margin-top: 18px;
