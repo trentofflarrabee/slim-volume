@@ -859,10 +859,27 @@ body.sv-player-ready {
   .sv-release-single .sv-release-hero {
     grid-template-columns: 1fr;
     align-items: start;
+    text-align: center;
   }
 
   .sv-release-single .sv-release-hero__art {
-    max-width: 260px;
+    width: min(100%, 300px);
+    max-width: 300px;
+    margin-inline: auto;
+  }
+
+  .sv-release-single .sv-release-hero__content {
+    min-width: 0;
+  }
+
+  .sv-release-single .sv-service-links {
+    justify-content: center;
+  }
+
+  .sv-release-single .sv-release-hero__description {
+    max-width: 640px;
+    margin-inline: auto;
+    text-align: left;
   }
 
   .sv-release-tracklist__header {
@@ -1086,20 +1103,33 @@ body.sv-player-ready {
   .sv-track-single .sv-track-hero {
     grid-template-columns: 1fr;
     align-items: start;
+    text-align: center;
   }
 
   .sv-track-single .sv-track-hero__art {
-    max-width: 260px;
+    width: min(100%, 300px);
+    max-width: 300px;
+    margin-inline: auto;
+  }
+
+  .sv-track-single .sv-track-hero__content {
+    min-width: 0;
   }
 
   .sv-track-hero__actions {
     align-items: stretch;
     flex-direction: column;
+    width: min(100%, 360px);
+    margin: 24px auto 0;
   }
 
   .sv-track-hero__actions .sv-button {
     justify-content: center;
     width: 100%;
+  }
+
+  .sv-track-single .sv-service-links {
+    justify-content: center;
   }
 }
 
