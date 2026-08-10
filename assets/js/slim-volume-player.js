@@ -182,17 +182,39 @@
       this.refreshVisualizerEls();
     },
 
-        setupPlaybackEnvironment() {
-      this.nativeMobileAudioMode =
-        this.isNativeMobileAudioEnvironment();
+setupPlaybackEnvironment() {
+  this.nativeMobileAudioMode =
+    this.isNativeMobileAudioEnvironment();
 
-      if (this.root) {
-        this.root.classList.toggle(
-          "sv-player--native-mobile-audio",
-          this.nativeMobileAudioMode,
+  if (this.root) {
+    this.root.classList.toggle(
+      "sv-player--native-mobile-audio",
+      this.nativeMobileAudioMode,
+    );
+  }
+
+  /*
+   * Safari exposes part of the Audio Session API on modern iOS.
+   * Music playback should identify itself as continuous playback rather
+   * than relying on the browser's default ambient-audio behavior.
+   */
+  if (
+    this.nativeMobileAudioMode
+    && navigator.audioSession
+    && "type" in navigator.audioSession
+  ) {
+    try {
+      navigator.audioSession.type = "playback";
+    } catch (err) {
+      if (this.isDebugEnabled()) {
+        console.debug(
+          "[SVPlayer] Audio Session playback mode is unavailable.",
+          err,
         );
       }
-    },
+    }
+  }
+},
 
     isNativeMobileAudioEnvironment() {
       const userAgent = String(
@@ -452,6 +474,39 @@
         }
       }
     },
+
+    syncMediaSessionPlaybackState() {
+  if (!("mediaSession" in navigator)) {
+    return;
+  }
+
+  try {
+    if (
+      this.audio
+      && !this.audio.paused
+      && !this.audio.ended
+    ) {
+      navigator.mediaSession.playbackState =
+        "playing";
+    } else if (
+      this.audio
+      && (this.audio.currentSrc || this.audio.src)
+    ) {
+      navigator.mediaSession.playbackState =
+        "paused";
+    } else {
+      navigator.mediaSession.playbackState =
+        "none";
+    }
+  } catch (err) {
+    if (this.isDebugEnabled()) {
+      console.debug(
+        "[SVPlayer] Could not update Media Session playback state.",
+        err,
+      );
+    }
+  }
+},
 
     publicApi() {
       const app = this;
@@ -939,12 +994,14 @@
       this.audio.addEventListener("play", () => {
         this.syncPlayButtonState();
         this.syncNowPlayingUi();
+        this.syncMediaSessionPlaybackState();
         this.syncTimedLyrics({ force: true });
         this.startVisualizer();
       });
 
       this.audio.addEventListener("pause", () => {
         this.syncPlayButtonState();
+        this.syncMediaSessionPlaybackState();
         this.renderDrawer();
         this.syncTimedLyrics({ force: true });
         this.stopVisualizer();
@@ -954,6 +1011,7 @@
 
       this.audio.addEventListener("ended", () => {
         this.syncPlayButtonState();
+        this.syncMediaSessionPlaybackState();
         this.syncTimedLyrics({ force: true });
         this.stopVisualizer();
         this.next();
