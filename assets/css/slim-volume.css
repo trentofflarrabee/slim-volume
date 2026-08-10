@@ -92,9 +92,9 @@ body.sv-player-ready {
 
 .sv-button--secondary {
   --sv-button-bg: transparent;
-  --sv-button-text: inherit;
   --sv-button-border: var(--sv-card-border);
 
+  color: inherit;
   box-shadow: none;
 }
 
