@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace SlimVolume\Frontend;
 
+use SlimVolume\Artists\ArtistResolver;
 use SlimVolume\PostTypes;
 use SlimVolume\Rewrite;
 use WP_Post;
@@ -29,9 +30,31 @@ final class PlayerData
         $artwork   = self::get_track_artwork($track_id, $release_id);
         $links     = self::get_track_links($track_id, $release_id);
 
+        $artist = ArtistResolver::for_track($track_id);
+
+        $artist_name = (
+            isset($artist['name'])
+            && is_scalar($artist['name'])
+        )
+            ? trim(
+                wp_strip_all_tags(
+                    (string) $artist['name']
+                )
+            )
+            : '';
+
+        if ($artist_name === '') {
+            $artist_name = trim(
+                wp_strip_all_tags(
+                    (string) get_bloginfo('name')
+                )
+            );
+        }
+
         return [
             'id'              => $track_id,
             'title'           => (string) $track->post_title,
+            'artist'          => $artist_name,
             'slug'            => $track->post_name,
             'trackNumber'     => (int) get_post_meta(
                 $track_id,

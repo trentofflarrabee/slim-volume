@@ -63,6 +63,7 @@
       if (!this.audio) return;
 
       this.cacheEls();
+      this.setupMediaSession();
       this.setupPlayerTitlePanHandling();
       this.setupVisualizerController();
       this.restoreVisualizerVisibility();
@@ -279,6 +280,130 @@
       );
 
       title.classList.add("is-overflowing");
+    },
+
+    setupMediaSession() {
+      if (!("mediaSession" in navigator)) {
+        return;
+      }
+
+      const actions = {
+        play: () => {
+          this.play();
+        },
+
+        pause: () => {
+          this.pause();
+        },
+
+        previoustrack: () => {
+          this.previous();
+        },
+
+        nexttrack: () => {
+          this.next();
+        },
+      };
+
+      Object.entries(actions).forEach(
+        ([action, handler]) => {
+          try {
+            navigator.mediaSession.setActionHandler(
+              action,
+              handler,
+            );
+          } catch (err) {
+            /*
+             * Individual Media Session actions can vary by browser.
+             * Unsupported actions should not affect normal playback.
+             */
+            if (this.isDebugEnabled()) {
+              console.debug(
+                `[SVPlayer] Media Session action "${action}" is unavailable.`,
+                err,
+              );
+            }
+          }
+        },
+      );
+    },
+
+    syncMediaSessionMetadata(track) {
+      if (
+        !("mediaSession" in navigator)
+        || typeof window.MediaMetadata !== "function"
+      ) {
+        return;
+      }
+
+      if (!track) {
+        try {
+          navigator.mediaSession.metadata = null;
+        } catch (err) {
+          if (this.isDebugEnabled()) {
+            console.debug(
+              "[SVPlayer] Could not clear Media Session metadata.",
+              err,
+            );
+          }
+        }
+
+        return;
+      }
+
+      const title =
+        typeof track.title === "string"
+          ? track.title.trim()
+          : "";
+
+      let artist = "";
+
+      if (typeof track.artist === "string") {
+        artist = track.artist.trim();
+      } else if (
+        track.artist
+        && typeof track.artist.name === "string"
+      ) {
+        artist = track.artist.name.trim();
+      }
+
+      const album =
+        track.release
+        && typeof track.release.title === "string"
+          ? track.release.title.trim()
+          : "";
+
+      const artworkUrl =
+        track.artwork
+        && typeof track.artwork.url === "string"
+          ? track.artwork.url.trim()
+          : "";
+
+      const metadata = {
+        title,
+        artist,
+        album,
+      };
+
+      if (artworkUrl !== "") {
+        metadata.artwork = [
+          {
+            src: artworkUrl,
+          },
+        ];
+      }
+
+      try {
+        navigator.mediaSession.metadata =
+          new window.MediaMetadata(metadata);
+      } catch (err) {
+        if (this.isDebugEnabled()) {
+          console.debug(
+            "[SVPlayer] Could not update Media Session metadata.",
+            err,
+          );
+        }
+      }
     },
 
     publicApi() {
@@ -1562,6 +1687,7 @@
       const track = this.getCurrentTrack();
 
       this.updateMetaUi(track);
+      this.syncMediaSessionMetadata(track);
       this.syncActiveTrackRows(track);
       this.syncTrackPlayButtons(track);
       this.updateProgressUi();
