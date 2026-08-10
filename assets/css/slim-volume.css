@@ -1328,11 +1328,30 @@ body.sv-player-ready {
 
 @media (max-width: 640px) {
   .sv-track-nav {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 10px;
+    margin-top: 40px;
+    padding-top: 20px;
+  }
+
+  .sv-track-nav a {
+    min-width: 0;
+    padding: 14px 12px;
+  }
+
+  .sv-track-nav span {
+    margin-bottom: 4px;
+    font-size: 0.72rem;
+  }
+
+  .sv-track-nav strong {
+    font-size: 0.9rem;
+    line-height: 1.25;
+    overflow-wrap: anywhere;
   }
 
   .sv-track-nav__next {
-    text-align: left;
+    text-align: right;
   }
 }
 
