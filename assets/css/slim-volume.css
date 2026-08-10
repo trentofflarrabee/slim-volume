@@ -1468,93 +1468,22 @@ body.sv-ajax-loading [data-sv-page-content] {
    Responsive: Base + Player Bar
    ========================================================================== */
 @media (max-width: 760px) {
-  body.sv-player-ready {
-    padding-bottom: calc(154px + env(safe-area-inset-bottom));
+  .sv-player__icon-button {
+    width: 40px;
+    min-width: 40px;
+    height: 40px;
   }
 
-  .sv-release-hero,
-  .sv-track-hero {
-    grid-template-columns: 1fr;
+  .sv-player__play-button {
+    width: 46px;
+    min-width: 46px;
+    height: 46px;
   }
 
-  .sv-player__bar {
-    grid-template-columns: 42px minmax(0, 1fr) auto;
-    grid-template-rows: auto auto auto;
-    column-gap: 10px;
-    row-gap: 9px;
-    width: 100%;
-    min-height: 132px;
-    box-sizing: border-box;
-    padding:
-      10px
-      max(18px, env(safe-area-inset-right))
-      calc(10px + env(safe-area-inset-bottom))
-      max(18px, env(safe-area-inset-left));
-  }
-
-  .sv-player__progress {
-    grid-column: 1 / -1;
-    grid-row: 1;
-    width: calc(100% - 8px);
-    height: 6px;
-    justify-self: center;
-  }
-
-  .sv-player__art {
-    grid-column: 1;
-    grid-row: 2;
-    width: 42px;
-    height: 42px;
-  }
-
-  .sv-player__meta {
-    grid-column: 2;
-    grid-row: 2;
-    align-self: center;
-    min-width: 0;
-  }
-
-  .sv-player__title {
-    font-size: 0.95rem;
-    line-height: 1.15;
-  }
-
-  .sv-player__release {
-    margin-top: 3px;
-    font-size: 0.78rem;
-    line-height: 1.2;
-  }
-
-  .sv-player__drawer-toggle {
-    grid-column: 3;
-    grid-row: 2;
-    justify-self: end;
-    align-self: center;
-    padding-inline: 10px;
-    font-size: 0.78rem;
-  }
-
-  .sv-player__controls {
-    grid-column: 1 / -1;
-    grid-row: 3;
-    justify-self: center;
-    gap: 12px;
-  }
-
-  .sv-player__time {
-    grid-column: 1 / -1;
-    grid-row: 3;
-    justify-self: end;
-    align-self: center;
-    font-size: 0.76rem;
-  }
-
-  .sv-player__button {
-    padding: 7px 9px;
-    font-size: 0.82rem;
+  .sv-player__drawer-toggle [data-sv-drawer-toggle-label] {
+    display: inline;
   }
 }
-
 
 /* ==========================================================================
    Player Controls + Transport Icons
