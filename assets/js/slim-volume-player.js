@@ -47,6 +47,9 @@
     visualizerResizeFrame: null,
     visualizerResizeTimer: null,
 
+    playerTitleResizeObserver: null,
+    playerTitlePanFrame: null,
+
     els: {},
 
     init() {
@@ -60,6 +63,7 @@
       if (!this.audio) return;
 
       this.cacheEls();
+      this.setupPlayerTitlePanHandling();
       this.setupVisualizerController();
       this.restoreVisualizerVisibility();
       this.setupVisualizerResizeHandling();
@@ -167,6 +171,114 @@
       );
 
       this.refreshVisualizerEls();
+    },
+
+    setupPlayerTitlePanHandling() {
+      if (!this.els.title) {
+        return;
+      }
+
+      const schedule = () => {
+        this.schedulePlayerTitlePan();
+      };
+
+      if (typeof ResizeObserver === "function") {
+        this.playerTitleResizeObserver = new ResizeObserver(schedule);
+        this.playerTitleResizeObserver.observe(this.els.title);
+      } else {
+        window.addEventListener("resize", schedule);
+      }
+
+      window.addEventListener("orientationchange", schedule);
+
+      if (document.fonts && document.fonts.ready) {
+        document.fonts.ready.then(schedule).catch(() => {});
+      }
+
+      this.schedulePlayerTitlePan();
+    },
+
+    schedulePlayerTitlePan() {
+      if (!this.els.title) {
+        return;
+      }
+
+      /*
+       * Removing the state before measuring also restarts the animation when
+       * the current track changes.
+       */
+      this.els.title.classList.remove("is-overflowing");
+      this.els.title.style.removeProperty("--sv-player-title-travel");
+      this.els.title.style.removeProperty("--sv-player-title-duration");
+
+      if (this.playerTitlePanFrame) {
+        window.cancelAnimationFrame(this.playerTitlePanFrame);
+      }
+
+      this.playerTitlePanFrame = window.requestAnimationFrame(() => {
+        this.playerTitlePanFrame = null;
+        this.updatePlayerTitlePan();
+      });
+    },
+
+    updatePlayerTitlePan() {
+      const title = this.els.title;
+
+      if (!title) {
+        return;
+      }
+
+      const isMobile = window.matchMedia(
+        "(max-width: 760px)",
+      ).matches;
+
+      const reduceMotion = window.matchMedia(
+        "(prefers-reduced-motion: reduce)",
+      ).matches;
+
+      if (!isMobile || reduceMotion) {
+        return;
+      }
+
+      const availableWidth = title.clientWidth;
+      const contentWidth = title.scrollWidth;
+      const overflow = Math.ceil(
+        contentWidth - availableWidth,
+      );
+
+      /*
+       * A few pixels of tolerance prevents tiny font-rendering differences
+       * from triggering an unnecessary animation.
+       */
+      if (!availableWidth || overflow <= 8) {
+        return;
+      }
+
+      const travel = overflow + 8;
+
+      /*
+       * Longer titles receive proportionally more travel time while keeping
+       * the movement comfortably slow.
+       */
+      const duration = Math.min(
+        18,
+        Math.max(
+          8,
+          6 + travel / 24,
+        ),
+      );
+
+      title.style.setProperty(
+        "--sv-player-title-travel",
+        `-${travel}px`,
+      );
+
+      title.style.setProperty(
+        "--sv-player-title-duration",
+        `${duration.toFixed(2)}s`,
+      );
+
+      title.classList.add("is-overflowing");
     },
 
     publicApi() {
@@ -1755,39 +1867,60 @@
 
     updateMetaUi(track) {
       if (!track) {
-        if (this.els.title) this.els.title.textContent = "Nothing playing";
-        if (this.els.release) this.els.release.textContent = "";
-        if (this.els.art) this.els.art.innerHTML = "";
+        if (this.els.title) {
+          this.els.title.textContent = "Nothing playing";
+        }
+
+        if (this.els.release) {
+          this.els.release.textContent = "";
+        }
+
+        if (this.els.art) {
+          this.els.art.innerHTML = "";
+        }
+
+        this.schedulePlayerTitlePan();
+
         return;
       }
 
       if (this.els.title) {
-        this.els.title.textContent = track.title || "";
+        this.els.title.textContent =
+          track.title || "";
       }
 
       if (this.els.release) {
         this.els.release.textContent =
-          track.release && track.release.title ? track.release.title : "";
+          track.release && track.release.title
+            ? track.release.title
+            : "";
       }
 
       if (this.els.art) {
         this.els.art.innerHTML = "";
 
         const artworkUrl =
-          track.artwork && track.artwork.url ? track.artwork.url : "";
+          track.artwork && track.artwork.url
+            ? track.artwork.url
+            : "";
 
         if (artworkUrl) {
           const img = document.createElement("img");
+
           img.src = artworkUrl;
           img.alt =
             track.artwork && track.artwork.alt
               ? track.artwork.alt
               : track.title || "";
+
           img.loading = "lazy";
           img.decoding = "async";
+
           this.els.art.appendChild(img);
         }
       }
+
+      this.schedulePlayerTitlePan();
     },
 
     syncActiveTrackRows(track) {

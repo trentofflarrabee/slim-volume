@@ -1441,10 +1441,44 @@ body.sv-ajax-loading [data-sv-page-content] {
 
 .sv-player__title {
   font-weight: 700;
+  text-indent: 0;
+}
+
+@media (max-width: 760px) {
+  .sv-player__title.is-overflowing {
+    text-overflow: clip;
+    animation:
+      sv-player-title-pan
+      var(--sv-player-title-duration, 10s)
+      linear
+      0.7s
+      infinite
+      alternate;
+  }
+}
+
+@keyframes sv-player-title-pan {
+  0%,
+  15% {
+    text-indent: 0;
+  }
+
+  85%,
+  100% {
+    text-indent: var(--sv-player-title-travel, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sv-player__title.is-overflowing {
+    animation: none;
+    text-indent: 0;
+    text-overflow: ellipsis;
+  }
 }
 
 .sv-player__release {
-  color: var(--sv-player-muted);
+   color: var(--sv-player-muted);
   font-size: 0.9rem;
 }
 
