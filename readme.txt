@@ -2,7 +2,7 @@
 Tags: music, audio player, albums, lyrics, artists
 Requires at least: 6.0
 Tested up to: 7.0
-Stable tag: 0.1.0
+Stable tag: 0.2.0
 Requires PHP: 8.0
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -26,7 +26,7 @@ It provides:
 * Theme, player, and visualizer settings.
 * Theme template overrides.
 
-Version 0.1.0 is a beta release intended for controlled production use and early customer projects. Back up the WordPress site before installing an update.
+Version 0.2.0 is a beta release intended for controlled production use and early customer projects. Back up the WordPress site before installing an update.
 
 == Installation ==
 
@@ -75,6 +75,19 @@ Keep the template's relative path beneath that directory.
 Yes. Tracks with plain lyrics and playable audio can be synchronized line by line through the Lyrics Sync administration workspace.
 
 == Changelog ==
+
+= 0.2.0 =
+
+* Improved mobile release and track layouts with centered hero presentation and denser track lists.
+* Reworked the mobile persistent player with a top-mounted seek bar, safer edge spacing, and improved transport layout.
+* Added overflow-aware scrolling for long player track titles with reduced-motion support.
+* Kept Previous and Next track navigation side by side on small screens.
+* Added a subtle animated Queue drawer with reduced-motion handling.
+* Consolidated artist and release attribution into compact hero bylines.
+* Improved secondary button contrast on dark presentation backgrounds.
+* Added Media Session metadata and transport integration for supported browsers.
+* Improved mobile lock-screen and background playback by using the native media path instead of the realtime visualizer path on mobile devices.
+* Added mobile audio-session and playback-state synchronization where supported.
 
 = 0.1.0 =
 
