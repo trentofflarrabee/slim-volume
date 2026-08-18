@@ -50,6 +50,17 @@ body.sv-player-ready {
   opacity: 0.76;
 }
 
+.sv-breadcrumb a,
+.sv-breadcrumb a:visited {
+    color: inherit;
+}
+
+.sv-breadcrumb a:hover,
+.sv-breadcrumb a:focus-visible {
+    color: inherit;
+    opacity: 0.75;
+}
+
 /* ==========================================================================
    Buttons
    ========================================================================== */
