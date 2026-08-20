@@ -623,7 +623,7 @@ body.sv-player-ready {
 .sv-release-single .sv-release-hero {
   grid-template-columns: minmax(150px, 240px) minmax(0, 1fr);
   gap: clamp(22px, 4vw, 42px);
-  align-items: center;
+  align-items: start;
   margin: 28px 0 42px;
 }
 

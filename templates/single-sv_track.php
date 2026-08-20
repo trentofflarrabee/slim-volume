@@ -366,7 +366,6 @@ $track_links = array_filter($track_links);
 
         <?php if (get_the_content()) : ?>
             <section class="sv-track-story">
-                <h2><?php esc_html_e('Song Story', 'slim-volume'); ?></h2>
                 <div class="sv-rich-text">
                     <?php the_content(); ?>
                 </div>
