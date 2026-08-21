@@ -189,7 +189,7 @@ final class Seo
         $title        = get_the_title($release_id);
         $url          = get_permalink($release_id);
         $image        = self::artwork_url($release_id) ?: self::setting_url($settings, 'seo_default_image');
-        $description  = self::post_description($release_id);
+        $description  = self::release_description($release_id, $artist);
         $release_date = self::release_date($release_id);
         $schema       = self::release_schema($release_id, $artist);
 
@@ -367,7 +367,7 @@ final class Seo
         $url          = get_permalink($release_id);
         $image        = self::artwork_url($release_id);
         $date         = self::release_date($release_id);
-        $description  = $full ? self::post_description($release_id) : '';
+        $description  = $full ? self::release_description($release_id, $artist) : '';
         $release_type = (string) get_post_meta($release_id, '_sv_release_type', true);
         $genre        = (string) get_post_meta($release_id, '_sv_genre', true);
         $same_as      = self::same_as_links(
@@ -620,6 +620,39 @@ final class Seo
         }
 
         return self::single_line($excerpt);
+    }
+
+    private static function release_description(int $release_id, array $artist): string
+    {
+        $description = self::post_description($release_id);
+
+        if ($description !== '') {
+            return $description;
+        }
+
+        $title       = self::single_line((string) get_the_title($release_id));
+        $artist_name = self::single_line((string) ($artist['name'] ?? ''));
+
+        if ($artist_name !== '') {
+            return sprintf(
+                /* translators: 1: release title, 2: artist or project name. */
+                __(
+                    'Listen to %1$s by %2$s. Explore the release, tracklist, lyrics, credits, artwork, and streaming links.',
+                    'slim-volume'
+                ),
+                $title,
+                $artist_name
+            );
+        }
+
+        return sprintf(
+            /* translators: %s: release title. */
+            __(
+                'Listen to %s. Explore the release, tracklist, lyrics, credits, artwork, and streaming links.',
+                'slim-volume'
+            ),
+            $title
+        );
     }
 
     private static function same_as_links(array $links): array
