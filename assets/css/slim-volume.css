@@ -18,6 +18,10 @@
   --sv-button-text: #fff;
   --sv-button-border: #111;
 
+  --sv-content-font-family: inherit;
+  --sv-content-font-size: 1rem;
+  --sv-content-line-height: 1.7;
+  --sv-content-link-color: currentColor;
   --sv-radius-card: 16px;
   --sv-radius-art: 18px;
   --sv-radius-control: 12px;
@@ -685,6 +689,13 @@ body.sv-player-ready {
 
 .sv-release-hero__description {
   margin-top: 22px;
+  font-family: var(--sv-content-font-family);
+  font-size: var(--sv-content-font-size);
+  line-height: var(--sv-content-line-height);
+}
+
+.sv-release-hero__description a {
+  color: var(--sv-content-link-color);
 }
 
 .sv-release-hero__description > :first-child {
@@ -1081,6 +1092,16 @@ body.sv-player-ready {
 
 .sv-track-single .sv-rich-text {
   max-width: 720px;
+}
+
+.sv-track-story .sv-rich-text {
+  font-family: var(--sv-content-font-family);
+  font-size: var(--sv-content-font-size);
+  line-height: var(--sv-content-line-height);
+}
+
+.sv-track-story .sv-rich-text a {
+  color: var(--sv-content-link-color);
 }
 
 

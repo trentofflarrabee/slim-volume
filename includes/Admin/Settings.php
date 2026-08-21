@@ -59,6 +59,11 @@ final class Settings
 
             'card_border'    => 'rgba(0, 0, 0, 0.12)',
 
+            'content_font_family' => 'inherit',
+            'content_font_size'   => '1rem',
+            'content_line_height' => '1.7',
+            'content_link_color'  => 'currentColor',
+
             'radius_card'    => '16px',
             'radius_art'     => '18px',
             'radius_control' => '14px',
@@ -182,6 +187,11 @@ final class Settings
 
             'card_border'    => '--sv-card-border',
 
+            'content_font_family' => '--sv-content-font-family',
+            'content_font_size'   => '--sv-content-font-size',
+            'content_line_height' => '--sv-content-line-height',
+            'content_link_color'  => '--sv-content-link-color',
+
             'radius_card'    => '--sv-radius-card',
             'radius_art'     => '--sv-radius-art',
             'radius_control' => '--sv-radius-control',
@@ -196,7 +206,8 @@ final class Settings
                 ? $defaults[$setting_key]
                 : '';
 
-            $value = self::sanitize_css_value(
+            $value = self::sanitize_appearance_value(
+                $setting_key,
                 $settings[$setting_key] ?? $fallback,
                 $fallback
             );
@@ -253,30 +264,35 @@ final class Settings
 $appearance = [
     'appearance_preset' => $preset_key,
 
-    'player_bg'      => self::sanitize_css_value($input['player_bg'] ?? $defaults['player_bg'], $defaults['player_bg']),
-    'player_text'    => self::sanitize_css_value($input['player_text'] ?? $defaults['player_text'], $defaults['player_text']),
-    'player_muted'   => self::sanitize_css_value($input['player_muted'] ?? $defaults['player_muted'], $defaults['player_muted']),
-    'player_border'  => self::sanitize_css_value($input['player_border'] ?? $defaults['player_border'], $defaults['player_border']),
-    'player_accent'  => self::sanitize_css_value($input['player_accent'] ?? $defaults['player_accent'], $defaults['player_accent']),
+    'player_bg'      => self::sanitize_appearance_value('player_bg', $input['player_bg'] ?? $defaults['player_bg'], $defaults['player_bg']),
+    'player_text'    => self::sanitize_appearance_value('player_text', $input['player_text'] ?? $defaults['player_text'], $defaults['player_text']),
+    'player_muted'   => self::sanitize_appearance_value('player_muted', $input['player_muted'] ?? $defaults['player_muted'], $defaults['player_muted']),
+    'player_border'  => self::sanitize_appearance_value('player_border', $input['player_border'] ?? $defaults['player_border'], $defaults['player_border']),
+    'player_accent'  => self::sanitize_appearance_value('player_accent', $input['player_accent'] ?? $defaults['player_accent'], $defaults['player_accent']),
 
-    'button_bg'      => self::sanitize_css_value($input['button_bg'] ?? $defaults['button_bg'], $defaults['button_bg']),
-    'button_text'    => self::sanitize_css_value($input['button_text'] ?? $defaults['button_text'], $defaults['button_text']),
-    'button_border'  => self::sanitize_css_value($input['button_border'] ?? $defaults['button_border'], $defaults['button_border']),
+    'button_bg'      => self::sanitize_appearance_value('button_bg', $input['button_bg'] ?? $defaults['button_bg'], $defaults['button_bg']),
+    'button_text'    => self::sanitize_appearance_value('button_text', $input['button_text'] ?? $defaults['button_text'], $defaults['button_text']),
+    'button_border'  => self::sanitize_appearance_value('button_border', $input['button_border'] ?? $defaults['button_border'], $defaults['button_border']),
 
-    'card_border'    => self::sanitize_css_value($input['card_border'] ?? $defaults['card_border'], $defaults['card_border']),
+    'card_border'    => self::sanitize_appearance_value('card_border', $input['card_border'] ?? $defaults['card_border'], $defaults['card_border']),
 
-    'radius_card'    => self::sanitize_css_value($input['radius_card'] ?? $defaults['radius_card'], $defaults['radius_card']),
-    'radius_art'     => self::sanitize_css_value($input['radius_art'] ?? $defaults['radius_art'], $defaults['radius_art']),
-    'radius_control' => self::sanitize_css_value($input['radius_control'] ?? $defaults['radius_control'], $defaults['radius_control']),
-    'radius_small'   => self::sanitize_css_value($input['radius_small'] ?? $defaults['radius_small'], $defaults['radius_small']),
-    'radius_pill'    => self::sanitize_css_value($input['radius_pill'] ?? $defaults['radius_pill'], $defaults['radius_pill']),
+    'content_font_family' => self::sanitize_appearance_value('content_font_family', $input['content_font_family'] ?? $defaults['content_font_family'], $defaults['content_font_family']),
+    'content_font_size'   => self::sanitize_appearance_value('content_font_size', $input['content_font_size'] ?? $defaults['content_font_size'], $defaults['content_font_size']),
+    'content_line_height' => self::sanitize_appearance_value('content_line_height', $input['content_line_height'] ?? $defaults['content_line_height'], $defaults['content_line_height']),
+    'content_link_color'  => self::sanitize_appearance_value('content_link_color', $input['content_link_color'] ?? $defaults['content_link_color'], $defaults['content_link_color']),
+
+    'radius_card'    => self::sanitize_appearance_value('radius_card', $input['radius_card'] ?? $defaults['radius_card'], $defaults['radius_card']),
+    'radius_art'     => self::sanitize_appearance_value('radius_art', $input['radius_art'] ?? $defaults['radius_art'], $defaults['radius_art']),
+    'radius_control' => self::sanitize_appearance_value('radius_control', $input['radius_control'] ?? $defaults['radius_control'], $defaults['radius_control']),
+    'radius_small'   => self::sanitize_appearance_value('radius_small', $input['radius_small'] ?? $defaults['radius_small'], $defaults['radius_small']),
+    'radius_pill'    => self::sanitize_appearance_value('radius_pill', $input['radius_pill'] ?? $defaults['radius_pill'], $defaults['radius_pill']),
 ];
 
 if ($preset_key !== 'custom' && ! empty($presets[$preset_key]['values']) && is_array($presets[$preset_key]['values'])) {
     foreach ($presets[$preset_key]['values'] as $key => $value) {
         if (array_key_exists($key, $appearance)) {
-            $appearance[$key] = self::sanitize_css_value($value, $defaults[$key] ?? '');
-        }
+            $appearance[$key] = self::sanitize_appearance_value($key, $value, $defaults[$key] ?? '');
+            }
     }
 }
 
@@ -333,6 +349,51 @@ return array_merge(
     $appearance
 );
     }
+
+        private static function sanitize_appearance_value(
+        string $key,
+        $value,
+        string $fallback
+    ): string {
+        if ($key === 'content_font_family') {
+            return self::sanitize_font_family($value, $fallback);
+        }
+
+        return self::sanitize_css_value($value, $fallback);
+    }
+
+    private static function sanitize_font_family($value, string $fallback): string
+    {
+        if (! is_string($value)) {
+            return $fallback;
+        }
+
+        $value = trim(wp_strip_all_tags($value));
+
+        if ($value === '') {
+            return $fallback;
+        }
+
+        if (strlen($value) > 200) {
+            return $fallback;
+        }
+
+        /*
+         * Font-family values may contain quoted family names, commas, spaces,
+         * underscores, and hyphens. Keep the accepted grammar intentionally
+         * narrow so the value cannot break out of the CSS declaration.
+         */
+        if (preg_match('/[\r\n;{}<>\\\\]/', $value)) {
+            return $fallback;
+        }
+
+        if (preg_match('/^[A-Za-z0-9\s,_\'"-]+$/', $value) !== 1) {
+            return $fallback;
+        }
+
+        return $value;
+    }
+
 
     private static function sanitize_css_value($value, string $fallback): string
     {
@@ -678,6 +739,10 @@ return array_merge(
                                 <code>--sv-button-text</code>,
                                 <code>--sv-button-border</code>,
                                 <code>--sv-card-border</code>,
+                                <code>--sv-content-font-family</code>,
+                                <code>--sv-content-font-size</code>,
+                                <code>--sv-content-line-height</code>,
+                                <code>--sv-content-link-color</code>,
                                 <code>--sv-radius-card</code>,
                                 <code>--sv-radius-art</code>,
                                 <code>--sv-radius-control</code>,
@@ -786,10 +851,52 @@ return array_merge(
                                         </tbody>
                                     </table>
                                 </div>
-
                                 <div class="sv-settings-subsection">
-                                    <h3><?php echo esc_html__('Corner shapes', 'slim-volume'); ?></h3>
+                                    <h3><?php echo esc_html__('Content typography', 'slim-volume'); ?></h3>
+                                    <p class="description">
+                                        <?php echo esc_html__('Optionally override the active theme typography for authored release and track content. Lyrics and plugin interface controls are not affected.', 'slim-volume'); ?>
+                                    </p>
                                     <table class="form-table" role="presentation">
+                                        <tbody>
+                                            <?php
+                                            self::render_text_row(
+                                                'content_font_family',
+                                                __('Content font family', 'slim-volume'),
+                                                $settings,
+                                                '--sv-content-font-family',
+                                                __('Enter a CSS font family or stack. Quoted family names are supported. Use inherit to follow the active theme.', 'slim-volume'),
+                                                __('Release + track content', 'slim-volume')
+                                            );
+                                            self::render_text_row(
+                                                'content_font_size',
+                                                __('Content font size', 'slim-volume'),
+                                                $settings,
+                                                '--sv-content-font-size',
+                                                __('Controls the base size of authored release and track editorial content. Examples: 16px, 1rem, 1.1rem.', 'slim-volume'),
+                                                __('Release + track content', 'slim-volume')
+                                            );
+                                            self::render_text_row(
+                                                'content_line_height',
+                                                __('Content line height', 'slim-volume'),
+                                                $settings,
+                                                '--sv-content-line-height',
+                                                __('Controls spacing between lines of authored editorial content. Examples: 1.5, 1.7, 1.8.', 'slim-volume'),
+                                                __('Release + track content', 'slim-volume')
+                                            );
+                                            self::render_text_row(
+                                                'content_link_color',
+                                                __('Content link color', 'slim-volume'),
+                                                $settings,
+                                                '--sv-content-link-color',
+                                                __('Controls links inside authored release and track content only. Use currentColor to inherit the surrounding text color.', 'slim-volume'),
+                                                __('Release + track content', 'slim-volume')
+                                            );
+                                            ?>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div class="sv-settings-subsection">
+                                    <h3><?php echo esc_html__('Corner shapes', 'slim-volume'); ?></h3>                                    <table class="form-table" role="presentation">
                                         <tbody>
                                             <?php
                                             self::render_text_row(
@@ -874,6 +981,11 @@ return array_merge(
 
         'card_border'    => '--sv-card-border',
 
+        'content_font_family' => '--sv-content-font-family',
+        'content_font_size'   => '--sv-content-font-size',
+        'content_line_height' => '--sv-content-line-height',
+        'content_link_color'  => '--sv-content-link-color',
+
         'radius_card'    => '--sv-radius-card',
         'radius_art'     => '--sv-radius-art',
         'radius_control' => '--sv-radius-control',
@@ -888,7 +1000,8 @@ return array_merge(
             ? $defaults[$setting_key]
             : '';
 
-        $value = self::sanitize_css_value(
+        $value = self::sanitize_appearance_value(
+            $setting_key,
             $settings[$setting_key] ?? $fallback,
             $fallback
         );
@@ -1137,12 +1250,15 @@ private static function render_appearance_preview(string $preview_style): void
                     button_text: '--sv-button-text',
                     button_border: '--sv-button-border',
                     card_border: '--sv-card-border',
+                    content_font_family: '--sv-content-font-family',
+                    content_font_size: '--sv-content-font-size',
+                    content_line_height: '--sv-content-line-height',
+                    content_link_color: '--sv-content-link-color',
                     radius_card: '--sv-radius-card',
                     radius_art: '--sv-radius-art',
                     radius_control: '--sv-radius-control',
                     radius_small: '--sv-radius-small',
                     radius_pill: '--sv-radius-pill'
-                };
 
                 const colorKeys = [
                     'player_bg',
@@ -1153,7 +1269,8 @@ private static function render_appearance_preview(string $preview_style): void
                     'button_bg',
                     'button_text',
                     'button_border',
-                    'card_border'
+                    'card_border',
+                    'content_link_color'
                 ];
 
                 function getField(key) {
@@ -1479,6 +1596,7 @@ private static function render_appearance_preview(string $preview_style): void
             'button_text',
             'button_border',
             'card_border',
+            'content_link_color',
         ];
     }
 
