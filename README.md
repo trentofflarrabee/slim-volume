@@ -12,30 +12,37 @@ Slim Volume is ready for controlled production use and early customer projects. 
 
 ## Features
 
-- Releases custom post type
-- Tracks custom post type
-- Public music archive at `/music`
-- Nested track URLs: `/music/{release-slug}/{track-slug}/`
+- Release and track custom post types
+- Public music archive at `/music/`
+- Nested track URLs at `/music/{release-slug}/{track-slug}/`
 - Release artwork via featured images
 - Track artwork with release artwork fallback
-- Track audio metadata
-- Track lyrics field
+- Artist and project attribution
+- Hosted audio, external-link, and catalog-only workflows
+- Plain lyrics and synchronized timed lyrics
+- Release and track editorial content
+- Configurable editorial font family, size, line height, and link color
 - Release and track frontend templates
 - Persistent frontend audio player
 - Queue drawer with reorder/remove controls
-- Play release / queue release actions
-- Per-track play and queue actions
+- Release-level and per-track playback actions
+- Accessible compact track hero playback controls
 - Player state persistence
-- AJAX navigation support
+- AJAX music navigation
+- Media Session integration on supported browsers
+- Mobile background and lock-screen playback support where available
 - Optional bars visualizer
 - Optional Butterchurn visualizer
 - Fullscreen visualizer mode
+- Release and track search, including lyrics
 - Admin release dashboard
-- Track context admin panel
+- Track Context admin panel
+- Release track management and relationship repair
 - Release prefill when creating tracks
 - Tracks admin release filter
 - Themeable CSS variables
 - Admin appearance presets and reset controls
+- Theme template overrides
 
 ## Requirements
 
@@ -59,6 +66,8 @@ Clean music URLs should use formats such as:
 /music/{release-slug}/
 /music/{release-slug}/{track-slug}/
 ```
+
+If the permalink structure contains `/index.php/`, WordPress may instead generate URLs such as `/index.php/music/`. This behavior comes from the WordPress or web-server permalink configuration rather than Slim Volume's routing.
 
 ## Butterchurn Visualizer
 
@@ -92,7 +101,8 @@ your-theme/slim-volume/partials/player-shell.php
 
 Slim Volume includes settings for:
 
-- AJAX navigation
+- Frontend audio player / catalog-only mode
+- AJAX music navigation
 - Player persistence
 - Visualizer enable/disable
 - Visualizer mode
@@ -101,6 +111,10 @@ Slim Volume includes settings for:
 - Player colors
 - Button colors
 - Card border color
+- Editorial content font family
+- Editorial content font size
+- Editorial content line height
+- Editorial content link color
 - Border radius values
 
 ## Known Future Work
