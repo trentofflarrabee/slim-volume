@@ -76,6 +76,9 @@ Yes. Tracks with plain lyrics and playable audio can be synchronized line by lin
 
 == Changelog ==
 
+= 0.3.1 =
+* Added meta description tag to /music/{release} pages.
+
 = 0.3.0 =
 
 * Improved release and track presentation across desktop and mobile layouts.
