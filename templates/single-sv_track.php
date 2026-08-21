@@ -44,6 +44,15 @@ $current_index = isset($config['currentIndex'])
     ? (int) $config['currentIndex']
     : 0;
 
+$current_track = isset($playlist[$current_index]) && is_array($playlist[$current_index])
+    ? $playlist[$current_index]
+    : [];
+
+$track_has_audio = (
+    (int) ($current_track['id'] ?? 0) === $track_id
+    && ! empty($current_track['audioUrl'])
+);
+
 $previous_track = $playlist[$current_index - 1] ?? null;
 $next_track     = $playlist[$current_index + 1] ?? null;
 
@@ -231,30 +240,78 @@ $track_links = array_filter($track_links);
                         class="sv-track-hero__actions"
                         data-sv-track-index="<?php echo esc_attr((string) ($config['currentIndex'] ?? 0)); ?>"
                     >
-                        <?php if ($player_enabled) : ?>
-                        <button
-                            type="button"
-                            class="sv-button sv-track-hero__play"
-                            data-sv-play-button="true"
-                        >
-                            <?php esc_html_e('Play Track', 'slim-volume'); ?>
-                        </button>
+                        <?php if ($player_enabled && $track_has_audio) : ?>
+                            <button
+                                type="button"
+                                class="sv-button sv-track-hero__icon-button sv-track-hero__play"
+                                data-sv-play-button="true"
+                                aria-label="<?php
+                                echo esc_attr(
+                                    sprintf(
+                                        /* translators: %s: track title. */
+                                        __('Play %s', 'slim-volume'),
+                                        get_the_title($track_id)
+                                    )
+                                );
+                                ?>"
+                            >
+                                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                                    <path
+                                        class="sv-track-hero__icon-play"
+                                        d="M8 5.75v12.5L18.5 12Z"
+                                    ></path>
+                                    <path
+                                        class="sv-track-hero__icon-pause"
+                                        d="M7.5 5.75h3.5v12.5H7.5zM13 5.75h3.5v12.5H13z"
+                                    ></path>
+                                </svg>
+                            </button>
 
-                        <button
-                            type="button"
-                            class="sv-button sv-button--secondary sv-track-hero__queue"
-                            data-sv-track-queue-button="true"
-                        >
-                            <?php esc_html_e('Queue Track', 'slim-volume'); ?>
-                        </button>
+                            <button
+                                type="button"
+                                class="sv-button sv-button--secondary sv-track-hero__icon-button sv-track-hero__queue"
+                                data-sv-track-queue-button="true"
+                                aria-label="<?php
+                                echo esc_attr(
+                                    sprintf(
+                                        /* translators: %s: track title. */
+                                        __('Add %s to queue', 'slim-volume'),
+                                        get_the_title($track_id)
+                                    )
+                                );
+                                ?>"
+                            >
+                                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                                    <path
+                                        class="sv-track-hero__icon-queue-lines"
+                                        d="M4.5 7.5h10M4.5 12h10M4.5 16.5h7"
+                                    ></path>
+                                    <path
+                                        class="sv-track-hero__icon-queue-add"
+                                        d="M18 13v6M15 16h6"
+                                    ></path>
+                                    <path
+                                        class="sv-track-hero__icon-queue-check"
+                                        d="m14.5 16 2.25 2.25 4.25-5"
+                                    ></path>
+                                </svg>
+                            </button>
+                        <?php elseif ($player_enabled) : ?>
+                            <span class="sv-track-hero__audio-status">
+                                <?php esc_html_e('No audio available', 'slim-volume'); ?>
+                            </span>
                         <?php endif; ?>
 
                         <?php if ($release_id) : ?>
-                            <a class="sv-button sv-button--ghost sv-track-hero__back" href="<?php echo esc_url(get_permalink($release_id)); ?>">
+                            <a
+                                class="sv-button sv-button--ghost sv-track-hero__back"
+                                href="<?php echo esc_url(get_permalink($release_id)); ?>"
+                            >
                                 <?php esc_html_e('Back to Release', 'slim-volume'); ?>
                             </a>
                         <?php endif; ?>
                     </div>
+
 
                 <?php if ($track_links) : ?>
                     <nav
