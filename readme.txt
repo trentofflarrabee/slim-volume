@@ -1,7 +1,7 @@
 === Slim Volume ===
 Tags: music, audio player, albums, lyrics, artists
 Requires at least: 6.0
-Tested up to: 7.0
+Tested up to: 7.1
 Stable tag: 0.2.0
 Requires PHP: 8.0
 License: GPL-2.0-or-later
