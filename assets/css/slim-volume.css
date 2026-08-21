@@ -749,6 +749,19 @@ body.sv-player-ready {
   white-space: nowrap;
 }
 
+.sv-release__audio-status {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  padding: 8px 14px;
+  border: 1px solid var(--sv-card-border);
+  border-radius: var(--sv-radius-pill);
+  opacity: 0.68;
+  font-size: 0.88rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
 .sv-release-tracklist__list,
 .sv-release-tracklist .sv-track-list {
   display: grid;
@@ -911,6 +924,24 @@ body.sv-player-ready {
 .sv-release-tracklist .sv-track-row__queue {
   width: auto;
   max-width: none;
+  white-space: nowrap;
+}
+
+.sv-release-tracklist .sv-track-row--no-audio .sv-track-row__body {
+  grid-column: 2 / 4;
+}
+
+.sv-release-tracklist .sv-track-row__audio-status {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  padding: 5px 9px;
+  border: 1px solid var(--sv-card-border);
+  border-radius: var(--sv-radius-pill);
+  opacity: 0.62;
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1.1;
   white-space: nowrap;
 }
 

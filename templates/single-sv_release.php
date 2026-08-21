@@ -24,6 +24,15 @@ $player_enabled = ! empty($settings['player_enabled']);
 $config         = PlayerData::get_release_page_config($release_id);
 $playlist       = $config['playlist'] ?? [];
 
+$release_has_audio = false;
+
+foreach ($playlist as $playlist_track) {
+    if (is_array($playlist_track) && ! empty($playlist_track['audioUrl'])) {
+        $release_has_audio = true;
+        break;
+    }
+}
+
 $primary_external_url     = esc_url_raw((string) get_post_meta($release_id, '_sv_external_url', true));
 $primary_external_label   = trim((string) get_post_meta($release_id, '_sv_external_label', true));
 $primary_external_new_tab = (bool) get_post_meta($release_id, '_sv_external_new_tab', true);
@@ -268,40 +277,46 @@ $service_key_from_link = static function (string $label, string $url): string {
                 </p>
             </div>
 
-            <?php if ($player_enabled) : ?>
-            <div class="sv-release__queue-actions">
-                <button
-                    type="button"
-                    class="sv-button sv-release__play-release"
-                    data-sv-page-queue-button="true"
-                    data-sv-page-queue-action="play"
-                    data-sv-page-queue-start-index="0"
-                >
-                    <?php esc_html_e('Play Release', 'slim-volume'); ?>
-                </button>
-
-                <button
-                    type="button"
-                    class="sv-button sv-button--secondary sv-release__add-release"
-                    data-sv-page-queue-button="true"
-                    data-sv-page-queue-action="append"
-                >
-                    <?php esc_html_e('Queue Release', 'slim-volume'); ?>
-                </button>
-            </div>
+            <?php if ($player_enabled && $release_has_audio) : ?>
+                <div class="sv-release__queue-actions">
+                    <button
+                        type="button"
+                        class="sv-button sv-release__play-release"
+                        data-sv-page-queue-button="true"
+                        data-sv-page-queue-action="play"
+                        data-sv-page-queue-start-index="0"
+                    >
+                        <?php esc_html_e('Play Release', 'slim-volume'); ?>
+                    </button>
+                    <button
+                        type="button"
+                        class="sv-button sv-button--secondary sv-release__add-release"
+                        data-sv-page-queue-button="true"
+                        data-sv-page-queue-action="append"
+                    >
+                        <?php esc_html_e('Queue Release', 'slim-volume'); ?>
+                    </button>
+                </div>
+            <?php elseif ($player_enabled) : ?>
+                <div class="sv-release__queue-actions">
+                    <span class="sv-release__audio-status">
+                        <?php esc_html_e('No audio available', 'slim-volume'); ?>
+                    </span>
+                </div>
             <?php endif; ?>
         </div>
 
         <ol class="sv-track-list sv-release-tracklist__list">
             <?php foreach ($playlist as $index => $track) : ?>
                 <?php
-                $track_id              = (int) ($track['id'] ?? 0);
-                $release              = $track['release'] ?? [];
-                $release_id_from_track = (int) ($release['id'] ?? $release_id);
+                $track_id               = (int) ($track['id'] ?? 0);
+                $release                = $track['release'] ?? [];
+                $release_id_from_track  = (int) ($release['id'] ?? $release_id);
+                $track_has_audio        = ! empty($track['audioUrl']);
                 ?>
 
                 <li
-                    class="sv-track-row"
+                    class="<?php echo esc_attr('sv-track-row' . ($track_has_audio ? '' : ' sv-track-row--no-audio')); ?>"
                     data-sv-track-row
                     data-sv-track-id="<?php echo esc_attr((string) $track_id); ?>"
                     data-sv-release-id="<?php echo esc_attr((string) $release_id_from_track); ?>"
@@ -313,7 +328,7 @@ $service_key_from_link = static function (string $label, string $url): string {
                         <?php echo esc_html(str_pad((string) ($index + 1), 2, '0', STR_PAD_LEFT)); ?>
                     </span>
 
-                    <?php if ($player_enabled) : ?>
+                    <?php if ($player_enabled && $track_has_audio) : ?>
                     <button
                         type="button"
                         class="sv-track-row__play"
@@ -344,15 +359,21 @@ $service_key_from_link = static function (string $label, string $url): string {
                     <?php endif; ?>
 
                     <?php if ($player_enabled) : ?>
-                    <div class="sv-track-row__actions">
-                        <button
-                            type="button"
-                            class="sv-track-row__queue"
-                            data-sv-track-queue-button="true"
-                        >
-                            <?php esc_html_e('Queue', 'slim-volume'); ?>
-                        </button>
-                    </div>
+                        <div class="sv-track-row__actions">
+                            <?php if ($track_has_audio) : ?>
+                                <button
+                                    type="button"
+                                    class="sv-track-row__queue"
+                                    data-sv-track-queue-button="true"
+                                >
+                                    <?php esc_html_e('Queue', 'slim-volume'); ?>
+                                </button>
+                            <?php else : ?>
+                                <span class="sv-track-row__audio-status">
+                                    <?php esc_html_e('No audio', 'slim-volume'); ?>
+                                </span>
+                            <?php endif; ?>
+                        </div>
                     <?php endif; ?>
                 </li>
             <?php endforeach; ?>
