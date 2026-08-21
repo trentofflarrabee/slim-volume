@@ -78,6 +78,12 @@ Yes. Tracks with plain lyrics and playable audio can be synchronized line by lin
 
 = 0.2.0 =
 
+* Improved release and track presentation across desktop and mobile layouts.
+* Top-aligned release artwork alongside long-form release content while preserving centered mobile stacking.
+* Added configurable font family, font size, line height, and link color controls for authored release and track content.
+* Removed the hard-coded Song Story heading so track editorial content renders exactly as authored.
+* Reworked track hero Play and Queue actions as compact accessible icon controls.
+* Replaced redundant disabled playback controls with clear passive no-audio states on track and release pages.
 * Improved mobile release and track layouts with centered hero presentation and denser track lists.
 * Reworked the mobile persistent player with a top-mounted seek bar, safer edge spacing, and improved transport layout.
 * Added overflow-aware scrolling for long player track titles with reduced-motion support.
