@@ -159,64 +159,86 @@ add_action('wp_head', [Frontend\Seo::class, 'render'], 2);
         flush_rewrite_rules();
     }
 
-    private static function maybe_upgrade(): void
-    {
-        /*
-         * Setting migrations are intentionally idempotent and inspect raw
-         * stored options before default values are merged by Settings.
-         */
-        self::migrate_seo_mode_setting();
-
-        $installed_version = (string) get_option(self::VERSION_OPTION, '');
-
-        if ($installed_version === SLIM_VOLUME_VERSION) {
-            return;
-        }
-
-        /*
-         * Future version-specific data migrations should run here before the
-         * stored version is advanced.
-         */
-        update_option(self::VERSION_OPTION, SLIM_VOLUME_VERSION, true);
-    }
-
-    private static function migrate_seo_mode_setting(): void
-    {
-        $raw_settings = get_option(Admin\Settings::OPTION_NAME, []);
-
-        if (! is_array($raw_settings)) {
-            return;
-        }
-
-        /*
-         * If seo_mode already exists, normalize it and leave it authoritative.
-         */
-if (array_key_exists('seo_mode', $raw_settings)) {
-    $mode = Admin\Settings::normalize_seo_mode(
-        $raw_settings['seo_mode']
+private static function maybe_upgrade(): void
+{
+    $installed_version = (string) get_option(
+        self::VERSION_OPTION,
+        ''
     );
 
-    if (($raw_settings['seo_mode'] ?? '') !== $mode) {
-        $raw_settings['seo_mode'] = $mode;
-        update_option(Admin\Settings::OPTION_NAME, $raw_settings);
+    if ($installed_version === SLIM_VOLUME_VERSION) {
+        return;
     }
 
-    return;
+    /*
+     * Versioned data migrations run before the stored plugin version is
+     * advanced. Migrations must inspect raw stored values where defaults
+     * would otherwise make legacy state ambiguous.
+     */
+    self::migrate_seo_mode_setting();
+
+    update_option(
+        self::VERSION_OPTION,
+        SLIM_VOLUME_VERSION,
+        true
+    );
 }
 
-        /*
-         * Existing installations migrate according to the raw legacy setting.
-         * Do not use Settings::get_settings() here because its defaults would
-         * make "never stored" indistinguishable from "stored as disabled".
-         */
-        if (! array_key_exists('seo_enabled', $raw_settings)) {
-            return;
-        }
+private static function migrate_seo_mode_setting(): void
+{
+    $raw_settings = get_option(
+        Admin\Settings::OPTION_NAME,
+        []
+    );
 
-        $raw_settings['seo_mode'] = ! empty($raw_settings['seo_enabled'])
+    if (! is_array($raw_settings)) {
+        return;
+    }
+
+    $changed = false;
+
+    /*
+     * seo_mode is authoritative when it already exists.
+     */
+    if (array_key_exists('seo_mode', $raw_settings)) {
+        $mode = Admin\Settings::normalize_seo_mode(
+            $raw_settings['seo_mode']
+        );
+
+        if (($raw_settings['seo_mode'] ?? '') !== $mode) {
+            $raw_settings['seo_mode'] = $mode;
+            $changed = true;
+        }
+    } elseif (array_key_exists('seo_enabled', $raw_settings)) {
+        /*
+         * Preserve existing frontend behavior exactly:
+         *
+         * enabled  -> Full Music Metadata
+         * disabled -> Off
+         */
+        $raw_settings['seo_mode'] = ! empty(
+            $raw_settings['seo_enabled']
+        )
             ? 'full'
             : 'off';
 
-        update_option(Admin\Settings::OPTION_NAME, $raw_settings);
+        $changed = true;
     }
+
+    /*
+     * The legacy boolean is migration input only. Once seo_mode is available,
+     * remove it rather than maintaining two competing settings indefinitely.
+     */
+    if (array_key_exists('seo_enabled', $raw_settings)) {
+        unset($raw_settings['seo_enabled']);
+        $changed = true;
+    }
+
+    if ($changed) {
+        update_option(
+            Admin\Settings::OPTION_NAME,
+            $raw_settings
+        );
+    }
+}
 }
