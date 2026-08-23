@@ -280,15 +280,10 @@ $same_as = self::normalize_same_as(
     $artist['sameAs'] ?? []
 );
 
+$artist['sameAs'] = $same_as;
+
 /**
  * Filter official external identities for a resolved artist/project.
- *
- * Examples include Spotify artist pages, Apple Music artist pages,
- * official YouTube channels, Bandcamp artist pages, MusicBrainz,
- * Discogs, and legitimate social profiles.
- *
- * These URLs identify the artist/project itself. Release- and track-level
- * streaming destinations do not belong here.
  *
  * @param string[] $same_as Normalized identity URLs.
  * @param array    $artist  Resolved Slim Volume artist/project identity.

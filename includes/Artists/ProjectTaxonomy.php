@@ -296,7 +296,7 @@ final class ProjectTaxonomy
             <th scope="row">
                 <label for="sv_project_same_as">
                     <?php esc_html_e(
-                        'Official identity URLs',
+                        'Official profiles',
                         'slim-volume'
                     ); ?>
                 </label>
@@ -321,12 +321,15 @@ final class ProjectTaxonomy
 
         <tr class="form-field">
             <th scope="row">
-                <?php esc_html_e('Artist/project image', 'slim-volume'); ?>
+                <?php esc_html_e('Artist / project image', 'slim-volume'); ?>
             </th>
             <td>
                 <?php self::render_image_field($image_id); ?>
                 <p class="description">
-                    <?php esc_html_e('Optional logo, portrait, or project artwork.', 'slim-volume'); ?>
+                    <?php esc_html_e(
+                        'Optional. Choose a portrait, band photo, logo, or other image that represents this artist or project.',
+                        'slim-volume'
+                    ); ?>
                 </p>
             </td>
         </tr>
