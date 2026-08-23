@@ -80,7 +80,10 @@ final class ArtistResolver
             'url'         => $url,
             'image'       => $image,
             'description' => '',
-            'schemaId'    => trailingslashit($url) . '#artist',
+            'sameAs' => (string) (
+                $settings['seo_artist_same_as'] ?? ''
+            ),
+            'schemaId'    => trailingslashit($url) . '#sv-artist',
         ];
 
         /**
@@ -89,11 +92,13 @@ final class ArtistResolver
          * @param array $artist   Normalized artist identity.
          * @param array $settings Current Slim Volume settings.
          */
-        return (array) apply_filters(
-            'slim_volume_default_artist',
-            $artist,
-            $settings
-        );
+$artist = (array) apply_filters(
+    'slim_volume_default_artist',
+    $artist,
+    $settings
+);
+
+return self::normalize_identity($artist);
     }
 
     /**
@@ -134,12 +139,14 @@ final class ArtistResolver
          * @param int   $release_id Release post ID.
          * @param array $fallback   Global/default artist identity.
          */
-        return (array) apply_filters(
-            'slim_volume_release_artist',
-            $artist,
-            $release_id,
-            $fallback
-        );
+$artist = (array) apply_filters(
+    'slim_volume_release_artist',
+    $artist,
+    $release_id,
+    $fallback
+);
+
+return self::normalize_identity($artist);
     }
 
     /**
@@ -179,12 +186,14 @@ final class ArtistResolver
          * @param int   $track_id   Track post ID.
          * @param int   $release_id Parent release post ID.
          */
-        return (array) apply_filters(
-            'slim_volume_track_artist',
-            $artist,
-            $track_id,
-            $release_id
-        );
+$artist = (array) apply_filters(
+    'slim_volume_track_artist',
+    $artist,
+    $track_id,
+    $release_id
+);
+
+return self::normalize_identity($artist);
     }
 
     /**
@@ -216,27 +225,155 @@ final class ArtistResolver
         return count(self::for_releases($release_ids, $settings)) > 1;
     }
 
-    public static function identity_key(array $artist): string
-    {
-        $schema_id = isset($artist['schemaId'])
-            ? trim((string) $artist['schemaId'])
-            : '';
+public static function identity_key(array $artist): string
+{
+    $schema_id = trim((string) ($artist['schemaId'] ?? ''));
 
-        if ($schema_id !== '') {
-            return strtolower($schema_id);
-        }
+    if ($schema_id !== '') {
+        return strtolower($schema_id);
+    }
 
-        return strtolower(
-            implode(
-                '|',
-                [
-                    (string) ($artist['entityType'] ?? ''),
-                    (string) ($artist['name'] ?? ''),
-                    (string) ($artist['url'] ?? ''),
-                ]
-            )
+    $term_id = absint($artist['termId'] ?? 0);
+
+    if ($term_id > 0) {
+        return 'project:' . $term_id;
+    }
+
+    return 'default';
+}
+
+/**
+ * Normalize the identity fields Slim Volume owns.
+ *
+ * Artist/project names, images, descriptions, and URLs may be filtered, but
+ * entity type and schema identity must remain deterministic and must never be
+ * inferred from the display name.
+ */
+private static function normalize_identity(array $artist): array
+{
+    $term_id = absint($artist['termId'] ?? 0);
+    $source  = $term_id > 0 ? 'project' : 'default';
+
+    $entity_type = (string) ($artist['entityType'] ?? 'MusicGroup');
+
+    if (! in_array($entity_type, ['MusicGroup', 'Person'], true)) {
+        $entity_type = 'MusicGroup';
+    }
+
+    $url = esc_url_raw((string) ($artist['url'] ?? ''));
+
+    if ($source === 'default' && $url === '') {
+        $url = home_url('/');
+    }
+
+$artist['source']     = $source;
+$artist['termId']     = $term_id;
+$artist['entityType'] = $entity_type;
+$artist['url']        = $url;
+$artist['schemaId']   = self::schema_id(
+    $source,
+    $term_id,
+    $url
+);
+
+$same_as = self::normalize_same_as(
+    $artist['sameAs'] ?? []
+);
+
+/**
+ * Filter official external identities for a resolved artist/project.
+ *
+ * Examples include Spotify artist pages, Apple Music artist pages,
+ * official YouTube channels, Bandcamp artist pages, MusicBrainz,
+ * Discogs, and legitimate social profiles.
+ *
+ * These URLs identify the artist/project itself. Release- and track-level
+ * streaming destinations do not belong here.
+ *
+ * @param string[] $same_as Normalized identity URLs.
+ * @param array    $artist  Resolved Slim Volume artist/project identity.
+ */
+$same_as = apply_filters(
+    'slim_volume_artist_same_as',
+    $same_as,
+    $artist
+);
+
+$artist['sameAs'] = self::normalize_same_as(
+    $same_as
+);
+
+return $artist;
+}
+
+/**
+ * Normalize official external artist/project identity URLs.
+ *
+ * @param mixed $value
+ * @return string[]
+ */
+private static function normalize_same_as(
+    $value
+): array {
+    if (is_string($value)) {
+        $value = preg_split(
+            '/\R+/',
+            $value
         );
     }
+
+    if (! is_array($value)) {
+        return [];
+    }
+
+    $urls = [];
+
+    foreach ($value as $candidate) {
+        if (! is_scalar($candidate)) {
+            continue;
+        }
+
+        $url = esc_url_raw(
+            trim((string) $candidate),
+            ['http', 'https']
+        );
+
+        if ($url === '') {
+            continue;
+        }
+
+        $urls[] = $url;
+    }
+
+    return array_values(
+        array_unique($urls)
+    );
+}
+
+/**
+ * Build Slim Volume's stable artist/project schema identifier.
+ */
+private static function schema_id(
+    string $source,
+    int $term_id,
+    string $url
+): string {
+    if ($source === 'project' && $term_id > 0) {
+        if ($url !== '') {
+            return trailingslashit($url) . '#sv-artist';
+        }
+
+        return trailingslashit(home_url('/'))
+            . '#sv-artist-'
+            . $term_id;
+    }
+
+    $base_url = $url !== ''
+        ? $url
+        : home_url('/');
+
+    return trailingslashit($base_url) . '#sv-artist';
+}
 
     /**
      * @return array{
@@ -272,10 +409,6 @@ final class ArtistResolver
             ? (string) wp_get_attachment_image_url($image_id, 'full')
             : '';
 
-        $schema_base = $url !== ''
-            ? untrailingslashit($url)
-            : untrailingslashit(home_url('/'));
-
         return [
             'source'      => 'project',
             'termId'      => (int) $term->term_id,
@@ -284,7 +417,15 @@ final class ArtistResolver
             'url'         => $url,
             'image'       => $image,
             'description' => trim(wp_strip_all_tags((string) $term->description)),
-            'schemaId'    => $schema_base . '/#artist-project-' . (int) $term->term_id,
-        ];
+            'sameAs' => (string) get_term_meta(
+                $term->term_id,
+                ProjectTaxonomy::META_SAME_AS,
+                true
+            ),
+            'schemaId'    => self::schema_id(
+                'project',
+                (int) $term->term_id,
+                $url
+            ),        ];
     }
 }

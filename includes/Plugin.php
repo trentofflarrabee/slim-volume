@@ -16,6 +16,7 @@ require_once SLIM_VOLUME_PATH . 'includes/Rewrite.php';
 require_once SLIM_VOLUME_PATH . 'includes/Assets.php';
 require_once SLIM_VOLUME_PATH . 'includes/Frontend/TemplateLoader.php';
 require_once SLIM_VOLUME_PATH . 'includes/Frontend/PlayerData.php';
+require_once SLIM_VOLUME_PATH . 'includes/Frontend/ArchiveQuery.php';
 require_once SLIM_VOLUME_PATH . 'includes/Frontend/Seo.php';
 require_once SLIM_VOLUME_PATH . 'includes/Admin/ReleaseMetaBoxes.php';
 require_once SLIM_VOLUME_PATH . 'includes/Admin/TrackMetaBoxes.php';
@@ -129,8 +130,14 @@ final class Plugin
         add_action('pre_get_posts', [Rewrite::class, 'resolve_nested_track_query']); 
         add_filter('post_type_link', [Rewrite::class, 'filter_track_permalink'], 10, 2);
 
-        add_filter('template_include', [Frontend\TemplateLoader::class, 'template_include']);
-        add_action('wp_head', [Frontend\Seo::class, 'render'], 2);
+add_filter('template_include', [Frontend\TemplateLoader::class, 'template_include']);
+
+add_filter(
+    'document_title_parts',
+    [Frontend\Seo::class, 'filter_document_title']
+);
+
+add_action('wp_head', [Frontend\Seo::class, 'render'], 2);
         add_action('wp_enqueue_scripts', [Assets::class, 'enqueue_frontend']);
         add_action('admin_enqueue_scripts', [Assets::class, 'enqueue_admin']);
     }
@@ -154,6 +161,12 @@ final class Plugin
 
     private static function maybe_upgrade(): void
     {
+        /*
+         * Setting migrations are intentionally idempotent and inspect raw
+         * stored options before default values are merged by Settings.
+         */
+        self::migrate_seo_mode_setting();
+
         $installed_version = (string) get_option(self::VERSION_OPTION, '');
 
         if ($installed_version === SLIM_VOLUME_VERSION) {
@@ -165,5 +178,45 @@ final class Plugin
          * stored version is advanced.
          */
         update_option(self::VERSION_OPTION, SLIM_VOLUME_VERSION, true);
+    }
+
+    private static function migrate_seo_mode_setting(): void
+    {
+        $raw_settings = get_option(Admin\Settings::OPTION_NAME, []);
+
+        if (! is_array($raw_settings)) {
+            return;
+        }
+
+        /*
+         * If seo_mode already exists, normalize it and leave it authoritative.
+         */
+if (array_key_exists('seo_mode', $raw_settings)) {
+    $mode = Admin\Settings::normalize_seo_mode(
+        $raw_settings['seo_mode']
+    );
+
+    if (($raw_settings['seo_mode'] ?? '') !== $mode) {
+        $raw_settings['seo_mode'] = $mode;
+        update_option(Admin\Settings::OPTION_NAME, $raw_settings);
+    }
+
+    return;
+}
+
+        /*
+         * Existing installations migrate according to the raw legacy setting.
+         * Do not use Settings::get_settings() here because its defaults would
+         * make "never stored" indistinguishable from "stored as disabled".
+         */
+        if (! array_key_exists('seo_enabled', $raw_settings)) {
+            return;
+        }
+
+        $raw_settings['seo_mode'] = ! empty($raw_settings['seo_enabled'])
+            ? 'full'
+            : 'off';
+
+        update_option(Admin\Settings::OPTION_NAME, $raw_settings);
     }
 }

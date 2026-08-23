@@ -39,11 +39,12 @@ final class Settings
             'visualizer_mode' => 'bars',
             'debug'          => false,
 
-            'seo_enabled'             => false,
-            'seo_artist_name'         => '',
-            'seo_artist_url'          => '',
-            'seo_archive_description' => '',
-            'seo_default_image'       => '',
+'seo_mode'                => 'off',
+'seo_artist_name'         => '',
+'seo_artist_url'          => '',
+'seo_artist_same_as'      => '',
+'seo_archive_description' => '',
+'seo_default_image'       => '',
 
             'appearance_preset' => 'custom',
 
@@ -167,6 +168,22 @@ final class Settings
         }
 
         return array_merge(self::defaults(), $saved);
+    }
+
+        /**
+     * Normalize the Music SEO ownership mode.
+     *
+     * @param mixed $value Raw or filtered mode value.
+     */
+    public static function normalize_seo_mode($value): string
+    {
+        $mode = is_scalar($value)
+            ? sanitize_key((string) $value)
+            : 'off';
+
+        return in_array($mode, ['off', 'schema', 'full'], true)
+            ? $mode
+            : 'off';
     }
 
     public static function get_appearance_css(): string
@@ -322,9 +339,14 @@ if (! in_array($release_card_link_behavior, $allowed_release_card_link_behaviors
 }
 
 $seo = [
-    'seo_enabled'             => ! empty($input['seo_enabled']),
+    'seo_mode'                => self::normalize_seo_mode(
+        $input['seo_mode'] ?? $defaults['seo_mode'] ?? 'off'
+    ),
     'seo_artist_name'         => sanitize_text_field((string) ($input['seo_artist_name'] ?? '')),
     'seo_artist_url'          => esc_url_raw((string) ($input['seo_artist_url'] ?? '')),
+    'seo_artist_same_as' => self::sanitize_url_list(
+    $input['seo_artist_same_as'] ?? ''
+    ),
     'seo_archive_description' => sanitize_textarea_field((string) ($input['seo_archive_description'] ?? '')),
     'seo_default_image'       => esc_url_raw((string) ($input['seo_default_image'] ?? '')),
 ];
@@ -349,6 +371,45 @@ return array_merge(
     $appearance
 );
     }
+
+    private static function sanitize_url_list($value): string
+{
+    if (! is_scalar($value)) {
+        return '';
+    }
+
+    $lines = preg_split(
+        '/\R+/',
+        (string) $value
+    );
+
+    if (! is_array($lines)) {
+        return '';
+    }
+
+    $urls = [];
+
+    foreach ($lines as $line) {
+        $url = esc_url_raw(
+            trim($line),
+            ['http', 'https']
+        );
+
+        if ($url === '') {
+            continue;
+        }
+
+        $urls[] = $url;
+    }
+
+    return implode(
+        "\n",
+        array_values(
+            array_unique($urls)
+        )
+    );
+}
+
 
         private static function sanitize_appearance_value(
         string $key,
@@ -603,17 +664,26 @@ return array_merge(
                     <div class="sv-settings-section">
                         <h2><?php echo esc_html__('Artists & Projects', 'slim-volume'); ?></h2>
                         <p class="description">
-                            <?php echo esc_html__('Artists & Projects can always be managed under Music. Enable attribution only when releases should use those identities publicly.', 'slim-volume'); ?>
+                        <?php echo esc_html__(
+                            'Use Artists & Projects when releases on this site may belong to different artists, bands, aliases, or projects. If every release belongs to the same artist, you can usually leave this off.',
+                            'slim-volume'
+                        ); ?>                   
                         </p>
 
                         <table class="form-table" role="presentation">
                             <tbody>
                                 <?php self::render_checkbox_row(
                                     'projects_enabled',
-                                    __('Use per-release artist/project attribution', 'slim-volume'),
-                                    __('Enable the artist/project selector on Release editors and use assigned identities on the frontend and in music SEO.', 'slim-volume'),
+                                    __('Let releases use different artists / projects', 'slim-volume'),
+                                    __(
+    'Adds an Artist / Project selector to Release editors and uses the assigned artist or project on public pages and in music SEO.',
+    'slim-volume'
+),
                                     $settings,
-                                    __('The Artists & Projects manager stays available when this is disabled. Existing assignments remain stored, but public pages and SEO use the global Artist / Project identity.', 'slim-volume')
+                                    __(
+    'Leave this off for a normal single-artist catalog. Existing Artist / Project records and assignments are kept if you turn it off.',
+    'slim-volume'
+)
                                 ); ?>
 
                                 <?php self::render_checkbox_row(
@@ -652,65 +722,161 @@ return array_merge(
                     </div>
                 </section>
 
-                <section
-                    class="sv-settings-panel"
-                    id="sv-settings-seo"
-                    role="tabpanel"
-                    aria-labelledby="sv-settings-tab-seo"
-                    data-sv-settings-panel="seo"
-                    hidden
-                >
-                    <div class="sv-settings-section">
-                        <h2><?php echo esc_html__('Music SEO Metadata', 'slim-volume'); ?></h2>
-                        <p class="description">
-                            <?php echo esc_html__('Output music-focused meta descriptions, Open Graph tags, Twitter card tags, and JSON-LD for /music, releases, and tracks.', 'slim-volume'); ?>
-                        </p>
+               <section
+    class="sv-settings-panel"
+    id="sv-settings-seo"
+    role="tabpanel"
+    aria-labelledby="sv-settings-tab-seo"
+    data-sv-settings-panel="seo"
+    hidden
+>
+    <div class="sv-settings-section">
+        <h2><?php echo esc_html__('Music SEO', 'slim-volume'); ?></h2>
 
-                        <table class="form-table" role="presentation">
-                            <tbody>
-                                <?php self::render_checkbox_row(
-                                    'seo_enabled',
-                                    __('Enable Slim Volume SEO metadata', 'slim-volume'),
-                                    __('Output Slim Volume SEO tags on the music archive, release pages, and track pages.', 'slim-volume'),
-                                    $settings,
-                                    __('Leave this disabled when another SEO plugin is already controlling these tags for Slim Volume pages.', 'slim-volume')
-                                ); ?>
+        <p class="description">
+            <?php echo esc_html__(
+                'Slim Volume can add search-engine information specifically for your music. Choose how much SEO information Slim Volume should provide.',
+                'slim-volume'
+            ); ?>
+        </p>
 
-                                <?php self::render_setting_text_row(
-                                    'seo_artist_name',
-                                    __('Artist / project name', 'slim-volume'),
-                                    $settings,
-                                    __('Used as the MusicGroup name in JSON-LD and in generated /music social titles. Defaults to the site title when blank.', 'slim-volume')
-                                ); ?>
+        <table class="form-table" role="presentation">
+            <tbody>
+                <?php
+                self::render_setting_select_row(
+                    'seo_mode',
+                    __('Music SEO Mode', 'slim-volume'),
+                    [
+                        'off'    => __('Off', 'slim-volume'),
+                        'schema' => __('Music Schema Only', 'slim-volume'),
+                        'full'   => __('Full Music Metadata', 'slim-volume'),
+                    ],
+                    $settings,
+                    __(
+                        'Off: use when another system already handles music-specific SEO. Music Schema Only: use when you already have a dedicated SEO plugin. Full Music Metadata: use when you do not have a dedicated SEO plugin managing your music pages.',
+                        'slim-volume'
+                    )
+                );
+                ?>
+            </tbody>
+        </table>
 
-                                <?php self::render_setting_text_row(
-                                    'seo_artist_url',
-                                    __('Artist / project URL', 'slim-volume'),
-                                    $settings,
-                                    __('Used as the artist URL inside MusicGroup, MusicAlbum, and MusicRecording data. Defaults to the site home URL when blank.', 'slim-volume'),
-                                    'url',
-                                    'regular-text code'
-                                ); ?>
+        <p class="description">
+            <strong>
+                <?php echo esc_html__('Not sure which to choose?', 'slim-volume'); ?>
+            </strong>
+            <?php echo esc_html__(
+                ' If you use a dedicated SEO plugin, choose Music Schema Only. If you do not use one, choose Full Music Metadata.',
+                'slim-volume'
+            ); ?>
+        </p>
+    </div>
 
-                                <?php self::render_setting_textarea_row(
-                                    'seo_archive_description',
-                                    __('Music archive description', 'slim-volume'),
-                                    $settings,
-                                    __('Used for the /music meta description, Open Graph description, Twitter description, and MusicGroup JSON-LD description.', 'slim-volume')
-                                ); ?>
+    <div class="sv-settings-section">
+        <h2><?php echo esc_html__('Fallback Artist / Project', 'slim-volume'); ?></h2>
 
-                                <?php self::render_setting_text_row(
-                                    'seo_default_image',
-                                    __('Default social image URL', 'slim-volume'),
-                                    $settings,
-                                    __('Fallback image for /music and for releases or tracks without artwork. Release and track artwork still take priority.', 'slim-volume'),
-                                    'url',
-                                    'regular-text code'
-                                ); ?>
-                            </tbody>
-                        </table>
-                    </div>
-                </section>
+        <p class="description">
+            <?php echo esc_html__(
+                'These details are used when a release does not have an Artist / Project assigned. On a single-artist site, these can represent the main artist for the whole catalog.',
+                'slim-volume'
+            ); ?>
+        </p>
+
+        <table class="form-table" role="presentation">
+            <tbody>
+                <?php self::render_setting_text_row(
+                    'seo_artist_name',
+                    __('Fallback artist / project name', 'slim-volume'),
+                    $settings,
+                    __(
+                        'The artist, band, alias, or project name to use for unassigned releases. Leave blank to use the WordPress site title.',
+                        'slim-volume'
+                    )
+                ); ?>
+
+                <?php self::render_setting_text_row(
+                    'seo_artist_url',
+                    __('Fallback artist / project website', 'slim-volume'),
+                    $settings,
+                    __(
+                        'The main official website for the fallback artist or project. Leave blank to use this site’s homepage.',
+                        'slim-volume'
+                    ),
+                    'url',
+                    'regular-text code'
+                ); ?>
+
+                <?php self::render_setting_textarea_row(
+                    'seo_artist_same_as',
+                    __('Official artist / project profiles', 'slim-volume'),
+                    $settings,
+                    __(
+                        'Optional. Enter one official profile URL per line, such as Spotify artist, Apple Music artist, YouTube, Bandcamp, MusicBrainz, Discogs, or an official social profile. Do not enter individual release or track links here. Assigned Artists & Projects use their own profiles instead.',
+                        'slim-volume'
+                    )
+                ); ?>
+
+                <?php self::render_setting_textarea_row(
+                    'seo_archive_description',
+                    __('Music catalog description', 'slim-volume'),
+                    $settings,
+                    __(
+                        'A short description of your music catalog. Used in music structured data and, in Full Music Metadata mode, search and social metadata.',
+                        'slim-volume'
+                    )
+                ); ?>
+
+                <?php self::render_setting_text_row(
+                    'seo_default_image',
+                    __('Fallback music image URL', 'slim-volume'),
+                    $settings,
+                    __(
+                        'Used when a release or track does not have its own artwork. In Full Music Metadata mode, it may also be used for social sharing previews.',
+                        'slim-volume'
+                    ),
+                    'url',
+                    'regular-text code'
+                ); ?>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="sv-settings-section">
+        <h2><?php echo esc_html__('Which mode should I use?', 'slim-volume'); ?></h2>
+
+        <p>
+            <strong><?php echo esc_html__('Off:', 'slim-volume'); ?></strong>
+            <?php echo esc_html__(
+                ' Use this when another system already provides music-specific structured data for your artists, releases, and tracks.',
+                'slim-volume'
+            ); ?>
+        </p>
+
+        <p>
+            <strong><?php echo esc_html__('Music Schema Only:', 'slim-volume'); ?></strong>
+            <?php echo esc_html__(
+                ' Use this when your site already has a dedicated SEO plugin. Your SEO plugin handles normal site SEO, while Slim Volume adds music-specific information about artists, releases, and tracks.',
+                'slim-volume'
+            ); ?>
+        </p>
+
+        <p>
+            <strong><?php echo esc_html__('Full Music Metadata:', 'slim-volume'); ?></strong>
+            <?php echo esc_html__(
+                ' Use this when you do not have a dedicated SEO plugin managing your music pages. Slim Volume adds music data plus descriptions, social sharing information, and music-aware page titles.',
+                'slim-volume'
+            ); ?>
+        </p>
+
+        <p class="description">
+            <strong><?php echo esc_html__('Using another SEO plugin?', 'slim-volume'); ?></strong>
+            <?php echo esc_html__(
+                ' Choose Music Schema Only. Full Music Metadata may duplicate titles, descriptions, or social metadata generated by another SEO system.',
+                'slim-volume'
+            ); ?>
+        </p>
+    </div>
+</section>
 
                 <section
                     class="sv-settings-panel"

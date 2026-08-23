@@ -27,6 +27,7 @@ final class ProjectTaxonomy
     public const META_ENTITY_TYPE = '_sv_project_entity_type';
     public const META_URL         = '_sv_project_url';
     public const META_IMAGE_ID    = '_sv_project_image_id';
+    public const META_SAME_AS     = '_sv_project_same_as';
 
     public const ENTITY_GROUP  = 'group';
     public const ENTITY_PERSON = 'person';
@@ -136,25 +137,48 @@ final class ProjectTaxonomy
                 'auth_callback'     => [self::class, 'can_manage_term_meta'],
             ]
         );
+        register_term_meta(
+        self::TAXONOMY,
+        self::META_SAME_AS,
+        [
+            'single'            => true,
+            'type'              => 'string',
+            'default'           => '',
+            'show_in_rest'      => false,
+            'sanitize_callback' => [self::class, 'sanitize_same_as'],
+            'auth_callback'     => [self::class, 'can_manage_term_meta'],
+        ]
+    );
     }
 
     public static function render_add_fields(): void
     {
         wp_nonce_field(self::NONCE_ACTION, self::NONCE_FIELD);
         ?>
+
+        <p>
+    <?php esc_html_e(
+        'Create an Artist / Project when releases on this site may belong to different artists, bands, aliases, or projects. If every release belongs to the same artist, you can usually use the fallback artist details under Music → Settings → SEO instead.',
+        'slim-volume'
+    ); ?>
+</p>
+
         <div class="form-field">
             <label for="sv_project_entity_type">
-                <?php esc_html_e('Entity type', 'slim-volume'); ?>
+                <?php esc_html_e('What kind of artist is this?', 'slim-volume'); ?>
             </label>
             <?php self::render_entity_type_select(self::ENTITY_GROUP); ?>
             <p>
-                <?php esc_html_e('Choose whether this credit represents a band/group/project or a solo person.', 'slim-volume'); ?>
+                <?php esc_html_e(
+                    'Choose Solo artist / person for an individual artist. Choose Band, group, alias, or project for everything else.',
+                    'slim-volume'
+                ); ?>
             </p>
         </div>
 
         <div class="form-field">
             <label for="sv_project_url">
-                <?php esc_html_e('Canonical artist/project URL', 'slim-volume'); ?>
+                <?php esc_html_e('Official artist / project website', 'slim-volume'); ?>
             </label>
             <input
                 type="url"
@@ -164,15 +188,42 @@ final class ProjectTaxonomy
                 placeholder="https://example.com/"
             >
             <p>
-                <?php esc_html_e('Optional. Used later for artist attribution links and structured data.', 'slim-volume'); ?>
+                <?php esc_html_e(
+    'Optional. Enter the main official website or public page for this artist or project. Leave blank if there is not one.',
+    'slim-volume'
+); ?>
             </p>
         </div>
 
         <div class="form-field">
-            <label><?php esc_html_e('Artist/project image', 'slim-volume'); ?></label>
+    <label for="sv_project_same_as">
+        <?php esc_html_e('Official profiles', 'slim-volume'); ?>
+    </label>
+
+    <textarea
+        id="sv_project_same_as"
+        name="sv_project_same_as"
+        rows="6"
+        class="large-text code"
+        placeholder="https://open.spotify.com/artist/..."
+    ></textarea>
+
+<p>
+    <?php esc_html_e(
+        'Optional. Enter one official profile URL per line. Examples include Spotify artist, Apple Music artist, YouTube, Bandcamp, MusicBrainz, Discogs, Instagram, or another official profile. Do not add individual release or track links here.',
+        'slim-volume'
+    ); ?>
+</p>
+</div>
+
+        <div class="form-field">
+            <label><?php esc_html_e('Artist / project image', 'slim-volume'); ?></label>
             <?php self::render_image_field(0); ?>
             <p>
-                <?php esc_html_e('Optional logo, portrait, or project artwork.', 'slim-volume'); ?>
+                <?php esc_html_e(
+                    'Optional. Choose a portrait, band photo, logo, or other image that represents this artist or project.',
+                    'slim-volume'
+                ); ?>
             </p>
         </div>
         <?php
@@ -186,22 +237,33 @@ final class ProjectTaxonomy
 
         $url = (string) get_term_meta($term->term_id, self::META_URL, true);
 
+        $same_as = (string) get_term_meta(
+        $term->term_id,
+        self::META_SAME_AS,
+        true
+    );
+
         $image_id = absint(
             get_term_meta($term->term_id, self::META_IMAGE_ID, true)
         );
 
         wp_nonce_field(self::NONCE_ACTION, self::NONCE_FIELD);
         ?>
+
+
         <tr class="form-field">
             <th scope="row">
                 <label for="sv_project_entity_type">
-                    <?php esc_html_e('Entity type', 'slim-volume'); ?>
+                    <?php esc_html_e('What kind of artist is this?', 'slim-volume'); ?>
                 </label>
             </th>
             <td>
                 <?php self::render_entity_type_select($entity_type); ?>
                 <p class="description">
-                    <?php esc_html_e('Choose whether this credit represents a band/group/project or a solo person.', 'slim-volume'); ?>
+                    <?php esc_html_e(
+    'Choose Solo artist / person for an individual artist. Choose Band, group, alias, or project for everything else.',
+    'slim-volume'
+); ?>
                 </p>
             </td>
         </tr>
@@ -209,7 +271,7 @@ final class ProjectTaxonomy
         <tr class="form-field">
             <th scope="row">
                 <label for="sv_project_url">
-                    <?php esc_html_e('Canonical artist/project URL', 'slim-volume'); ?>
+                    <?php esc_html_e('Official artist / project website', 'slim-volume'); ?>
                 </label>
             </th>
             <td>
@@ -222,7 +284,37 @@ final class ProjectTaxonomy
                     placeholder="https://example.com/"
                 >
                 <p class="description">
-                    <?php esc_html_e('Optional. Used later for artist attribution links and structured data.', 'slim-volume'); ?>
+                    <?php esc_html_e(
+    'Optional. Enter the main official website or public page for this artist or project. Leave blank if there is not one.',
+    'slim-volume'
+); ?>
+                </p>
+            </td>
+        </tr>
+
+        <tr class="form-field">
+            <th scope="row">
+                <label for="sv_project_same_as">
+                    <?php esc_html_e(
+                        'Official identity URLs',
+                        'slim-volume'
+                    ); ?>
+                </label>
+            </th>
+
+            <td>
+                <textarea
+                    id="sv_project_same_as"
+                    name="sv_project_same_as"
+                    rows="6"
+                    class="large-text code"
+                ><?php echo esc_textarea($same_as); ?></textarea>
+
+                <p class="description">
+                    <?php esc_html_e(
+                        'Optional. Enter one official profile URL per line. Examples include Spotify artist, Apple Music artist, YouTube, Bandcamp, MusicBrainz, Discogs, Instagram, or another official profile. Do not add individual release or track links here.',
+                        'slim-volume'
+                    ); ?>
                 </p>
             </td>
         </tr>
@@ -322,11 +414,19 @@ final class ProjectTaxonomy
             ? self::sanitize_entity_type(wp_unslash($_POST['sv_project_entity_type']))
             : self::ENTITY_GROUP;
 
-        $url = isset($_POST['sv_project_url'])
-            ? esc_url_raw(wp_unslash($_POST['sv_project_url']))
-            : '';
+$url = isset($_POST['sv_project_url'])
+    ? esc_url_raw(
+        wp_unslash($_POST['sv_project_url'])
+    )
+    : '';
 
-        $image_id = isset($_POST['sv_project_image_id'])
+$same_as = isset($_POST['sv_project_same_as'])
+    ? self::sanitize_same_as(
+        wp_unslash($_POST['sv_project_same_as'])
+    )
+    : '';
+
+$image_id = isset($_POST['sv_project_image_id'])
             ? absint($_POST['sv_project_image_id'])
             : 0;
 
@@ -338,12 +438,63 @@ final class ProjectTaxonomy
             delete_term_meta($term_id, self::META_URL);
         }
 
+        if ($same_as !== '') {
+            update_term_meta(
+                $term_id,
+                self::META_SAME_AS,
+                $same_as
+            );
+        } else {
+            delete_term_meta(
+                $term_id,
+                self::META_SAME_AS
+            );
+}
+
         if ($image_id > 0) {
             update_term_meta($term_id, self::META_IMAGE_ID, $image_id);
         } else {
             delete_term_meta($term_id, self::META_IMAGE_ID);
         }
     }
+
+    public static function sanitize_same_as($value): string
+{
+    if (! is_scalar($value)) {
+        return '';
+    }
+
+    $lines = preg_split(
+        '/\R+/',
+        (string) $value
+    );
+
+    if (! is_array($lines)) {
+        return '';
+    }
+
+    $urls = [];
+
+    foreach ($lines as $line) {
+        $url = esc_url_raw(
+            trim($line),
+            ['http', 'https']
+        );
+
+        if ($url === '') {
+            continue;
+        }
+
+        $urls[] = $url;
+    }
+
+    return implode(
+        "\n",
+        array_values(
+            array_unique($urls)
+        )
+    );
+}
 
     public static function sanitize_entity_type($value): string
     {

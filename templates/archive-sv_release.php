@@ -8,25 +8,42 @@
 use SlimVolume\Admin\Settings;
 use SlimVolume\Artists\ArtistResolver;
 use SlimVolume\Artists\ProjectTaxonomy;
+use SlimVolume\Frontend\ArchiveQuery;
 
 if (! defined('ABSPATH')) {
     exit;
 }
 
-$search_query = isset($_GET['sv_release_q'])
-    ? sanitize_text_field(wp_unslash($_GET['sv_release_q']))
-    : '';
-
 $settings = Settings::get_settings();
 
-$projects_enabled        = ! empty($settings['projects_enabled']);
-$show_archive_artist     = $projects_enabled && ! empty($settings['projects_show_archive']);
-$show_project_filter     = $projects_enabled && ! empty($settings['projects_archive_filter']);
-$selected_project_id     = $show_project_filter && isset($_GET['sv_project'])
-    ? absint($_GET['sv_project'])
-    : 0;
-$selected_project        = null;
-$project_filter_terms    = [];
+$projects_enabled = ! empty(
+    $settings['projects_enabled']
+);
+
+$show_archive_artist = (
+    $projects_enabled
+    && ! empty($settings['projects_show_archive'])
+);
+
+$archive_state = ArchiveQuery::state($settings);
+
+$search_query = (string) (
+    $archive_state['search_query'] ?? ''
+);
+
+$show_project_filter = (bool) (
+    $archive_state['show_project_filter'] ?? false
+);
+
+$selected_project_id = (int) (
+    $archive_state['selected_project_id'] ?? 0
+);
+
+$selected_project = (
+    $archive_state['selected_project'] ?? null
+);
+
+$project_filter_terms = [];
 
 if ($show_project_filter) {
     $terms = get_terms(
@@ -41,16 +58,6 @@ if ($show_project_filter) {
     if (! is_wp_error($terms)) {
         $project_filter_terms = $terms;
     }
-
-    if ($selected_project_id > 0) {
-        $term = get_term($selected_project_id, ProjectTaxonomy::TAXONOMY);
-
-        if ($term instanceof WP_Term) {
-            $selected_project = $term;
-        } else {
-            $selected_project_id = 0;
-        }
-    }
 }
 
 
@@ -62,159 +69,15 @@ if (! in_array($release_card_link_behavior, ['internal', 'external_when_availabl
     $release_card_link_behavior = 'internal';
 }
 
-$sort = isset($_GET['sv_release_sort'])
-    ? sanitize_key(wp_unslash($_GET['sv_release_sort']))
-    : 'newest';
-
-$allowed_sorts = ['newest', 'oldest', 'title_asc', 'title_desc'];
-
-if (! in_array($sort, $allowed_sorts, true)) {
-    $sort = 'newest';
-}
-
-$paged = max(
-    1,
-    (int) get_query_var('paged'),
-    (int) get_query_var('page')
+$sort = (string) (
+    $archive_state['sort'] ?? 'newest'
 );
 
-$get_matching_release_ids = static function (string $search_query): array {
-    if ('' === trim($search_query)) {
-        return [];
-    }
+$paged = (int) (
+    $archive_state['paged'] ?? 1
+);
 
-    $release_ids = get_posts(
-        [
-            'post_type'      => 'sv_release',
-            'post_status'    => 'publish',
-            'posts_per_page' => -1,
-            'fields'         => 'ids',
-            'no_found_rows'  => true,
-            's'              => $search_query,
-        ]
-    );
-
-    $track_title_or_content_ids = get_posts(
-        [
-            'post_type'      => 'sv_track',
-            'post_status'    => 'publish',
-            'posts_per_page' => -1,
-            'fields'         => 'ids',
-            'no_found_rows'  => true,
-            's'              => $search_query,
-        ]
-    );
-
-    $track_lyrics_ids = get_posts(
-        [
-            'post_type'      => 'sv_track',
-            'post_status'    => 'publish',
-            'posts_per_page' => -1,
-            'fields'         => 'ids',
-            'no_found_rows'  => true,
-            'meta_query'     => [
-                [
-                    'key'     => '_sv_lyrics',
-                    'value'   => $search_query,
-                    'compare' => 'LIKE',
-                ],
-            ],
-        ]
-    );
-
-    $track_ids = array_values(
-        array_unique(
-            array_map(
-                'absint',
-                array_merge($track_title_or_content_ids, $track_lyrics_ids)
-            )
-        )
-    );
-
-    foreach ($track_ids as $track_id) {
-        $release_id =
-            \SlimVolume\Relationships\TrackReleaseRelationship
-                ::get_release_id($track_id);
-
-        if ($release_id <= 0) {
-            continue;
-        }
-
-        $release = get_post($release_id);
-
-        if (
-            $release instanceof WP_Post
-            && 'sv_release' === $release->post_type
-            && 'publish' === $release->post_status
-        ) {
-            $release_ids[] = $release_id;
-        }
-    }
-
-    $release_ids = array_values(
-        array_unique(
-            array_filter(
-                array_map('absint', $release_ids)
-            )
-        )
-    );
-
-    return $release_ids;
-};
-
-$query_args = [
-    'post_type'      => 'sv_release',
-    'post_status'    => 'publish',
-    'posts_per_page' => (int) get_option('posts_per_page'),
-    'paged'          => $paged,
-];
-
-if ($selected_project_id > 0) {
-    $query_args['tax_query'] = [
-        [
-            'taxonomy' => ProjectTaxonomy::TAXONOMY,
-            'field'    => 'term_id',
-            'terms'    => [$selected_project_id],
-        ],
-    ];
-}
-
-if ($search_query) {
-    $matching_release_ids = $get_matching_release_ids($search_query);
-
-    $query_args['post__in'] = $matching_release_ids ?: [0];
-}
-
-switch ($sort) {
-    case 'oldest':
-        $query_args['meta_key'] = '_sv_release_date';
-        $query_args['orderby']  = [
-            'meta_value' => 'ASC',
-            'title'      => 'ASC',
-        ];
-        break;
-
-    case 'title_asc':
-        $query_args['orderby'] = 'title';
-        $query_args['order']   = 'ASC';
-        break;
-
-    case 'title_desc':
-        $query_args['orderby'] = 'title';
-        $query_args['order']   = 'DESC';
-        break;
-
-    case 'newest':
-    default:
-        $query_args['meta_key'] = '_sv_release_date';
-        $query_args['orderby']  = [
-            'meta_value' => 'DESC',
-            'title'      => 'ASC',
-        ];
-        break;
-}
-
-$release_query = new WP_Query($query_args);
+$release_query = ArchiveQuery::query($settings);
 
 $archive_url = get_post_type_archive_link('sv_release');
 
