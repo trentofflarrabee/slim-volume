@@ -597,7 +597,7 @@ private static function render_schema(array $schema): void
 
     echo "\n<!-- Slim Volume music schema -->\n";
     echo '<script type="application/ld+json">' . "\n";
-    echo $json;
+    echo wp_kses($json, []);
     echo "\n</script>\n";
     echo "<!-- /Slim Volume music schema -->\n";
 }
