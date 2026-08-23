@@ -35,6 +35,7 @@ final class ArtistResolver
      *     url:string,
      *     image:string,
      *     description:string,
+     *     sameAs:list<string>,
      *     schemaId:string
      * }
      */
@@ -110,6 +111,7 @@ return self::normalize_identity($artist);
      *     url:string,
      *     image:string,
      *     description:string,
+     *     sameAs:list<string>,
      *     schemaId:string
      * }
      */
@@ -160,6 +162,7 @@ return self::normalize_identity($artist);
      *     url:string,
      *     image:string,
      *     description:string,
+     *     sameAs:list<string>,
      *     schemaId:string
      * }
      */
@@ -379,6 +382,7 @@ private static function schema_id(
      *     url:string,
      *     image:string,
      *     description:string,
+     *     sameAs:list<string>,
      *     schemaId:string
      * }
      */
