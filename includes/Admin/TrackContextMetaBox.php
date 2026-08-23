@@ -137,7 +137,7 @@ final class TrackContextMetaBox
 
                             <?php
                             submit_button(
-                                __('Repair Relationship', 'slim-volume'),
+                                __('Fix release assignment', 'slim-volume'),
                                 'secondary',
                                 'submit',
                                 false
@@ -217,7 +217,7 @@ final class TrackContextMetaBox
 
                 <?php if ($route_preview) : ?>
                     <p class="sv-admin-track-context__label">
-                        <?php echo esc_html__('Route Preview', 'slim-volume'); ?>
+                        <?php echo esc_html__('Track URL preview', 'slim-volume'); ?>
                     </p>
 
                     <input
@@ -233,7 +233,7 @@ final class TrackContextMetaBox
                     <p class="sv-admin-track-context__label">
                         <?php
                         echo esc_html__(
-                            'Current Release Tracklist',
+                            'Track order on this release',
                             'slim-volume'
                         );
                         ?>

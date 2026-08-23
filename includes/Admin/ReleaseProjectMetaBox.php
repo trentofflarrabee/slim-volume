@@ -62,7 +62,7 @@ final class ReleaseProjectMetaBox
         ?>
         <p>
             <label for="sv_project_term_id">
-                <strong><?php esc_html_e('Primary artist or project', 'slim-volume'); ?></strong>
+                <strong><?php esc_html_e('Artist / Project for this release', 'slim-volume'); ?></strong>
             </label>
         </p>
 
@@ -76,7 +76,7 @@ final class ReleaseProjectMetaBox
                 echo esc_html(
                     sprintf(
                         /* translators: %s: default artist/project name. */
-                        __('Use default artist — %s', 'slim-volume'),
+                        __('Use fallback artist — %s', 'slim-volume'),
                         (string) ($default_artist['name'] ?? get_bloginfo('name'))
                     )
                 );
@@ -116,7 +116,10 @@ final class ReleaseProjectMetaBox
         </select>
 
         <p class="description">
-            <?php esc_html_e('Tracks inherit this release attribution automatically. Leave this on the default artist for a normal single-artist site.', 'slim-volume'); ?>
+            <?php esc_html_e(
+                'Tracks inherit this choice automatically. For a normal single-artist site, leave this set to the fallback artist.',
+                'slim-volume'
+            ); ?>
         </p>
 
         <?php if (! $terms) : ?>

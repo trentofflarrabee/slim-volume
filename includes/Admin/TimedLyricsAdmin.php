@@ -427,7 +427,7 @@ final class TimedLyricsAdmin
                                 <p class="sv-timed-lyrics-panel__eyebrow">
                                     <?php esc_html_e('Audio', 'slim-volume'); ?>
                                 </p>
-                                <h2><?php esc_html_e('Synchronization source', 'slim-volume'); ?></h2>
+                                <h2><?php esc_html_e('Audio for syncing', 'slim-volume'); ?></h2>
                             </div>
                         </div>
 
@@ -497,7 +497,7 @@ final class TimedLyricsAdmin
                     <section class="sv-timed-lyrics-panel sv-timed-lyrics-save-panel">
                         <div>
                             <p class="sv-timed-lyrics-panel__eyebrow">
-                                <?php esc_html_e('Save timing pass', 'slim-volume'); ?>
+                                <?php esc_html_e('Save synced lyrics', 'slim-volume'); ?>
                             </p>
                             <p class="sv-timed-lyrics-save-status" data-sv-save-status aria-live="polite">
                                 <?php esc_html_e('No unsaved changes.', 'slim-volume'); ?>
@@ -522,9 +522,9 @@ final class TimedLyricsAdmin
                     <div class="sv-timed-lyrics-lines-panel__header">
                         <div>
                             <p class="sv-timed-lyrics-panel__eyebrow">
-                                <?php esc_html_e('Canonical lyrics', 'slim-volume'); ?>
+                                <?php esc_html_e('Track lyrics', 'slim-volume'); ?>
                             </p>
-                            <h2><?php esc_html_e('Line map', 'slim-volume'); ?></h2>
+                            <h2><?php esc_html_e('Lyric lines', 'slim-volume'); ?></h2>
                         </div>
                         <span>
                             <?php

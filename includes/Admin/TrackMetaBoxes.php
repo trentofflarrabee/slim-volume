@@ -340,6 +340,14 @@ final class TrackMetaBoxes
 
     public static function render_links(\WP_Post $post): void
     {
+        ?>
+            <p class="description">
+                <?php esc_html_e(
+                    'Add track-specific destinations when you have them. If a track link is left blank, Slim Volume can use the matching release-level link for player and frontend buttons. Track-specific links also help identify the individual recording in music metadata.',
+                    'slim-volume'
+                ); ?>
+            </p>
+            <?php
         $fields = [
             'sv_spotify_url'     => ['_sv_spotify_url', __('Spotify URL', 'slim-volume')],
             'sv_apple_music_url' => ['_sv_apple_music_url', __('Apple Music URL', 'slim-volume')],
