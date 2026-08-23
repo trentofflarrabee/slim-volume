@@ -571,7 +571,7 @@ return array_merge(
 
                                 <?php self::render_checkbox_row(
                                     'ajax_navigation',
-                                    __('AJAX music navigation', 'slim-volume'),
+                                    __('Keep music playing between pages', 'slim-volume'),
                                     __('Keep audio playing while visitors move between the /music archive, release pages, and track pages.', 'slim-volume'),
                                     $settings,
                                     __('Requires the frontend player to be enabled.', 'slim-volume')
@@ -579,8 +579,11 @@ return array_merge(
 
                                 <?php self::render_checkbox_row(
                                     'persistence',
-                                    __('Persistent player state', 'slim-volume'),
-                                    __('Restore the queue, current track, drawer state, and playback position after refresh.', 'slim-volume'),
+                                    __('Remember player after refresh', 'slim-volume'),
+                                    __(
+                                        'Restore the queue, current track, expanded player state, and playback position after the page is refreshed.',
+                                        'slim-volume'
+                                    ),
                                     $settings
                                 ); ?>
                             </tbody>
@@ -640,9 +643,12 @@ return array_merge(
                     hidden
                 >
                     <div class="sv-settings-section">
-                        <h2><?php echo esc_html__('Catalog Mode', 'slim-volume'); ?></h2>
+                        <h2><?php echo esc_html__('Release Card Links', 'slim-volume'); ?></h2>
                         <p class="description">
-                            <?php echo esc_html__('Control where the clickable artwork and title on the /music release grid send visitors.', 'slim-volume'); ?>
+                            <?php echo esc_html__(
+                                'Choose what happens when a visitor clicks release artwork or a release title on the /music page.',
+                                'slim-volume'
+                            ); ?>
                         </p>
 
                         <table class="form-table" role="presentation">
@@ -652,10 +658,13 @@ return array_merge(
                                     __('Release card destination', 'slim-volume'),
                                     [
                                         'internal'                => __('Slim Volume release page', 'slim-volume'),
-                                        'external_when_available' => __('Primary External URL when available', 'slim-volume'),
+                                        'external_when_available' => __('External release link when available', 'slim-volume'),
                                     ],
                                     $settings,
-                                    __('External mode uses each release\'s Primary External URL and falls back to the internal release page when that field is empty.', 'slim-volume')
+                                    __(
+                                        'When an external release link is available, the release card opens that destination. Otherwise it opens the Slim Volume release page.',
+                                        'slim-volume'
+                                    )
                                 ); ?>
                             </tbody>
                         </table>

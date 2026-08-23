@@ -184,7 +184,7 @@ final class TrackMetaBoxes
 
         <p>
             <label for="sv_duration_seconds">
-                <strong><?php esc_html_e('Duration Seconds', 'slim-volume'); ?></strong>
+                <strong><?php esc_html_e('Duration in seconds', 'slim-volume'); ?></strong>
             </label>
             <br>
             <input
@@ -216,7 +216,7 @@ final class TrackMetaBoxes
         >
         
         <label for="sv_audio_attachment_id">
-                <strong><?php esc_html_e('Streaming Audio File', 'slim-volume'); ?></strong>
+                <strong><?php esc_html_e('Player audio file', 'slim-volume'); ?></strong>
             </label>
 
             <p class="description">
@@ -261,6 +261,14 @@ final class TrackMetaBoxes
             <label for="sv_audio_url">
                 <strong><?php esc_html_e('External Audio URL', 'slim-volume'); ?></strong>
             </label>
+
+            <p class="description">
+                <?php esc_html_e(
+                    'Use this only when the player audio is hosted outside WordPress. A WordPress audio file selected above takes priority.',
+                    'slim-volume'
+                ); ?>
+            </p>
+
             <br>
             <input
                 type="url"
@@ -326,10 +334,6 @@ final class TrackMetaBoxes
                 <?php echo $download_attachment_url ? esc_html($download_attachment_url) : esc_html__('No download file selected.', 'slim-volume'); ?>
             </p>
         </div>
-
-        <p class="description">
-            <?php esc_html_e('Audio Attachment ID is temporary. A media picker will come in a later pass.', 'slim-volume'); ?>
-        </p>
 
         <?php
     }

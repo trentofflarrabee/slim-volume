@@ -148,7 +148,7 @@ final class ReleaseMetaBoxes
         <div class="sv-release-primary-link-fields">
             <p>
                 <label for="sv_external_url">
-                    <strong><?php esc_html_e('Primary External Release URL', 'slim-volume'); ?></strong>
+                    <strong><?php esc_html_e('Primary external release link', 'slim-volume'); ?></strong>
                 </label>
                 <br>
                 <input
@@ -162,12 +162,15 @@ final class ReleaseMetaBoxes
             </p>
 
             <p class="description">
-                <?php esc_html_e('Optional. Use this for catalog-mode release cards, a primary frontend CTA, and release SEO sameAs data.', 'slim-volume'); ?>
-            </p>
+            <?php esc_html_e(
+                'Optional. Use this as the main external destination for this release, such as Bandcamp, Spotify, or a store page. Slim Volume can use it for release cards, the main external button, and music metadata.',
+                'slim-volume'
+            ); ?>     
+                   </p>
 
             <p>
                 <label for="sv_external_label">
-                    <strong><?php esc_html_e('Primary External Link Label', 'slim-volume'); ?></strong>
+                    <strong><?php esc_html_e('Button label', 'slim-volume'); ?></strong>
                 </label>
                 <br>
                 <input
