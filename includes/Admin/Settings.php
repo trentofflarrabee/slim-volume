@@ -752,12 +752,40 @@ return array_merge(
                         'full'   => __('Full Music Metadata', 'slim-volume'),
                     ],
                     $settings,
-                    __(
-                        'Off: use when another system already handles music-specific SEO. Music Schema Only: use when you already have a dedicated SEO plugin. Full Music Metadata: use when you do not have a dedicated SEO plugin managing your music pages.',
-                        'slim-volume'
-                    )
+__(
+    'Choose how much music SEO information Slim Volume should provide.',
+    'slim-volume'
+)
                 );
                 ?>
+                <tr>
+    <th></th>
+    <td>
+        <p class="description">
+            <strong><?php esc_html_e('Off:', 'slim-volume'); ?></strong>
+            <?php esc_html_e(
+                ' Use this when another system already handles music-specific SEO.',
+                'slim-volume'
+            ); ?>
+        </p>
+
+        <p class="description">
+            <strong><?php esc_html_e('Music Schema Only:', 'slim-volume'); ?></strong>
+            <?php esc_html_e(
+                ' Use this when you already have a dedicated SEO plugin.',
+                'slim-volume'
+            ); ?>
+        </p>
+
+        <p class="description">
+            <strong><?php esc_html_e('Full Music Metadata:', 'slim-volume'); ?></strong>
+            <?php esc_html_e(
+                ' Use this when you do not have a dedicated SEO plugin managing your music pages.',
+                'slim-volume'
+            ); ?>
+        </p>
+    </td>
+</tr>
             </tbody>
         </table>
 
