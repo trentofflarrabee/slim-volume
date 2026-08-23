@@ -2,7 +2,7 @@
 Tags: music, audio player, albums, lyrics, artists
 Requires at least: 6.0
 Tested up to: 7.1
-Stable tag: 0.3.1
+Stable tag: 0.4.0
 Requires PHP: 8.0
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -26,8 +26,7 @@ It provides:
 * Theme, player, and visualizer settings.
 * Theme template overrides.
 
-Version 0.3.1 is a beta release intended for controlled production use and early customer projects. Back up the WordPress site before installing an update.
-
+Version 0.4.0 is a beta release intended for controlled production use and early customer projects. Back up the WordPress site before installing an update.
 == Installation ==
 
 1. Upload the `slim-volume` folder to `/wp-content/plugins/`, or install the packaged plugin ZIP through the WordPress Plugins screen.
@@ -39,6 +38,14 @@ Version 0.3.1 is a beta release intended for controlled production use and early
 
 For clean music URLs such as `/music/`, open Settings > Permalinks and select a pretty permalink structure such as Post name (`/%postname%/`). The structure should not contain `/index.php/`. Save the permalink settings after making a change. On servers where URL rewriting is unavailable, WordPress may instead use URLs such as `/index.php/music/`.
 == Frequently Asked Questions ==
+
+= Should I use Slim Volume SEO with another SEO plugin? =
+
+Yes. If your site already uses a dedicated SEO plugin, open Music > Settings > SEO and choose Music Schema Only. Your SEO plugin can continue handling normal site SEO while Slim Volume adds music-specific structured data for artists, releases, and tracks.
+
+Choose Full Music Metadata when you do not have another SEO plugin managing your music pages. This mode also adds descriptions, social metadata, and music-aware page titles.
+
+Choose Off when another system already provides the music-specific structured data you need.
 
 = Does uninstalling Slim Volume delete releases and tracks? =
 
@@ -75,6 +82,20 @@ Keep the template's relative path beneath that directory.
 Yes. Tracks with plain lyrics and playable audio can be synchronized line by line through the Lyrics Sync administration workspace.
 
 == Changelog ==
+
+= 0.4.0 =
+* Added configurable music SEO modes: Off, Music Schema Only, and Full Music Metadata.
+* Added music-specific structured data for artists and projects, releases, and tracks using linked MusicGroup, Person, MusicAlbum, and MusicRecording entities.
+* Added stable music entity identifiers and improved artist/project identity resolution.
+* Added official artist/project profile URLs for structured-data identity matching.
+* Added music-aware page titles, descriptions, and social metadata in Full Music Metadata mode.
+* Improved compatibility with dedicated SEO plugins by keeping Music Schema Only focused on music-specific structured data.
+* Improved archive structured data so it follows the releases currently shown by archive search, filtering, sorting, and pagination.
+* Improved track structured data so track identity links represent the individual recording rather than inherited release destinations.
+* Added fallback artist/project settings for single-artist catalogs and unassigned releases.
+* Improved Artists & Projects administration and simplified wording throughout music settings, release editors, track editors, timed lyrics, and track context tools.
+* Improved music-navigation and player-setting descriptions for clearer non-technical administration.
+* Migrated the legacy SEO enabled setting to the new SEO ownership modes.
 
 = 0.3.1 =
 * Added meta description tag to /music/{release} pages.

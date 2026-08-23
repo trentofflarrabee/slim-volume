@@ -6,7 +6,7 @@ It provides release archives, single release pages, track deep-dive pages, admin
 
 ## Current Status
 
-`v0.3.1-beta`
+`v0.4.0-beta`
 
 Slim Volume is ready for controlled production use and early customer projects. APIs, templates, settings, and markup may still change before the first stable release.
 
@@ -18,6 +18,10 @@ Slim Volume is ready for controlled production use and early customer projects. 
 - Release artwork via featured images
 - Track artwork with release artwork fallback
 - Artist and project attribution
+- Music-specific structured data for artists, releases, and tracks
+- Configurable SEO ownership modes: Off, Music Schema Only, and Full Music Metadata
+- Fallback artist / project identity for single-artist catalogs
+- Official artist / project profile URLs for music identity matching
 - Hosted audio, external-link, and catalog-only workflows
 - Plain lyrics and synchronized timed lyrics
 - Release and track editorial content
@@ -102,8 +106,11 @@ your-theme/slim-volume/partials/player-shell.php
 Slim Volume includes settings for:
 
 - Frontend audio player / catalog-only mode
-- AJAX music navigation
-- Player persistence
+- Keep music playing between music pages
+- Remember player state after refresh
+- Music SEO ownership mode
+- Fallback artist / project details
+- Music catalog description and fallback artwork
 - Visualizer enable/disable
 - Visualizer mode
 - Debug mode
@@ -116,6 +123,18 @@ Slim Volume includes settings for:
 - Editorial content line height
 - Editorial content link color
 - Border radius values
+
+## Music SEO
+
+Slim Volume owns music-specific semantics rather than the site's general SEO system.
+
+Three SEO modes are available under **Music → Settings → SEO**:
+
+- **Off** — Slim Volume does not output music SEO data.
+- **Music Schema Only** — recommended when the site already uses a dedicated SEO plugin. Slim Volume adds music-specific structured data for artists, releases, and tracks while the SEO plugin continues handling normal site SEO.
+- **Full Music Metadata** — intended for sites without another SEO plugin managing music pages. Slim Volume adds music structured data plus descriptions, social metadata, and music-aware page titles.
+
+Slim Volume does not replace WordPress or a general SEO plugin for canonical URLs, robots directives, XML sitemaps, redirects, or other site-wide SEO responsibilities.
 
 ## Known Future Work
 
@@ -146,4 +165,4 @@ JS global: window.SVPlayer
 
 Current beta release:
 
-`v0.3.1`
+`v0.4.0`
