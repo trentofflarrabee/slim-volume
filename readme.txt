@@ -2,7 +2,7 @@
 Tags: music, audio player, albums, lyrics, artists
 Requires at least: 6.0
 Tested up to: 7.1
-Stable tag: 0.4.0
+Stable tag: 0.4.1
 Requires PHP: 8.0
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -82,6 +82,9 @@ Keep the template's relative path beneath that directory.
 Yes. Tracks with plain lyrics and playable audio can be synchronized line by line through the Lyrics Sync administration workspace.
 
 == Changelog ==
+
+= 0.4.1 =
+* Fixed WordPress Plugin Check escaping compliance for music JSON-LD output.
 
 = 0.4.0 =
 * Added configurable music SEO modes: Off, Music Schema Only, and Full Music Metadata.

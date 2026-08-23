@@ -6,7 +6,7 @@ It provides release archives, single release pages, track deep-dive pages, admin
 
 ## Current Status
 
-`v0.4.0-beta`
+`v0.4.1-beta`
 
 Slim Volume is ready for controlled production use and early customer projects. APIs, templates, settings, and markup may still change before the first stable release.
 
@@ -165,4 +165,4 @@ JS global: window.SVPlayer
 
 Current beta release:
 
-`v0.4.0`
+`v0.4.1`
