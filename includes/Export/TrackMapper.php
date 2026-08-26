@@ -13,8 +13,8 @@ if (! defined('ABSPATH')) {
 /**
  * Maps Slim Volume track source data into the portable v1 track shape.
  *
- * Timed-lyrics projection is intentionally deferred to the dedicated
- * TimedLyricsMapper introduced in the next implementation slice.
+ * Timed lyrics are projected from the stored authoring document by the
+ * dedicated TimedLyricsMapper; no authoring reconciliation occurs here.
  */
 final class TrackMapper
 {
@@ -23,19 +23,22 @@ final class TrackMapper
     private WarningCollector $warnings;
     private MediaReferenceBuilder $media;
     private EditorialLifecycle $lifecycle;
+    private TimedLyricsMapper $timed_lyrics;
 
     public function __construct(
         SourceRepository $source,
         ReferenceIndex $refs,
         WarningCollector $warnings,
         MediaReferenceBuilder $media,
-        EditorialLifecycle $lifecycle
+        EditorialLifecycle $lifecycle,
+        TimedLyricsMapper $timed_lyrics
     ) {
         $this->source = $source;
         $this->refs = $refs;
         $this->warnings = $warnings;
         $this->media = $media;
         $this->lifecycle = $lifecycle;
+        $this->timed_lyrics = $timed_lyrics;
     }
 
     /**
@@ -120,7 +123,10 @@ final class TrackMapper
                 'purchase' => $source['purchase'],
             ],
             'lyrics' => $source['lyrics'],
-            'timedLyrics' => new \stdClass(),
+            'timedLyrics' => $this->timed_lyrics->map(
+                $post_id,
+                $ref
+            ),
             'credits' => $source['credits'],
         ];
     }

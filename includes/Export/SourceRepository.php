@@ -7,6 +7,7 @@ namespace SlimVolume\Export;
 use SlimVolume\Admin\Settings;
 use SlimVolume\Artists\ProjectTaxonomy;
 use SlimVolume\PostTypes;
+use SlimVolume\TimedLyrics;
 
 if (! defined('ABSPATH')) {
     exit;
@@ -608,6 +609,27 @@ final class SourceRepository
             'lyrics' => self::string_value($lyrics['value']),
             'credits' => self::string_value($credits['value']),
         ];
+    }
+
+    /**
+     * Return the raw stored timed-lyrics meta value without applying the
+     * TimedLyrics authoring reconciler or registered metadata defaults.
+     *
+     * @return array{exists:bool,value:mixed}
+     */
+    public function get_timed_lyrics_source(int $post_id): array
+    {
+        if ($post_id <= 0) {
+            return [
+                'exists' => false,
+                'value' => '',
+            ];
+        }
+
+        return $this->get_raw_post_meta(
+            $post_id,
+            TimedLyrics::META_KEY
+        );
     }
 
     /**
