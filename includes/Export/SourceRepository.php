@@ -234,9 +234,9 @@ final class SourceRepository
     /**
      * Return the explicit/core stored source fields for one release.
      *
-     * Runtime fallback values are intentionally absent. The legacy release
-     * genre source remains unverified, so the v1 core field is currently
-     * supplied with its neutral value until that source audit is completed.
+     * Runtime fallback values are intentionally absent. The historical
+     * Slim Volume-owned _sv_genre field is preserved when present even though
+     * the current release admin UI does not expose it.
      *
      * @return array{
      *   postId:int,
@@ -317,6 +317,10 @@ final class SourceRepository
             $post_id,
             '_sv_catalog_number'
         );
+        $genre = $this->get_raw_post_meta(
+            $post_id,
+            '_sv_genre'
+        );
         $featured = $this->get_raw_post_meta(
             $post_id,
             '_sv_featured_release'
@@ -371,7 +375,7 @@ final class SourceRepository
             'catalogNumber' => self::string_value(
                 $catalog_number['value']
             ),
-            'genre' => '',
+            'genre' => self::string_value($genre['value']),
             'featuredRaw' => $featured['value'],
             'artworkId' => absint($artwork_id['value']),
             'credits' => self::string_value($credits['value']),
@@ -435,8 +439,8 @@ final class SourceRepository
      * Return the explicit/core stored source fields for one track.
      *
      * Runtime fallback values are intentionally absent. The historical
-     * track-level external destination remains unverified, so links.external
-     * is supplied with its neutral value until that source audit is complete.
+     * Slim Volume-owned _sv_external_url track value is preserved when
+     * present even though the current track admin UI does not expose it.
      *
      * @return array{
      *   postId:int,
@@ -538,6 +542,10 @@ final class SourceRepository
             $post_id,
             '_sv_download_url'
         );
+        $external_url = $this->get_raw_post_meta(
+            $post_id,
+            '_sv_external_url'
+        );
         $spotify = $this->get_raw_post_meta(
             $post_id,
             '_sv_spotify_url'
@@ -600,7 +608,9 @@ final class SourceRepository
             'downloadExternalUrl' => self::string_value(
                 $download_url['value']
             ),
-            'externalUrl' => '',
+            'externalUrl' => self::string_value(
+                $external_url['value']
+            ),
             'spotify' => self::string_value($spotify['value']),
             'appleMusic' => self::string_value($apple_music['value']),
             'youtube' => self::string_value($youtube['value']),
