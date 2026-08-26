@@ -51,7 +51,7 @@ final class JsonWriter
                 $json
             );
 
-            $size = filesize($path);
+            $size = @filesize($path);
 
             if (! is_int($size) || $size !== strlen($json)) {
                 throw new ExportException(
@@ -65,7 +65,7 @@ final class JsonWriter
             );
         } catch (\Throwable $exception) {
             if (is_file($path)) {
-                unlink($path);
+                @unlink($path);
             }
 
             if ($exception instanceof ExportException) {
@@ -105,7 +105,7 @@ final class JsonWriter
 
         $this->assert_non_public_directory($temp_dir);
 
-        $path = tempnam(
+        $path = @tempnam(
             $temp_dir,
             'slim-volume-discography-'
         );
@@ -118,9 +118,12 @@ final class JsonWriter
 
         /*
          * tempnam() creates the file atomically. Tighten permissions where the
-         * platform supports POSIX-style modes.
+         * platform supports POSIX-style modes. Failure to change permissions
+         * is not itself fatal because tempnam() already uses the host's normal
+         * temporary-file permissions and the directory has passed the private
+         * location checks above.
          */
-        chmod($path, 0600);
+        @chmod($path, 0600);
 
         return $path;
     }
@@ -183,7 +186,7 @@ final class JsonWriter
         string $path,
         string $contents
     ): void {
-        $handle = fopen($path, 'wb');
+        $handle = @fopen($path, 'wb');
 
         if ($handle === false) {
             throw new ExportException(
@@ -196,7 +199,7 @@ final class JsonWriter
 
         try {
             while ($offset < $length) {
-                $written = fwrite(
+                $written = @fwrite(
                     $handle,
                     substr($contents, $offset)
                 );
@@ -210,7 +213,7 @@ final class JsonWriter
                 $offset += $written;
             }
 
-            if (! fflush($handle)) {
+            if (! @fflush($handle)) {
                 throw new ExportException(
                     'Slim Volume could not finalize the discography export artifact.'
                 );

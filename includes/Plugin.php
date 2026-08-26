@@ -38,6 +38,7 @@ require_once SLIM_VOLUME_PATH . 'includes/Admin/TrackMetaBoxes.php';
 require_once SLIM_VOLUME_PATH . 'includes/Admin/AdminColumns.php';
 require_once SLIM_VOLUME_PATH . 'includes/Admin/ReleaseTrackManager.php';
 require_once SLIM_VOLUME_PATH . 'includes/Admin/Settings.php';
+require_once SLIM_VOLUME_PATH . 'includes/Admin/ToolsPage.php';
 require_once SLIM_VOLUME_PATH . 'includes/Artists/ProjectTaxonomy.php';
 require_once SLIM_VOLUME_PATH . 'includes/Artists/ArtistResolver.php';
 require_once SLIM_VOLUME_PATH . 'includes/Admin/ReleaseProjectMetaBox.php';
@@ -115,6 +116,7 @@ final class Plugin
         );
 
         Admin\Settings::init();
+        Admin\ToolsPage::register();
 
         add_filter(
             'plugin_action_links_' . plugin_basename(SLIM_VOLUME_FILE),

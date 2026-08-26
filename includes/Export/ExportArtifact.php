@@ -34,6 +34,11 @@ final class ExportArtifact
         $this->size = $size;
     }
 
+    public function __destruct()
+    {
+        $this->delete();
+    }
+
     public function path(): string
     {
         return $this->path;
@@ -65,7 +70,7 @@ final class ExportArtifact
             );
         }
 
-        $handle = fopen($this->path, 'rb');
+        $handle = @fopen($this->path, 'rb');
 
         if ($handle === false) {
             throw new ExportException(
@@ -75,7 +80,7 @@ final class ExportArtifact
 
         try {
             while (! feof($handle)) {
-                $chunk = fread($handle, 1024 * 1024);
+                $chunk = @fread($handle, 1024 * 1024);
 
                 if ($chunk === false) {
                     throw new ExportException(
@@ -101,7 +106,9 @@ final class ExportArtifact
         }
 
         if (is_file($this->path)) {
-            unlink($this->path);
+            if (! @unlink($this->path)) {
+                return;
+            }
         }
 
         $this->deleted = true;

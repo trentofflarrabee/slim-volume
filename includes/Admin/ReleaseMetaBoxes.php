@@ -140,10 +140,6 @@ final class ReleaseMetaBoxes
         $external_label   = (string) get_post_meta($post->ID, '_sv_external_label', true);
         $external_new_tab = (bool) get_post_meta($post->ID, '_sv_external_new_tab', true);
 
-        if ($external_label === '') {
-            $external_label = __('Listen', 'slim-volume');
-        }
-
         ?>
         <div class="sv-release-primary-link-fields">
             <p>
