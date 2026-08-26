@@ -10,9 +10,6 @@ if (! defined('ABSPATH')) {
 
 /**
  * Coordinates creation of a Slim Volume portable discography snapshot.
- *
- * Mapping and serialization are added in later implementation stages. This
- * class establishes the format identity and export-local reference inventory.
  */
 final class DiscographyExporter
 {
@@ -21,13 +18,16 @@ final class DiscographyExporter
 
     private SourceRepository $source;
     private WarningCollector $warnings;
+    private JsonWriter $writer;
 
     public function __construct(
         ?SourceRepository $source = null,
-        ?WarningCollector $warnings = null
+        ?WarningCollector $warnings = null,
+        ?JsonWriter $writer = null
     ) {
         $this->source = $source ?? new SourceRepository();
         $this->warnings = $warnings ?? new WarningCollector();
+        $this->writer = $writer ?? new JsonWriter();
     }
 
     public function build_reference_index(): ReferenceIndex
@@ -39,8 +39,119 @@ final class DiscographyExporter
         );
     }
 
+    /**
+     * Build the complete portable v1 document in memory.
+     *
+     * @return array<string,mixed>
+     */
+    public function build_document(): array
+    {
+        $refs = $this->build_reference_index();
+
+        $media = new MediaReferenceBuilder(
+            $this->source,
+            $this->warnings
+        );
+
+        $lifecycle = new EditorialLifecycle(
+            $this->warnings
+        );
+
+        $timed_lyrics = new TimedLyricsMapper(
+            $this->source,
+            $this->warnings
+        );
+
+        $catalog_mapper = new CatalogMapper(
+            $this->source,
+            $media
+        );
+
+        $artist_mapper = new ArtistMapper(
+            $this->source,
+            $refs,
+            $this->warnings,
+            $media
+        );
+
+        $release_mapper = new ReleaseMapper(
+            $this->source,
+            $refs,
+            $this->warnings,
+            $media,
+            $lifecycle
+        );
+
+        $track_mapper = new TrackMapper(
+            $this->source,
+            $refs,
+            $this->warnings,
+            $media,
+            $lifecycle,
+            $timed_lyrics
+        );
+
+        /*
+         * Mapping must complete before warnings are read, because relationship,
+         * lifecycle, media, and timed-lyrics warnings are discovered while
+         * portable objects are constructed.
+         */
+        $catalog = $catalog_mapper->map();
+        $artists = $artist_mapper->map_all();
+        $releases = $release_mapper->map_all();
+        $tracks = $track_mapper->map_all();
+
+        return [
+            'schema' => [
+                'format' => self::FORMAT,
+                'formatVersion' => self::FORMAT_VERSION,
+            ],
+            'generatedBy' => [
+                'plugin' => 'slim-volume',
+                'pluginVersion' => defined('SLIM_VOLUME_VERSION')
+                    ? (string) SLIM_VOLUME_VERSION
+                    : '',
+            ],
+            'exportedAt' => gmdate('Y-m-d\TH:i:s\Z'),
+            'source' => [
+                'homeUrl' => self::source_home_url(),
+            ],
+            'counts' => [
+                'artists' => $refs->artist_count(),
+                'releases' => $refs->release_count(),
+                'tracks' => $refs->track_count(),
+            ],
+            'warnings' => $this->warnings->all(),
+            'catalog' => $catalog,
+            'artists' => $artists,
+            'releases' => $releases,
+            'tracks' => $tracks,
+        ];
+    }
+
+    /**
+     * Generate the complete JSON artifact before any response is started.
+     */
+    public function generate_artifact(): ExportArtifact
+    {
+        return $this->writer->write(
+            $this->build_document()
+        );
+    }
+
     public function warnings(): WarningCollector
     {
         return $this->warnings;
+    }
+
+    private static function source_home_url(): string
+    {
+        $home_url = get_option('home', '');
+
+        if (! is_string($home_url) || $home_url === '') {
+            return '';
+        }
+
+        return trailingslashit($home_url);
     }
 }

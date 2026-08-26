@@ -24,6 +24,8 @@ require_once SLIM_VOLUME_PATH . 'includes/Export/ArtistMapper.php';
 require_once SLIM_VOLUME_PATH . 'includes/Export/ReleaseMapper.php';
 require_once SLIM_VOLUME_PATH . 'includes/Export/TimedLyricsMapper.php';
 require_once SLIM_VOLUME_PATH . 'includes/Export/TrackMapper.php';
+require_once SLIM_VOLUME_PATH . 'includes/Export/ExportArtifact.php';
+require_once SLIM_VOLUME_PATH . 'includes/Export/JsonWriter.php';
 require_once SLIM_VOLUME_PATH . 'includes/Export/DiscographyExporter.php';
 require_once SLIM_VOLUME_PATH . 'includes/Rewrite.php';
 require_once SLIM_VOLUME_PATH . 'includes/Assets.php';
