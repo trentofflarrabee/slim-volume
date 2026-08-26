@@ -231,6 +231,206 @@ final class SourceRepository
     }
 
     /**
+     * Return the explicit/core stored source fields for one release.
+     *
+     * Runtime fallback values are intentionally absent. The legacy release
+     * genre source remains unverified, so the v1 core field is currently
+     * supplied with its neutral value until that source audit is completed.
+     *
+     * @return array{
+     *   postId:int,
+     *   title:string,
+     *   slug:string,
+     *   status:string,
+     *   content:string,
+     *   excerpt:string,
+     *   releaseDate:string,
+     *   releaseType:string,
+     *   label:string,
+     *   catalogNumber:string,
+     *   genre:string,
+     *   featuredRaw:mixed,
+     *   artworkId:int,
+     *   credits:string,
+     *   primaryUrl:string,
+     *   primaryLabel:string,
+     *   spotify:string,
+     *   appleMusic:string,
+     *   youtube:string,
+     *   bandcamp:string,
+     *   purchase:string,
+     *   artistTermIds:array<int,int>
+     * }
+     */
+    public function get_release_source(int $post_id): array
+    {
+        if ($post_id <= 0) {
+            throw new ExportException(
+                'Slim Volume received an invalid release source ID.'
+            );
+        }
+
+        $query = $this->db->prepare(
+            "SELECT
+                ID,
+                post_title,
+                post_name,
+                post_status,
+                post_content,
+                post_excerpt
+            FROM {$this->db->posts}
+            WHERE ID = %d
+              AND post_type = %s
+            LIMIT 1",
+            $post_id,
+            PostTypes::RELEASE
+        );
+
+        if (! is_string($query) || $query === '') {
+            throw new ExportException(
+                'Slim Volume could not prepare a release export source query.'
+            );
+        }
+
+        $row = $this->db->get_row($query, ARRAY_A);
+
+        if (! is_array($row)) {
+            throw new ExportException(
+                'An inventoried Slim Volume release could not be read for export.'
+            );
+        }
+
+        $release_date = $this->get_raw_post_meta(
+            $post_id,
+            '_sv_release_date'
+        );
+        $release_type = $this->get_raw_post_meta(
+            $post_id,
+            '_sv_release_type'
+        );
+        $label = $this->get_raw_post_meta(
+            $post_id,
+            '_sv_label'
+        );
+        $catalog_number = $this->get_raw_post_meta(
+            $post_id,
+            '_sv_catalog_number'
+        );
+        $featured = $this->get_raw_post_meta(
+            $post_id,
+            '_sv_featured_release'
+        );
+        $artwork_id = $this->get_raw_post_meta(
+            $post_id,
+            '_thumbnail_id'
+        );
+        $credits = $this->get_raw_post_meta(
+            $post_id,
+            '_sv_release_credits'
+        );
+        $primary_url = $this->get_raw_post_meta(
+            $post_id,
+            '_sv_external_url'
+        );
+        $primary_label = $this->get_raw_post_meta(
+            $post_id,
+            '_sv_external_label'
+        );
+        $spotify = $this->get_raw_post_meta(
+            $post_id,
+            '_sv_spotify_url'
+        );
+        $apple_music = $this->get_raw_post_meta(
+            $post_id,
+            '_sv_apple_music_url'
+        );
+        $youtube = $this->get_raw_post_meta(
+            $post_id,
+            '_sv_youtube_url'
+        );
+        $bandcamp = $this->get_raw_post_meta(
+            $post_id,
+            '_sv_bandcamp_url'
+        );
+        $purchase = $this->get_raw_post_meta(
+            $post_id,
+            '_sv_purchase_url'
+        );
+
+        return [
+            'postId' => absint($row['ID'] ?? 0),
+            'title' => self::string_value($row['post_title'] ?? ''),
+            'slug' => self::string_value($row['post_name'] ?? ''),
+            'status' => self::string_value($row['post_status'] ?? ''),
+            'content' => self::string_value($row['post_content'] ?? ''),
+            'excerpt' => self::string_value($row['post_excerpt'] ?? ''),
+            'releaseDate' => self::string_value($release_date['value']),
+            'releaseType' => self::string_value($release_type['value']),
+            'label' => self::string_value($label['value']),
+            'catalogNumber' => self::string_value(
+                $catalog_number['value']
+            ),
+            'genre' => '',
+            'featuredRaw' => $featured['value'],
+            'artworkId' => absint($artwork_id['value']),
+            'credits' => self::string_value($credits['value']),
+            'primaryUrl' => self::string_value($primary_url['value']),
+            'primaryLabel' => self::string_value(
+                $primary_label['value']
+            ),
+            'spotify' => self::string_value($spotify['value']),
+            'appleMusic' => self::string_value($apple_music['value']),
+            'youtube' => self::string_value($youtube['value']),
+            'bandcamp' => self::string_value($bandcamp['value']),
+            'purchase' => self::string_value($purchase['value']),
+            'artistTermIds' => $this->get_release_artist_term_ids(
+                $post_id
+            ),
+        ];
+    }
+
+    /**
+     * Return every stored Artist / Project taxonomy assignment for a release,
+     * ordered according to Slim Volume's canonical lowest-term-ID rule.
+     *
+     * @return array<int,int>
+     */
+    public function get_release_artist_term_ids(int $post_id): array
+    {
+        if ($post_id <= 0) {
+            return [];
+        }
+
+        $query = $this->db->prepare(
+            "SELECT tt.term_id
+            FROM {$this->db->term_relationships} AS tr
+            INNER JOIN {$this->db->term_taxonomy} AS tt
+                ON tt.term_taxonomy_id = tr.term_taxonomy_id
+            WHERE tr.object_id = %d
+              AND tt.taxonomy = %s
+            ORDER BY tt.term_id ASC",
+            $post_id,
+            ProjectTaxonomy::TAXONOMY
+        );
+
+        if (! is_string($query) || $query === '') {
+            throw new ExportException(
+                'Slim Volume could not prepare a release Artist / Project relationship query.'
+            );
+        }
+
+        $term_ids = $this->db->get_col($query);
+
+        if (! is_array($term_ids)) {
+            throw new ExportException(
+                'Slim Volume could not read a release Artist / Project relationship for export.'
+            );
+        }
+
+        return self::normalize_ids($term_ids);
+    }
+
+    /**
      * Return stored descriptive source data for a WordPress attachment.
      *
      * @return array{
