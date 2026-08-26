@@ -20,6 +20,14 @@ final class JsonWriter
         | JSON_UNESCAPED_SLASHES
         | JSON_UNESCAPED_UNICODE;
 
+    private \WP_Filesystem_Direct $filesystem;
+
+    public function __construct(
+        ?\WP_Filesystem_Direct $filesystem = null
+    ) {
+        $this->filesystem = $filesystem ?? self::create_filesystem();
+    }
+
     /**
      * @param array<string,mixed> $document
      */
@@ -32,8 +40,7 @@ final class JsonWriter
 
         if (! is_string($json)) {
             throw new ExportException(
-                'Slim Volume could not encode the discography export as valid JSON: '
-                . json_last_error_msg()
+                'Slim Volume could not encode the discography export as valid JSON.'
             );
         }
 
@@ -46,14 +53,24 @@ final class JsonWriter
         $path = $this->create_private_temp_file();
 
         try {
-            $this->write_complete_file(
-                $path,
-                $json
-            );
+            if (
+                ! $this->filesystem->put_contents(
+                    $path,
+                    $json,
+                    0600
+                )
+            ) {
+                throw new ExportException(
+                    'Slim Volume could not complete the discography export artifact.'
+                );
+            }
 
-            $size = @filesize($path);
+            $size = $this->filesystem->size($path);
 
-            if (! is_int($size) || $size !== strlen($json)) {
+            if (
+                ! is_int($size)
+                || $size !== strlen($json)
+            ) {
                 throw new ExportException(
                     'Slim Volume could not verify the completed export artifact.'
                 );
@@ -61,11 +78,12 @@ final class JsonWriter
 
             return new ExportArtifact(
                 $path,
-                $size
+                $size,
+                $this->filesystem
             );
         } catch (\Throwable $exception) {
-            if (is_file($path)) {
-                @unlink($path);
+            if ($this->filesystem->exists($path)) {
+                $this->filesystem->delete($path);
             }
 
             if ($exception instanceof ExportException) {
@@ -73,57 +91,66 @@ final class JsonWriter
             }
 
             throw new ExportException(
-                'Slim Volume could not create the private export artifact.',
-                0,
-                $exception
+                'Slim Volume could not create the private export artifact.'
             );
         }
     }
 
     private function create_private_temp_file(): string
     {
-        $temp_dir = sys_get_temp_dir();
+        require_once ABSPATH . 'wp-admin/includes/file.php';
+
+        $temp_dir = get_temp_dir();
 
         if (
             ! is_string($temp_dir)
             || trim($temp_dir) === ''
-            || ! is_dir($temp_dir)
-            || ! is_writable($temp_dir)
+            || ! $this->filesystem->is_dir($temp_dir)
+            || ! $this->filesystem->is_writable($temp_dir)
         ) {
             throw new ExportException(
-                'A writable private system temporary directory is unavailable for discography export.'
+                'A writable private temporary directory is unavailable for discography export.'
             );
         }
 
-        $temp_dir = realpath($temp_dir);
+        $resolved_temp_dir = realpath($temp_dir);
 
-        if (! is_string($temp_dir) || $temp_dir === '') {
+        if (
+            ! is_string($resolved_temp_dir)
+            || $resolved_temp_dir === ''
+        ) {
             throw new ExportException(
-                'Slim Volume could not resolve the private system temporary directory.'
+                'Slim Volume could not resolve the private temporary directory.'
             );
         }
 
-        $this->assert_non_public_directory($temp_dir);
-
-        $path = @tempnam(
-            $temp_dir,
-            'slim-volume-discography-'
+        $this->assert_non_public_directory(
+            $resolved_temp_dir
         );
 
-        if (! is_string($path) || $path === '') {
+        $path = wp_tempnam(
+            'slim-volume-discography.json',
+            trailingslashit($resolved_temp_dir)
+        );
+
+        if (
+            ! is_string($path)
+            || $path === ''
+        ) {
             throw new ExportException(
                 'Slim Volume could not allocate private temporary storage for the discography export.'
             );
         }
 
         /*
-         * tempnam() creates the file atomically. Tighten permissions where the
-         * platform supports POSIX-style modes. Failure to change permissions
-         * is not itself fatal because tempnam() already uses the host's normal
-         * temporary-file permissions and the directory has passed the private
-         * location checks above.
+         * wp_tempnam() creates the file before we write it. Tighten its
+         * permissions where supported; put_contents() below also requests
+         * mode 0600 for the completed artifact.
          */
-        @chmod($path, 0600);
+        $this->filesystem->chmod(
+            $path,
+            0600
+        );
 
         return $path;
     }
@@ -182,44 +209,13 @@ final class JsonWriter
         );
     }
 
-    private function write_complete_file(
-        string $path,
-        string $contents
-    ): void {
-        $handle = @fopen($path, 'wb');
+    private static function create_filesystem(): \WP_Filesystem_Direct
+    {
+        require_once ABSPATH
+            . 'wp-admin/includes/class-wp-filesystem-base.php';
+        require_once ABSPATH
+            . 'wp-admin/includes/class-wp-filesystem-direct.php';
 
-        if ($handle === false) {
-            throw new ExportException(
-                'Slim Volume could not open private temporary storage for the discography export.'
-            );
-        }
-
-        $length = strlen($contents);
-        $offset = 0;
-
-        try {
-            while ($offset < $length) {
-                $written = @fwrite(
-                    $handle,
-                    substr($contents, $offset)
-                );
-
-                if ($written === false || $written === 0) {
-                    throw new ExportException(
-                        'Slim Volume could not complete the discography export artifact.'
-                    );
-                }
-
-                $offset += $written;
-            }
-
-            if (! @fflush($handle)) {
-                throw new ExportException(
-                    'Slim Volume could not finalize the discography export artifact.'
-                );
-            }
-        } finally {
-            fclose($handle);
-        }
+        return new \WP_Filesystem_Direct(null);
     }
 }
