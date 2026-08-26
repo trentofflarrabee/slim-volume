@@ -2,7 +2,7 @@
 Tags: music, audio player, albums, lyrics, artists
 Requires at least: 6.0
 Tested up to: 7.1
-Stable tag: 0.4.1
+Stable tag: 0.5.0
 Requires PHP: 8.0
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -18,6 +18,7 @@ It provides:
 * A public music archive at `/music/`.
 * Nested track URLs at `/music/{release}/{track}/`.
 * Release and track administration workflows.
+* Portable JSON discography export for backup and migration.
 * A persistent frontend audio player and queue.
 * Hosted-audio, external-link, and catalog-only workflows.
 * Plain and synchronized timed lyrics.
@@ -26,7 +27,8 @@ It provides:
 * Theme, player, and visualizer settings.
 * Theme template overrides.
 
-Version 0.4.0 is a beta release intended for controlled production use and early customer projects. Back up the WordPress site before installing an update.
+Version 0.5.0 is a beta release intended for controlled production use and early customer projects. Back up the WordPress site before installing an update.
+
 == Installation ==
 
 1. Upload the `slim-volume` folder to `/wp-content/plugins/`, or install the packaged plugin ZIP through the WordPress Plugins screen.
@@ -77,11 +79,30 @@ Yes. Copy the desired plugin template into:
 
 Keep the template's relative path beneath that directory.
 
+= How do I export my music catalog? =
+Open Music > Tools in WordPress administration and choose Export Discography Data.
+
+The JSON export includes artists/projects, releases, tracks, relationships, publication state, editorial content, lyrics, timed lyrics, credits, entered destination links, and descriptive media references. Audio and artwork files themselves are not bundled.
+
+Export files may contain unpublished or private catalog information, so keep downloaded export files private.
+
 = Does Slim Volume support synchronized lyrics? =
 
 Yes. Tracks with plain lyrics and playable audio can be synchronized line by line through the Lyrics Sync administration workspace.
 
 == Changelog ==
+
+= 0.5.0 =
+
+* Added Music > Tools with portable JSON discography export.
+* Added export of artists/projects, releases, tracks, catalog identity, relationships, editorial content, publication state, lyrics, timed lyrics, credits, destination links, downloads, and descriptive media references.
+* Added export-local portable relationship references without exposing WordPress post, term, or attachment IDs as catalog identity.
+* Added preservation of drafts, private content, pending content, scheduled content, and unknown custom workflow statuses.
+* Added export warnings for detectable relationship, media, lifecycle, artist-type, legacy-value, and timed-lyrics integrity problems.
+* Preserved stale and incomplete timed-lyrics authoring work without regenerating it during export.
+* Preserved legacy Slim Volume release genre and track external-destination data when present.
+* Added private temporary export generation so a successful download does not begin until the complete JSON document has been generated.
+* Fixed release button-label administration so a blank stored label remains blank instead of being persisted as the display fallback “Listen”.
 
 = 0.4.1 =
 * Fixed WordPress Plugin Check escaping compliance for music JSON-LD output.

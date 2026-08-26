@@ -6,7 +6,7 @@ It provides release archives, single release pages, track deep-dive pages, admin
 
 ## Current Status
 
-`v0.4.1-beta`
+`v0.5.0-beta`
 
 Slim Volume is ready for controlled production use and early customer projects. APIs, templates, settings, and markup may still change before the first stable release.
 
@@ -25,6 +25,7 @@ Slim Volume is ready for controlled production use and early customer projects. 
 - Hosted audio, external-link, and catalog-only workflows
 - Plain lyrics and synchronized timed lyrics
 - Release and track editorial content
+- Portable JSON discography export for backup, migration, and catalog preservation
 - Configurable editorial font family, size, line height, and link color
 - Release and track frontend templates
 - Persistent frontend audio player
@@ -124,6 +125,41 @@ Slim Volume includes settings for:
 - Editorial content link color
 - Border radius values
 
+## Discography Export
+
+Administrators can export the current Slim Volume music catalog through **Music → Tools → Export Discography Data**.
+
+The JSON export preserves portable music-domain information including:
+
+* Catalog fallback artist/project identity
+* Artists and projects
+* Releases and tracks
+* Release and track relationships
+* Publication and scheduling state
+* Release dates and track ordering
+* Editorial content and excerpts
+* Lyrics and timed lyrics
+* Credits
+* Streaming, purchase, external, audio, and download destinations
+* Descriptive artwork, audio, and download media references
+
+Audio, artwork, and downloadable files themselves are not bundled into the export. Persistent descriptive references are preserved where available.
+
+The export intentionally preserves explicit or canonical stored catalog data rather than materializing frontend fallbacks. For example, inherited release artwork and release-level track links do not become explicit track data.
+
+The portable format is identified by:
+
+```json
+{
+  "schema": {
+    "format": "slim-volume-discography",
+    "formatVersion": 1
+  }
+}
+```
+
+Export files may contain unpublished releases, tracks, lyrics, credits, links, and other private catalog information. Keep them private.
+
 ## Music SEO
 
 Slim Volume owns music-specific semantics rather than the site's general SEO system.
@@ -165,4 +201,4 @@ JS global: window.SVPlayer
 
 Current beta release:
 
-`v0.4.1`
+`v0.5.0-beta`
