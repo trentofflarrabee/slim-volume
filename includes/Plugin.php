@@ -22,6 +22,7 @@ require_once SLIM_VOLUME_PATH . 'includes/Export/EditorialLifecycle.php';
 require_once SLIM_VOLUME_PATH . 'includes/Export/CatalogMapper.php';
 require_once SLIM_VOLUME_PATH . 'includes/Export/ArtistMapper.php';
 require_once SLIM_VOLUME_PATH . 'includes/Export/ReleaseMapper.php';
+require_once SLIM_VOLUME_PATH . 'includes/Export/TrackMapper.php';
 require_once SLIM_VOLUME_PATH . 'includes/Export/DiscographyExporter.php';
 require_once SLIM_VOLUME_PATH . 'includes/Rewrite.php';
 require_once SLIM_VOLUME_PATH . 'includes/Assets.php';

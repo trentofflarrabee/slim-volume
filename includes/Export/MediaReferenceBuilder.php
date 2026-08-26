@@ -31,12 +31,12 @@ final class MediaReferenceBuilder
      * The exporter intentionally does not guess filename, MIME type, title,
      * or alt text from a URL.
      *
-     * @return array<string,string>
+     * @return array<string,string>|\stdClass
      */
-    public function from_url(string $url): array
+    public function from_url(string $url)
     {
         if ($url === '') {
-            return [];
+            return self::empty_reference();
         }
 
         return self::shape(
@@ -51,14 +51,14 @@ final class MediaReferenceBuilder
     /**
      * Build a persistent descriptive reference for an explicit attachment.
      *
-     * @return array<string,string>
+     * @return array<string,string>|\stdClass
      */
     public function from_attachment(
         int $attachment_id,
         ?string $object_ref
-    ): array {
+    ) {
         if ($attachment_id <= 0) {
-            return [];
+            return self::empty_reference();
         }
 
         $source = $this->source->get_attachment_source($attachment_id);
@@ -66,7 +66,7 @@ final class MediaReferenceBuilder
         if ($source === null) {
             $this->warn_missing($object_ref);
 
-            return [];
+            return self::empty_reference();
         }
 
         $url = self::persistent_attachment_url(
@@ -96,7 +96,7 @@ final class MediaReferenceBuilder
             }
         }
 
-        return [];
+        return self::empty_reference();
     }
 
     private static function persistent_attachment_url(
@@ -166,6 +166,11 @@ final class MediaReferenceBuilder
             'title'    => $title,
             'alt'      => $alt,
         ];
+    }
+
+    private static function empty_reference(): \stdClass
+    {
+        return new \stdClass();
     }
 
     private function warn_missing(?string $object_ref): void

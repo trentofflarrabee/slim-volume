@@ -431,6 +431,186 @@ final class SourceRepository
     }
 
     /**
+     * Return the explicit/core stored source fields for one track.
+     *
+     * Runtime fallback values are intentionally absent. The historical
+     * track-level external destination remains unverified, so links.external
+     * is supplied with its neutral value until that source audit is complete.
+     *
+     * @return array{
+     *   postId:int,
+     *   title:string,
+     *   slug:string,
+     *   status:string,
+     *   content:string,
+     *   excerpt:string,
+     *   discNumber:int,
+     *   trackNumber:int,
+     *   durationSeconds:int,
+     *   artworkId:int,
+     *   audioAttachmentId:int,
+     *   audioExternalUrl:string,
+     *   downloadEnabledRaw:mixed,
+     *   downloadAttachmentId:int,
+     *   downloadExternalUrl:string,
+     *   externalUrl:string,
+     *   spotify:string,
+     *   appleMusic:string,
+     *   youtube:string,
+     *   bandcamp:string,
+     *   purchase:string,
+     *   lyrics:string,
+     *   credits:string
+     * }
+     */
+    public function get_track_source(int $post_id): array
+    {
+        if ($post_id <= 0) {
+            throw new ExportException(
+                'Slim Volume received an invalid track source ID.'
+            );
+        }
+
+        $query = $this->db->prepare(
+            "SELECT
+                ID,
+                post_title,
+                post_name,
+                post_status,
+                post_content,
+                post_excerpt
+            FROM {$this->db->posts}
+            WHERE ID = %d
+              AND post_type = %s
+            LIMIT 1",
+            $post_id,
+            PostTypes::TRACK
+        );
+
+        if (! is_string($query) || $query === '') {
+            throw new ExportException(
+                'Slim Volume could not prepare a track export source query.'
+            );
+        }
+
+        $row = $this->db->get_row($query, ARRAY_A);
+
+        if (! is_array($row)) {
+            throw new ExportException(
+                'An inventoried Slim Volume track could not be read for export.'
+            );
+        }
+
+        $disc_number = $this->get_raw_post_meta(
+            $post_id,
+            '_sv_disc_number'
+        );
+        $track_number = $this->get_raw_post_meta(
+            $post_id,
+            '_sv_track_number'
+        );
+        $duration_seconds = $this->get_raw_post_meta(
+            $post_id,
+            '_sv_duration_seconds'
+        );
+        $artwork_id = $this->get_raw_post_meta(
+            $post_id,
+            '_thumbnail_id'
+        );
+        $audio_attachment_id = $this->get_raw_post_meta(
+            $post_id,
+            '_sv_audio_attachment_id'
+        );
+        $audio_url = $this->get_raw_post_meta(
+            $post_id,
+            '_sv_audio_url'
+        );
+        $download_enabled = $this->get_raw_post_meta(
+            $post_id,
+            '_sv_can_download'
+        );
+        $download_attachment_id = $this->get_raw_post_meta(
+            $post_id,
+            '_sv_download_attachment_id'
+        );
+        $download_url = $this->get_raw_post_meta(
+            $post_id,
+            '_sv_download_url'
+        );
+        $spotify = $this->get_raw_post_meta(
+            $post_id,
+            '_sv_spotify_url'
+        );
+        $apple_music = $this->get_raw_post_meta(
+            $post_id,
+            '_sv_apple_music_url'
+        );
+        $youtube = $this->get_raw_post_meta(
+            $post_id,
+            '_sv_youtube_url'
+        );
+        $bandcamp = $this->get_raw_post_meta(
+            $post_id,
+            '_sv_bandcamp_url'
+        );
+        $purchase = $this->get_raw_post_meta(
+            $post_id,
+            '_sv_purchase_url'
+        );
+        $lyrics = $this->get_raw_post_meta(
+            $post_id,
+            '_sv_lyrics'
+        );
+        $credits = $this->get_raw_post_meta(
+            $post_id,
+            '_sv_track_credits'
+        );
+
+        return [
+            'postId' => absint($row['ID'] ?? 0),
+            'title' => self::string_value($row['post_title'] ?? ''),
+            'slug' => self::string_value($row['post_name'] ?? ''),
+            'status' => self::string_value($row['post_status'] ?? ''),
+            'content' => self::string_value($row['post_content'] ?? ''),
+            'excerpt' => self::string_value($row['post_excerpt'] ?? ''),
+            'discNumber' => max(
+                0,
+                (int) $disc_number['value']
+            ),
+            'trackNumber' => max(
+                0,
+                (int) $track_number['value']
+            ),
+            'durationSeconds' => max(
+                0,
+                (int) $duration_seconds['value']
+            ),
+            'artworkId' => absint($artwork_id['value']),
+            'audioAttachmentId' => absint(
+                $audio_attachment_id['value']
+            ),
+            'audioExternalUrl' => self::string_value(
+                $audio_url['value']
+            ),
+            'downloadEnabledRaw' => $download_enabled['value'],
+            'downloadAttachmentId' => absint(
+                $download_attachment_id['value']
+            ),
+            'downloadExternalUrl' => self::string_value(
+                $download_url['value']
+            ),
+            'externalUrl' => '',
+            'spotify' => self::string_value($spotify['value']),
+            'appleMusic' => self::string_value($apple_music['value']),
+            'youtube' => self::string_value($youtube['value']),
+            'bandcamp' => self::string_value($bandcamp['value']),
+            'purchase' => self::string_value($purchase['value']),
+            'lyrics' => self::string_value($lyrics['value']),
+            'credits' => self::string_value($credits['value']),
+        ];
+    }
+
+    /**
      * Return stored descriptive source data for a WordPress attachment.
      *
      * @return array{
