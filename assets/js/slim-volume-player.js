@@ -1081,6 +1081,7 @@ notifyState(type = "change") {
         this.syncMediaSessionPlaybackState();
         this.syncTimedLyrics({ force: true });
         this.startVisualizer();
+        this.notifyState("playback");
       });
 
       this.audio.addEventListener("pause", () => {
@@ -1091,6 +1092,7 @@ notifyState(type = "change") {
         this.stopVisualizer();
         this.drawVisualizerIdle();
         this.scheduleSaveState();
+        this.notifyState("playback");
       });
 
       this.audio.addEventListener("ended", () => {
@@ -1098,6 +1100,7 @@ notifyState(type = "change") {
         this.syncMediaSessionPlaybackState();
         this.syncTimedLyrics({ force: true });
         this.stopVisualizer();
+        this.notifyState("playback");
         this.next();
       });
 
@@ -1109,6 +1112,7 @@ notifyState(type = "change") {
         this.syncTimedLyrics({ force: true });
         this.renderDrawer();
         this.scheduleSaveState();
+        this.notifyState("metadata");
       });
 
       this.audio.addEventListener("timeupdate", () => {
@@ -1519,6 +1523,8 @@ notifyState(type = "change") {
       this.renderDrawer();
       this.scheduleSaveState();
 
+      this.notifyState("queue");
+
       return true;
     },
 
@@ -1563,6 +1569,8 @@ notifyState(type = "change") {
       this.renderDrawer();
       this.scheduleSaveState();
 
+      this.notifyState("queue");
+
       return true;
     },
 
@@ -1591,6 +1599,8 @@ notifyState(type = "change") {
       this.syncPlayButtonState();
       this.renderDrawer();
       this.scheduleSaveState();
+
+      this.notifyState("queue");
 
       return true;
     },
@@ -1642,6 +1652,8 @@ notifyState(type = "change") {
       this.renderDrawer();
       this.scheduleSaveState();
 
+      this.notifyState("queue");
+
       return true;
     },
 
@@ -1680,6 +1692,8 @@ notifyState(type = "change") {
       this.syncPlayButtonState();
       this.renderDrawer();
       this.scheduleSaveState();
+
+      this.notifyState("queue");
     },
 
     loadTrack(track, options = {}) {
@@ -1728,6 +1742,8 @@ notifyState(type = "change") {
       this.renderDrawer();
       this.scheduleSaveState();
       this.applyPendingTimedLyricsSeek();
+
+      this.notifyState("track");
 
       if (options.autoplay) {
         this.play();
