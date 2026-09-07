@@ -3963,10 +3963,6 @@ if (this.els.visualizerPresetName) {
       this.syncPlayButtonState();
       this.renderDrawer();
 
-      if (state.drawerOpen) {
-        this.setDrawerOpen(true);
-      }
-
       return true;
     },
 
@@ -4053,7 +4049,6 @@ if (this.els.visualizerPresetName) {
         currentIndex: this.currentIndex,
         currentTrackId: track && track.id ? track.id : null,
         currentTime: this.audio ? this.audio.currentTime || 0 : 0,
-        drawerOpen: this.drawerOpen,
         savedAt: Date.now(),
       };
 
