@@ -15,6 +15,8 @@
     saveStateTimer: null,
     pendingRestoreTime: null,
 
+    stateSubscribers: new Set(),
+
     queueDragIndex: null,
 
     timedLyrics: {
@@ -508,6 +510,79 @@ setupPlaybackEnvironment() {
   }
 },
 
+getState() {
+  const audio = this.audio;
+  const track = this.getCurrentTrack();
+
+  return {
+    currentTrack: track || null,
+    playlist: this.playlist.slice(),
+    albumTracklist: this.albumTracklist.slice(),
+    currentIndex: this.currentIndex,
+    currentTime: audio ? audio.currentTime || 0 : 0,
+    duration:
+      audio && Number.isFinite(audio.duration)
+        ? audio.duration
+        : 0,
+    isPlaying:
+      !!audio
+      && !audio.paused
+      && !audio.ended,
+    isLoading:
+      !!audio
+      && audio.readyState < HTMLMediaElement.HAVE_FUTURE_DATA
+      && !!(audio.currentSrc || audio.src),
+    canGoPrevious:
+      this.currentIndex > 0,
+    canGoNext:
+      this.currentIndex >= 0
+      && this.currentIndex < this.playlist.length - 1,
+  };
+},
+
+subscribe(callback) {
+  if (typeof callback !== "function") {
+    return () => {};
+  }
+
+  this.stateSubscribers.add(callback);
+
+  callback(this.getState(), {
+    type: "initial",
+  });
+
+  return () => {
+    this.stateSubscribers.delete(callback);
+  };
+},
+
+notifyState(type = "change") {
+  if (!this.stateSubscribers.size) {
+    return;
+  }
+
+  const state = this.getState();
+  const change = {
+    type,
+  };
+
+  this.stateSubscribers.forEach((callback) => {
+    try {
+      callback(state, change);
+    } catch (err) {
+      if (this.isDebugEnabled()) {
+        console.error(
+          "[SVPlayer] State subscriber failed.",
+          err,
+        );
+      }
+    }
+  });
+},
+
+
+
+
     publicApi() {
       const app = this;
 
@@ -515,6 +590,15 @@ setupPlaybackEnvironment() {
         get audioElement() {
           return app.audio;
         },
+
+        getState() {
+          return app.getState();
+        },
+
+        subscribe(callback) {
+          return app.subscribe(callback);
+        },
+
 
         play() {
           return app.play();
