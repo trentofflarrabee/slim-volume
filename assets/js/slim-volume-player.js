@@ -1610,7 +1610,6 @@ if (queue) {
 
       this.syncNowPlayingUi();
       this.syncPlayButtonState();
-      this.renderDrawer();
       this.scheduleSaveState();
 
       this.notifyState("queue");
@@ -1656,7 +1655,6 @@ if (queue) {
 
       this.syncNowPlayingUi();
       this.syncPlayButtonState();
-      this.renderDrawer();
       this.scheduleSaveState();
 
       this.notifyState("queue");
@@ -1687,9 +1685,7 @@ if (queue) {
 
       this.syncNowPlayingUi();
       this.syncPlayButtonState();
-      this.renderDrawer();
       this.scheduleSaveState();
-
       this.notifyState("queue");
 
       return true;
@@ -1739,7 +1735,6 @@ if (queue) {
 
       this.syncNowPlayingUi();
       this.syncPlayButtonState();
-      this.renderDrawer();
       this.scheduleSaveState();
 
       this.notifyState("queue");
