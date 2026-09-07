@@ -160,6 +160,42 @@
       els.drawerClose = this.root.querySelector(
         "[data-sv-drawer-close]"
       );
+
+      els.drawerArt = this.root.querySelector(
+        "[data-sv-drawer-art]"
+      );
+
+      els.drawerTitle = this.root.querySelector(
+        "[data-sv-drawer-title]"
+      );
+
+      els.drawerRelease = this.root.querySelector(
+        "[data-sv-drawer-release]"
+      );
+
+      els.drawerTrackLink = this.root.querySelector(
+        "[data-sv-drawer-track-link]"
+      );
+
+      els.drawerReleaseLink = this.root.querySelector(
+        "[data-sv-drawer-release-link]"
+      );
+
+      els.drawerLinks = this.root.querySelector(
+        "[data-sv-drawer-links]"
+      );
+
+      els.queue = this.root.querySelector(
+        "[data-sv-queue]"
+      );
+
+      els.queueCount = this.root.querySelector(
+        "[data-sv-queue-count]"
+      );
+
+      els.clearQueue = this.root.querySelector(
+        "[data-sv-clear-queue]"
+      );
     },
 
     cacheEls() {
@@ -178,22 +214,6 @@
       this.els.progress = this.root.querySelector("[data-sv-progress]");
       this.els.currentTime = this.root.querySelector("[data-sv-current-time]");
       this.els.duration = this.root.querySelector("[data-sv-duration]");
-
-      this.els.queueCount = this.root.querySelector("[data-sv-queue-count]");
-      this.els.drawerArt = this.root.querySelector("[data-sv-drawer-art]");
-      this.els.drawerTitle = this.root.querySelector("[data-sv-drawer-title]");
-      this.els.drawerRelease = this.root.querySelector(
-        "[data-sv-drawer-release]",
-      );
-      this.els.drawerTrackLink = this.root.querySelector(
-        "[data-sv-drawer-track-link]",
-      );
-      this.els.drawerReleaseLink = this.root.querySelector(
-        "[data-sv-drawer-release-link]",
-      );
-      this.els.drawerLinks = this.root.querySelector("[data-sv-drawer-links]");
-      this.els.queue = this.root.querySelector("[data-sv-queue]");
-      this.els.clearQueue = this.root.querySelector("[data-sv-clear-queue]");
 
       this.els.visualizerPresetName = this.root.querySelector(
         "[data-sv-visualizer-preset-name]",
@@ -940,50 +960,52 @@ notifyState(type = "change") {
 
       });
 
-      if (this.els.queue) {
-        this.els.queue.addEventListener("click", (event) => {
-          const target = event.target instanceof Element ? event.target : null;
+const queue = this.desktopView.els.queue;
 
-          if (!target) return;
+if (queue) {
+  queue.addEventListener("click", (event) => {
+    const target = event.target instanceof Element ? event.target : null;
 
-          const removeButton = target.closest("[data-sv-remove-queue-index]");
+    if (!target) return;
 
-          if (removeButton) {
-            event.preventDefault();
-            event.stopPropagation();
+    const removeButton = target.closest("[data-sv-remove-queue-index]");
 
-            const removeIndex = parseInt(
-              removeButton.getAttribute("data-sv-remove-queue-index") || "-1",
-              10,
-            );
+    if (removeButton) {
+      event.preventDefault();
+      event.stopPropagation();
 
-            this.removeTrackFromQueue(removeIndex);
-            return;
-          }
+      const removeIndex = parseInt(
+        removeButton.getAttribute("data-sv-remove-queue-index") || "-1",
+        10,
+      );
 
-          const button = target.closest("[data-sv-queue-index]");
-          if (!button) return;
+      this.removeTrackFromQueue(removeIndex);
+      return;
+    }
 
-          event.preventDefault();
+    const button = target.closest("[data-sv-queue-index]");
+    if (!button) return;
 
-          const index = parseInt(
-            button.getAttribute("data-sv-queue-index") || "-1",
-            10,
-          );
+    event.preventDefault();
 
-          if (!Number.isFinite(index) || index < 0) return;
-          if (!this.playlist[index]) return;
+    const index = parseInt(
+      button.getAttribute("data-sv-queue-index") || "-1",
+      10,
+    );
 
-          this.loadPlaylist(this.playlist, {
-            startIndex: index,
-            autoplay: true,
-            load: true,
-          });
-        });
-      }
+    if (!Number.isFinite(index) || index < 0) return;
+    if (!this.playlist[index]) return;
 
-      if (this.els.queue) {
-        this.els.queue.addEventListener("dragstart", (event) => {
+    this.loadPlaylist(this.playlist, {
+      startIndex: index,
+      autoplay: true,
+      load: true,
+    });
+  });
+}
+
+      if (queue) {
+        queue.addEventListener("dragstart", (event) => {
           const target = event.target instanceof Element ? event.target : null;
           if (!target) return;
 
@@ -1010,7 +1032,7 @@ notifyState(type = "change") {
           }
         });
 
-        this.els.queue.addEventListener("dragover", (event) => {
+        queue.addEventListener("dragover", (event) => {
           if (this.queueDragIndex === null) return;
 
           const target = event.target instanceof Element ? event.target : null;
@@ -1028,7 +1050,7 @@ notifyState(type = "change") {
           }
         });
 
-        this.els.queue.addEventListener("dragleave", (event) => {
+        queue.addEventListener("dragleave", (event) => {
           const target = event.target instanceof Element ? event.target : null;
           if (!target) return;
 
@@ -1038,7 +1060,7 @@ notifyState(type = "change") {
           item.classList.remove("is-drop-target");
         });
 
-        this.els.queue.addEventListener("drop", (event) => {
+        queue.addEventListener("drop", (event) => {
           if (this.queueDragIndex === null) return;
 
           const target = event.target instanceof Element ? event.target : null;
@@ -1062,17 +1084,20 @@ notifyState(type = "change") {
           this.moveQueueTrack(fromIndex, toIndex);
         });
 
-        this.els.queue.addEventListener("dragend", () => {
+        queue.addEventListener("dragend", () => {
           this.queueDragIndex = null;
           this.clearQueueDragClasses();
         });
       }
 
-      if (this.els.clearQueue) {
-        this.els.clearQueue.addEventListener("click", (event) => {
-          event.preventDefault();
-          this.clearQueue();
-        });
+      if (this.desktopView.els.clearQueue) {
+        this.desktopView.els.clearQueue.addEventListener(
+          "click",
+          (event) => {
+            event.preventDefault();
+            this.clearQueue();
+          },
+        );
       }
 
       document.addEventListener("keydown", (event) => {
@@ -1693,17 +1718,22 @@ notifyState(type = "change") {
       return true;
     },
 
-    clearQueueDragClasses() {
-      if (!this.els.queue) {
-        return;
-      }
+clearQueueDragClasses() {
+  const els = this.desktopView.els;
 
-      this.els.queue
-        .querySelectorAll(".is-dragging, .is-drop-target")
-        .forEach((item) => {
-          item.classList.remove("is-dragging", "is-drop-target");
-        });
-    },
+  if (!els.queue) return;
+
+  els.queue
+    .querySelectorAll(
+      ".sv-player__queue-item--dragging, .sv-player__queue-item--drag-over",
+    )
+    .forEach((item) => {
+      item.classList.remove(
+        "sv-player__queue-item--dragging",
+        "sv-player__queue-item--drag-over",
+      );
+    });
+},
 
     loadPlaylist(tracks, options = {}) {
       if (!Array.isArray(tracks) || !tracks.length) return;
@@ -2561,32 +2591,33 @@ setDrawerOpen(open) {
 
     renderDrawerCurrent() {
       const track = this.getCurrentTrack();
+      const els = this.desktopView.els;
 
       if (!track) {
-        if (this.els.drawerArt) this.els.drawerArt.innerHTML = "";
+        if (els.drawerArt) els.drawerArt.innerHTML = "";
 
-        if (this.els.drawerTitle) {
-        this.els.drawerTitle.textContent = this.playlist.length
+        if (els.drawerTitle) {
+        els.drawerTitle.textContent = this.playlist.length
           ? "Ready to play"
           : "Nothing playing";
         }
 
-        if (this.els.drawerRelease) {
-        this.els.drawerRelease.textContent = this.playlist.length
+        if (els.drawerRelease) {
+        els.drawerRelease.textContent = this.playlist.length
           ? `${this.playlist.length} track${this.playlist.length === 1 ? "" : "s"} in queue`
           : "Add tracks from a release or track page";
         }
 
-        if (this.els.drawerTrackLink) this.els.drawerTrackLink.hidden = true;
-        if (this.els.drawerReleaseLink)
-          this.els.drawerReleaseLink.hidden = true;
-        if (this.els.drawerLinks) this.els.drawerLinks.innerHTML = "";
+        if (els.drawerTrackLink) els.drawerTrackLink.hidden = true;
+        if (els.drawerReleaseLink)
+          els.drawerReleaseLink.hidden = true;
+        if (els.drawerLinks) els.drawerLinks.innerHTML = "";
 
         return;
       }
 
-      if (this.els.drawerArt) {
-        this.els.drawerArt.innerHTML = "";
+      if (els.drawerArt) {
+        els.drawerArt.innerHTML = "";
 
         const artworkUrl =
           track.artwork && track.artwork.url ? track.artwork.url : "";
@@ -2600,39 +2631,39 @@ setDrawerOpen(open) {
               : track.title || "";
           img.loading = "lazy";
           img.decoding = "async";
-          this.els.drawerArt.appendChild(img);
+          els.drawerArt.appendChild(img);
         }
       }
 
-      if (this.els.drawerTitle) {
-        this.els.drawerTitle.textContent = track.title || "";
+      if (els.drawerTitle) {
+        els.drawerTitle.textContent = track.title || "";
       }
 
-      if (this.els.drawerRelease) {
-        this.els.drawerRelease.textContent =
+      if (els.drawerRelease) {
+        els.drawerRelease.textContent =
           track.release && track.release.title ? track.release.title : "";
       }
 
-      if (this.els.drawerTrackLink) {
+      if (els.drawerTrackLink) {
         if (track.trackUrl) {
-          this.els.drawerTrackLink.href = track.trackUrl;
-          this.els.drawerTrackLink.hidden = false;
+          els.drawerTrackLink.href = track.trackUrl;
+          els.drawerTrackLink.hidden = false;
         } else {
-          this.els.drawerTrackLink.hidden = true;
+          els.drawerTrackLink.hidden = true;
         }
       }
 
-      if (this.els.drawerReleaseLink) {
+      if (els.drawerReleaseLink) {
         if (track.release && track.release.url) {
-          this.els.drawerReleaseLink.href = track.release.url;
-          this.els.drawerReleaseLink.hidden = false;
+          els.drawerReleaseLink.href = track.release.url;
+          els.drawerReleaseLink.hidden = false;
         } else {
-          this.els.drawerReleaseLink.hidden = true;
+          els.drawerReleaseLink.hidden = true;
         }
       }
 
-      if (this.els.drawerLinks) {
-        this.els.drawerLinks.innerHTML = "";
+      if (els.drawerLinks) {
+        els.drawerLinks.innerHTML = "";
 
         const services = {
           spotify: {
@@ -2729,17 +2760,19 @@ setDrawerOpen(open) {
             link.setAttribute("download", "");
           }
 
-          this.els.drawerLinks.appendChild(link);
+          els.drawerLinks.appendChild(link);
         });
       }
     },
 
     renderDrawerQueue() {
-      if (!this.els.queue) return;
+      const els = this.desktopView.els;
+
+      if (!els.queue) return;
 
       const tracks = this.playlist.length ? this.playlist : this.albumTracklist;
 
-      if (this.els.clearQueue) {
+      if (els.clearQueue) {
         const hasActiveAudio = this.hasActiveAudio();
         const canClear =
           this.playlist.length > 1 ||
@@ -2747,29 +2780,29 @@ setDrawerOpen(open) {
 
         const label = hasActiveAudio ? "Clear Upcoming" : "Clear Queue";
 
-        this.els.clearQueue.hidden = !canClear;
-        this.els.clearQueue.disabled = !canClear;
-        this.els.clearQueue.textContent = label;
-        this.els.clearQueue.setAttribute("aria-label", label);
+        els.clearQueue.hidden = !canClear;
+        els.clearQueue.disabled = !canClear;
+        els.clearQueue.textContent = label;
+        els.clearQueue.setAttribute("aria-label", label);
       }
 
-      if (this.els.queueCount) {
+      if (els.queueCount) {
         if (tracks.length) {
-          this.els.queueCount.hidden = false;
-          this.els.queueCount.textContent = String(tracks.length);
+          els.queueCount.hidden = false;
+          els.queueCount.textContent = String(tracks.length);
         } else {
-          this.els.queueCount.hidden = true;
-          this.els.queueCount.textContent = "0";
+          els.queueCount.hidden = true;
+          els.queueCount.textContent = "0";
         }
       }
 
-      this.els.queue.innerHTML = "";
+      els.queue.innerHTML = "";
 
       if (!tracks.length) {
         const empty = document.createElement("li");
         empty.className = "sv-player__queue-empty";
         empty.textContent = "Your queue is empty. Add tracks from a release or track page.";
-        this.els.queue.appendChild(empty);
+        els.queue.appendChild(empty);
         return;
       }
 
@@ -2904,7 +2937,7 @@ setDrawerOpen(open) {
           item.appendChild(removeButton);
         }
 
-        this.els.queue.appendChild(item);
+        els.queue.appendChild(item);
       });
     },
 
