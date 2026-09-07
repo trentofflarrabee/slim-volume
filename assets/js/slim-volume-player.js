@@ -16,6 +16,10 @@
       },
     },
 
+    desktopView: {
+      els: {},
+    },
+
     storageKey: "slimVolumePlayerState:v1",
     saveStateTimer: null,
     pendingRestoreTime: null,
@@ -138,6 +142,26 @@
       );
     },
 
+    cacheDesktopViewEls() {
+      const els = this.desktopView.els;
+
+      els.drawer = this.root.querySelector(
+        "[data-sv-drawer]"
+      );
+
+      els.drawerToggle = this.root.querySelector(
+        "[data-sv-drawer-toggle]"
+      );
+
+      els.drawerToggleLabel = this.root.querySelector(
+        "[data-sv-drawer-toggle-label]"
+      );
+
+      els.drawerClose = this.root.querySelector(
+        "[data-sv-drawer-close]"
+      );
+    },
+
     cacheEls() {
       this.els.title = this.root.querySelector("[data-sv-player-title]");
       this.els.release = this.root.querySelector("[data-sv-player-release]");
@@ -155,15 +179,7 @@
       this.els.currentTime = this.root.querySelector("[data-sv-current-time]");
       this.els.duration = this.root.querySelector("[data-sv-duration]");
 
-      this.els.drawer = this.root.querySelector("[data-sv-drawer]");
-      this.els.drawerToggle = this.root.querySelector(
-        "[data-sv-drawer-toggle]",
-      );
-      this.els.drawerToggleLabel = this.root.querySelector(
-        "[data-sv-drawer-toggle-label]",
-      );
       this.els.queueCount = this.root.querySelector("[data-sv-queue-count]");
-      this.els.drawerClose = this.root.querySelector("[data-sv-drawer-close]");
       this.els.drawerArt = this.root.querySelector("[data-sv-drawer-art]");
       this.els.drawerTitle = this.root.querySelector("[data-sv-drawer-title]");
       this.els.drawerRelease = this.root.querySelector(
@@ -185,6 +201,8 @@
       this.els.visualizerNextPreset = this.root.querySelector(
         "[data-sv-visualizer-next-preset]",
       );
+
+      this.cacheDesktopViewEls();
 
       this.refreshVisualizerEls();
     },
@@ -866,18 +884,24 @@ notifyState(type = "change") {
         });
       }
 
-      if (this.els.drawerToggle) {
-        this.els.drawerToggle.addEventListener("click", () => {
-          this.setDrawerOpen(
-            !this.presentationState.desktop.drawerOpen
-          );
-        });
+      if (this.desktopView.els.drawerToggle) {
+        this.desktopView.els.drawerToggle.addEventListener(
+          "click",
+          () => {
+            this.setDrawerOpen(
+              !this.presentationState.desktop.drawerOpen
+            );
+          },
+        );
       }
 
-      if (this.els.drawerClose) {
-        this.els.drawerClose.addEventListener("click", () => {
-          this.setDrawerOpen(false);
-        });
+      if (this.desktopView.els.drawerClose) {
+        this.desktopView.els.drawerClose.addEventListener(
+          "click",
+          () => {
+            this.setDrawerOpen(false);
+          },
+        );
       }
 
       //visualizerToggle
@@ -2484,6 +2508,7 @@ notifyState(type = "change") {
 
 setDrawerOpen(open) {
   const drawerOpen = !!open;
+  const els = this.desktopView.els;
 
   this.presentationState.desktop.drawerOpen = drawerOpen;
 
@@ -2502,16 +2527,16 @@ setDrawerOpen(open) {
     drawerOpen
   );
 
-  if (this.els.drawer) {
-    this.els.drawer.hidden = !drawerOpen;
-  }
+    if (els.drawer) {
+      els.drawer.hidden = !drawerOpen;
+    }
 
-  if (this.els.drawerToggle) {
-    this.els.drawerToggle.setAttribute(
-      "aria-expanded",
-      drawerOpen ? "true" : "false"
-    );
-  }
+    if (els.drawerToggle) {
+      els.drawerToggle.setAttribute(
+        "aria-expanded",
+        drawerOpen ? "true" : "false"
+      );
+    }
 
   if (drawerOpen) {
     this.scheduleVisualizerResize(60);
@@ -2521,10 +2546,10 @@ setDrawerOpen(open) {
     }, 260);
   }
 
-  if (this.els.drawerToggleLabel) {
-    this.els.drawerToggleLabel.textContent =
-      drawerOpen ? "Close" : "Queue";
-  }
+    if (els.drawerToggleLabel) {
+      els.drawerToggleLabel.textContent =
+        drawerOpen ? "Close" : "Queue";
+    }
 
   this.renderDrawer();
 },
