@@ -9,7 +9,12 @@
     albumTracklist: [],
     currentIndex: -1,
     currentTrack: null,
-    drawerOpen: false,
+
+    presentationState: {
+      desktop: {
+        drawerOpen: false,
+      },
+    },
 
     storageKey: "slimVolumePlayerState:v1",
     saveStateTimer: null,
@@ -671,7 +676,9 @@ notifyState(type = "change") {
         },
 
         toggleDrawer() {
-          app.setDrawerOpen(!app.drawerOpen);
+          app.setDrawerOpen(
+            !app.presentationState.desktop.drawerOpen
+          );
         },
 
         renderDrawer() {
@@ -770,7 +777,7 @@ notifyState(type = "change") {
         this.drawVisualizerIdle();
       }
 
-      if (this.drawerOpen) {
+      if (this.presentationState.desktop.drawerOpen) {
         this.scheduleVisualizerResize(80);
       }
     },
@@ -861,7 +868,9 @@ notifyState(type = "change") {
 
       if (this.els.drawerToggle) {
         this.els.drawerToggle.addEventListener("click", () => {
-          this.setDrawerOpen(!this.drawerOpen);
+          this.setDrawerOpen(
+            !this.presentationState.desktop.drawerOpen
+          );
         });
       }
 
@@ -1043,7 +1052,10 @@ notifyState(type = "change") {
       }
 
       document.addEventListener("keydown", (event) => {
-        if (event.key === "Escape" && this.drawerOpen) {
+        if (
+          event.key === "Escape"
+          && this.presentationState.desktop.drawerOpen
+        ) {
           this.setDrawerOpen(false);
         }
 
@@ -2470,45 +2482,52 @@ notifyState(type = "change") {
       this.els.duration.textContent = this.formatTime(duration);
     },
 
-    setDrawerOpen(open) {
-      this.drawerOpen = !!open;
+setDrawerOpen(open) {
+  const drawerOpen = !!open;
 
-      this.root.classList.toggle("sv-player--drawer-open", this.drawerOpen);
-      this.root.setAttribute(
-        "data-sv-drawer-state",
-        this.drawerOpen ? "open" : "closed",
-      );
+  this.presentationState.desktop.drawerOpen = drawerOpen;
 
-      document.body.classList.toggle("sv-player-drawer-open", this.drawerOpen);
+  this.root.classList.toggle(
+    "sv-player--drawer-open",
+    drawerOpen
+  );
 
-      if (this.els.drawer) {
-        this.els.drawer.hidden = !this.drawerOpen;
-      }
+  this.root.setAttribute(
+    "data-sv-drawer-state",
+    drawerOpen ? "open" : "closed"
+  );
 
-      if (this.els.drawerToggle) {
-        this.els.drawerToggle.setAttribute(
-          "aria-expanded",
-          this.drawerOpen ? "true" : "false",
-        );
-      }
+  document.body.classList.toggle(
+    "sv-player-drawer-open",
+    drawerOpen
+  );
 
-      if (this.drawerOpen) {
-        this.scheduleVisualizerResize(60);
+  if (this.els.drawer) {
+    this.els.drawer.hidden = !drawerOpen;
+  }
 
-        window.setTimeout(() => {
-          this.scheduleVisualizerResize();
-        }, 260);
-      }
+  if (this.els.drawerToggle) {
+    this.els.drawerToggle.setAttribute(
+      "aria-expanded",
+      drawerOpen ? "true" : "false"
+    );
+  }
 
-      if (this.els.drawerToggleLabel) {
-        this.els.drawerToggleLabel.textContent = this.drawerOpen
-          ? "Close"
-          : "Queue";
-      }
+  if (drawerOpen) {
+    this.scheduleVisualizerResize(60);
 
-      this.renderDrawer();
-      this.scheduleSaveState();
-    },
+    window.setTimeout(() => {
+      this.scheduleVisualizerResize();
+    }, 260);
+  }
+
+  if (this.els.drawerToggleLabel) {
+    this.els.drawerToggleLabel.textContent =
+      drawerOpen ? "Close" : "Queue";
+  }
+
+  this.renderDrawer();
+},
 
     renderDrawer() {
       this.renderDrawerCurrent();
@@ -3957,7 +3976,7 @@ if (this.els.visualizerPresetName) {
         playlistIds: this.playlist.map((item) => item && item.id),
         albumTracklistIds: this.albumTracklist.map((item) => item && item.id),
 
-        drawerOpen: this.drawerOpen,
+        drawerOpen: this.presentationState.desktop.drawerOpen,
         pendingRestoreTime: this.pendingRestoreTime,
 
         queueButtonCount: document.querySelectorAll(
