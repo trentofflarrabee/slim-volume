@@ -18,6 +18,7 @@
 
     desktopView: {
       els: {},
+      unsubscribe: null,
     },
 
     storageKey: "slimVolumePlayerState:v1",
@@ -101,6 +102,7 @@
       this.bindTrackQueueButtons();
       this.bindPageQueueButtons();
       this.bindTimedLyrics();
+      this.bindDesktopViewState();
       this.syncNowPlayingUi();
       this.syncPlayButtonState();
       this.renderDrawer();
@@ -197,6 +199,33 @@
         "[data-sv-clear-queue]"
       );
     },
+
+    bindDesktopViewState() {
+  if (typeof this.desktopView.unsubscribe === "function") {
+    this.desktopView.unsubscribe();
+  }
+
+  this.desktopView.unsubscribe = this.subscribe(
+    (state, change) => {
+      if (!change || !change.type) {
+        return;
+      }
+
+      switch (change.type) {
+        case "initial":
+        case "track":
+        case "queue":
+        case "playback":
+        case "metadata":
+          this.renderDrawer();
+          break;
+
+        default:
+          break;
+      }
+    },
+  );
+},
 
     cacheEls() {
       this.els.title = this.root.querySelector("[data-sv-player-title]");
