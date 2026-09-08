@@ -1177,7 +1177,6 @@ if (queue) {
       this.audio.addEventListener("pause", () => {
         this.syncPlayButtonState();
         this.syncMediaSessionPlaybackState();
-        this.renderDrawer();
         this.syncTimedLyrics({ force: true });
         this.stopVisualizer();
         this.drawVisualizerIdle();
@@ -1200,7 +1199,6 @@ if (queue) {
         this.updateDurationUi();
         this.updateProgressUi();
         this.syncTimedLyrics({ force: true });
-        this.renderDrawer();
         this.scheduleSaveState();
         this.notifyState("metadata");
       });
