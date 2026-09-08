@@ -105,7 +105,6 @@
       this.bindDesktopViewState();
       this.syncNowPlayingUi();
       this.syncPlayButtonState();
-      this.renderDrawer();
       this.drawVisualizerIdle();
 
       document.body.classList.add("sv-player-ready");
@@ -1984,18 +1983,17 @@ clearQueueDragClasses() {
       return match || null;
     },
 
-    syncNowPlayingUi() {
-      const track = this.getCurrentTrack();
+syncNowPlayingUi() {
+  const track = this.getCurrentTrack();
 
-      this.updateMetaUi(track);
-      this.syncMediaSessionMetadata(track);
-      this.syncActiveTrackRows(track);
-      this.syncTrackPlayButtons(track);
-      this.updateProgressUi();
-      this.updateDurationUi();
-      this.renderDrawer();
-      this.syncTimedLyrics({ force: true });
-    },
+  this.updateMetaUi(track);
+  this.syncMediaSessionMetadata(track);
+  this.syncActiveTrackRows(track);
+  this.syncTrackPlayButtons(track);
+  this.updateProgressUi();
+  this.updateDurationUi();
+  this.syncTimedLyrics({ force: true });
+},
 
     bindTimedLyrics() {
       const root = document.querySelector("[data-sv-timed-lyrics]");
