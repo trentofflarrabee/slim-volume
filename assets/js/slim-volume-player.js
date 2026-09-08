@@ -888,26 +888,42 @@ notifyState(type = "change") {
       return !!(this.audio && (this.audio.currentSrc || this.audio.src));
     },
 
-    refreshPage(options = {}) {
-      this.configureFromPage({
-        preserveActive: !!options.preserveActive,
-      });
-
+    refreshPageBindings() {
       this.bindTrackPlayButtons();
       this.bindTrackQueueButtons();
       this.bindPageQueueButtons();
       this.bindTimedLyrics();
-      this.syncNowPlayingUi();
-      this.syncPlayButtonState();
-
-      if (!this.hasActiveAudio()) {
-        this.drawVisualizerIdle();
-      }
-
-      if (this.presentationState.desktop.drawerOpen) {
-        this.scheduleVisualizerResize(80);
-      }
     },
+
+    refreshVisualizerAfterPageChange() {
+  if (!this.hasVisualizerPresentation()) {
+    return;
+  }
+
+  if (!this.hasActiveAudio()) {
+    this.drawVisualizerIdle();
+  }
+
+  if (this.isVisualizerVisible()) {
+    this.scheduleVisualizerResize(80);
+  }
+},
+
+refreshPage(options = {}) {
+  const preserveActive =
+    !!options.preserveActive;
+
+  this.configureFromPage({
+    preserveActive,
+  });
+
+  this.refreshPageBindings();
+
+  this.syncNowPlayingUi();
+  this.syncPlayButtonState();
+
+  this.refreshVisualizerAfterPageChange();
+},
 
     bindCoreControls() {
       if (this.els.playToggle) {
