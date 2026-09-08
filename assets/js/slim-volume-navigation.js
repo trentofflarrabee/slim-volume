@@ -272,19 +272,22 @@
       this.afterSwap(url, options);
     },
 
-    updateBodyClasses(nextDocument) {
-      if (!nextDocument.body) return;
+updateBodyClasses(nextDocument) {
+  if (!nextDocument.body) return;
 
-      const keepClasses = ["sv-player-ready", "sv-player-drawer-open"].filter(
-        (className) => document.body.classList.contains(className),
-      );
+  const keepClasses = Array.from(
+    document.body.classList,
+  ).filter((className) => {
+    return className.startsWith("sv-player-");
+  });
 
-      document.body.className = nextDocument.body.className;
+  document.body.className =
+    nextDocument.body.className;
 
-      keepClasses.forEach((className) => {
-        document.body.classList.add(className);
-      });
-    },
+  keepClasses.forEach((className) => {
+    document.body.classList.add(className);
+  });
+},
 
     afterSwap(url, options = {}) {
       if (
