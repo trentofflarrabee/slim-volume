@@ -21,6 +21,10 @@
       unsubscribe: null,
     },
 
+    visualizerView: {
+      els: {},
+    },
+
     storageKey: "slimVolumePlayerState:v1",
     saveStateTimer: null,
     pendingRestoreTime: null,
@@ -123,36 +127,47 @@
       window.SVPlayer = publicApi;
     },
 
-    refreshVisualizerEls() {
-      if (!this.root) {
-        return;
-      }
+refreshVisualizerEls() {
+  if (!this.root) {
+    return;
+  }
 
-      this.els.visualizer = this.root.querySelector("[data-sv-visualizer]");
-      this.els.visualizerCanvas = this.root.querySelector(
-        "[data-sv-visualizer-canvas]",
-      );
-      this.els.visualizerToggle = this.root.querySelector(
-        "[data-sv-visualizer-toggle]",
-      );
-      this.els.visualizerPresetName = this.root.querySelector(
-        "[data-sv-visualizer-preset-name]",
-      );
-      this.els.visualizerNextPreset = this.root.querySelector(
-        "[data-sv-visualizer-next-preset]",
-      );
-      this.els.visualizerFullscreen = this.root.querySelector(
-        "[data-sv-visualizer-fullscreen]",
-      );
-    },
+  const els = this.visualizerView.els;
 
-    hasVisualizerPresentation() {
-      return !!(
-        this.els.visualizer
-        || this.els.visualizerCanvas
-        || this.els.visualizerToggle
-      );
-    },
+  els.visualizer = this.root.querySelector(
+    "[data-sv-visualizer]",
+  );
+
+  els.visualizerCanvas = this.root.querySelector(
+    "[data-sv-visualizer-canvas]",
+  );
+
+  els.visualizerToggle = this.root.querySelector(
+    "[data-sv-visualizer-toggle]",
+  );
+
+  els.visualizerPresetName = this.root.querySelector(
+    "[data-sv-visualizer-preset-name]",
+  );
+
+  els.visualizerNextPreset = this.root.querySelector(
+    "[data-sv-visualizer-next-preset]",
+  );
+
+  els.visualizerFullscreen = this.root.querySelector(
+    "[data-sv-visualizer-fullscreen]",
+  );
+},
+
+hasVisualizerPresentation() {
+  const els = this.visualizerView.els;
+
+  return !!(
+    els.visualizer
+    || els.visualizerCanvas
+    || els.visualizerToggle
+  );
+},
 
     cacheDesktopViewEls() {
       const els = this.desktopView.els;
