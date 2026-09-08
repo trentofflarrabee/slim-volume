@@ -197,7 +197,7 @@ if (! defined('ABSPATH')) {
         </button>
     </div>
 
-        <div
+    <div
         class="sv-player-mobile"
         data-sv-mobile-player
         hidden
@@ -237,6 +237,42 @@ if (! defined('ABSPATH')) {
                     aria-hidden="true"
                 >▶</span>
             </button>
+        </div>
+        <div
+            class="sv-player-mobile__sheet"
+            data-sv-mobile-sheet
+            hidden
+        >
+            <div class="sv-player-mobile__sheet-header">
+                <button
+                    type="button"
+                    class="sv-player__button sv-player-mobile__minimize"
+                    data-sv-mobile-minimize
+                    aria-label="<?php esc_attr_e('Minimize player', 'slim-volume'); ?>"
+                >
+                    <span aria-hidden="true">⌄</span>
+                </button>
+            </div>
+
+            <div class="sv-player-mobile__sheet-content">
+                <div
+                    class="sv-player-mobile__sheet-art"
+                    data-sv-mobile-sheet-art
+                    aria-hidden="true"
+                ></div>
+
+                <div
+                    class="sv-player-mobile__sheet-title"
+                    data-sv-mobile-sheet-title
+                >
+                    <?php esc_html_e('Nothing playing', 'slim-volume'); ?>
+                </div>
+
+                <div
+                    class="sv-player-mobile__sheet-release"
+                    data-sv-mobile-sheet-release
+                ></div>
+            </div>
         </div>
     </div>
 

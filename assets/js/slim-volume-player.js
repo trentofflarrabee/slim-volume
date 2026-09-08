@@ -555,6 +555,27 @@ hasVisualizerPresentation() {
   els.playIcon = this.root.querySelector(
     "[data-sv-mobile-play-icon]",
   );
+
+  els.sheet = this.root.querySelector(
+  "[data-sv-mobile-sheet]",
+);
+
+els.minimize = this.root.querySelector(
+  "[data-sv-mobile-minimize]",
+);
+
+els.sheetArt = this.root.querySelector(
+  "[data-sv-mobile-sheet-art]",
+);
+
+els.sheetTitle = this.root.querySelector(
+  "[data-sv-mobile-sheet-title]",
+);
+
+els.sheetRelease = this.root.querySelector(
+  "[data-sv-mobile-sheet-release]",
+);
+
 },
 
     bindDesktopViewState() {
@@ -646,8 +667,49 @@ renderMobileMiniPlayer(state) {
       img.alt = "";
 
       els.art.appendChild(img);
-    }
-  }
+          }
+        }
+        const isPlayerOpen =
+        this.presentationState.mobile.surface === "player";
+
+      if (els.mini) {
+        els.mini.hidden = isPlayerOpen;
+      }
+
+      if (els.sheet) {
+        els.sheet.hidden = !isPlayerOpen;
+      }
+
+      if (els.sheetTitle) {
+        els.sheetTitle.textContent =
+          track && track.title
+            ? track.title
+            : "Nothing playing";
+      }
+
+      if (els.sheetRelease) {
+        els.sheetRelease.textContent = releaseTitle;
+      }
+
+      if (els.sheetArt) {
+        els.sheetArt.innerHTML = "";
+
+        const artworkUrl =
+          track
+          && track.artwork
+          && typeof track.artwork.url === "string"
+            ? track.artwork.url
+            : "";
+
+        if (artworkUrl) {
+          const img = document.createElement("img");
+
+          img.src = artworkUrl;
+          img.alt = "";
+
+          els.sheetArt.appendChild(img);
+        }
+      }
 },
 
 bindMobileViewState() {
@@ -1265,6 +1327,16 @@ bindCoreControls() {
             }
 
             this.openMobilePlayer();
+          },
+        );
+      }
+
+      if (this.mobileView.els.minimize) {
+        this.mobileView.els.minimize.addEventListener(
+          "click",
+          (event) => {
+            event.preventDefault();
+            this.minimizeMobilePlayer();
           },
         );
       }
