@@ -1,6 +1,10 @@
 (function () {
   "use strict";
 
+  const PLAYER_MOBILE_BREAKPOINT = 760;
+  const PLAYER_MOBILE_QUERY =
+    `(max-width: ${PLAYER_MOBILE_BREAKPOINT}px)`;
+
   const SV = {
     root: null,
     audio: null,
@@ -509,6 +513,11 @@ isNativeMobileAudioEnvironment() {
     .isNativeMobileAudioEnvironment();
 },
 
+isMobilePresentationMode() {
+  return window.matchMedia(
+    PLAYER_MOBILE_QUERY,
+  ).matches;
+},
 
     setupPlayerTitlePanHandling() {
       if (!this.els.title) {
@@ -565,9 +574,8 @@ isNativeMobileAudioEnvironment() {
         return;
       }
 
-      const isMobile = window.matchMedia(
-        "(max-width: 760px)",
-      ).matches;
+      const isMobile =
+        this.isMobilePresentationMode();
 
       const reduceMotion = window.matchMedia(
         "(prefers-reduced-motion: reduce)",
