@@ -81,7 +81,10 @@
       this.setupMediaSession();
       this.setupPlayerTitlePanHandling();
 
-      if (!this.nativeMobileAudioMode) {
+      if (
+        !this.nativeMobileAudioMode
+        && this.hasVisualizerPresentation()
+      ) {
         this.setupVisualizerController();
         this.restoreVisualizerVisibility();
         this.setupVisualizerResizeHandling();
@@ -140,6 +143,14 @@
       );
       this.els.visualizerFullscreen = this.root.querySelector(
         "[data-sv-visualizer-fullscreen]",
+      );
+    },
+
+    hasVisualizerPresentation() {
+      return !!(
+        this.els.visualizer
+        || this.els.visualizerCanvas
+        || this.els.visualizerToggle
       );
     },
 
@@ -837,7 +848,6 @@ notifyState(type = "change") {
       this.bindTimedLyrics();
       this.syncNowPlayingUi();
       this.syncPlayButtonState();
-      this.renderDrawer();
 
       if (!this.hasActiveAudio()) {
         this.drawVisualizerIdle();
@@ -2514,7 +2524,6 @@ syncNowPlayingUi() {
       this.syncTrackPlayButtons(this.getCurrentTrack());
       this.syncTrackQueueButtons();
       this.syncPageQueueButtons();
-      this.renderDrawer();
     },
 
     updateProgressUi() {
@@ -3378,9 +3387,10 @@ setDrawerOpen(open) {
       }
     },
 
-       startVisualizer() {
+    startVisualizer() {
       if (
-        !this.isVisualizerEnabled()
+        !this.hasVisualizerPresentation()
+        || !this.isVisualizerEnabled()
         || !this.isVisualizerVisible()
       ) {
         return;
@@ -3408,6 +3418,10 @@ setDrawerOpen(open) {
     },
 
     resizeVisualizer() {
+      if (!this.hasVisualizerPresentation()) {
+        return;
+      }
+
       const controller = this.getVisualizerController();
 
       if (controller) {
@@ -3416,16 +3430,19 @@ setDrawerOpen(open) {
     },
 
     setupVisualizerFullscreenHandling() {
-  this.updateVisualizerFullscreenUI();
+      if (!this.hasVisualizerPresentation()) {
+        return;
+      }
+      this.updateVisualizerFullscreenUI();
 
-  document.addEventListener("fullscreenchange", () => {
-    this.handleVisualizerFullscreenChange();
-  });
+      document.addEventListener("fullscreenchange", () => {
+        this.handleVisualizerFullscreenChange();
+      });
 
-  document.addEventListener("webkitfullscreenchange", () => {
-    this.handleVisualizerFullscreenChange();
-  });
-},
+      document.addEventListener("webkitfullscreenchange", () => {
+        this.handleVisualizerFullscreenChange();
+      });
+    },
 
 getFullscreenElement() {
   return (
@@ -3564,9 +3581,13 @@ updateVisualizerFullscreenUI() {
     },
 
     drawVisualizerIdle() {
-      if (!this.isVisualizerVisible()) {
+      if (
+        !this.hasVisualizerPresentation()
+        || !this.isVisualizerVisible()
+      ) {
         return;
       }
+
       const controller = this.getVisualizerController();
 
       if (controller) {
@@ -4156,7 +4177,6 @@ if (this.els.visualizerPresetName) {
 
       this.syncNowPlayingUi();
       this.syncPlayButtonState();
-      this.renderDrawer();
 
       return true;
     },
