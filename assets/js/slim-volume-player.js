@@ -1780,7 +1780,6 @@ clearQueueDragClasses() {
       }
 
       this.syncPlayButtonState();
-      this.renderDrawer();
       this.scheduleSaveState();
 
       this.notifyState("queue");
@@ -1829,7 +1828,6 @@ clearQueueDragClasses() {
 
       this.syncNowPlayingUi();
       this.syncPlayButtonState();
-      this.renderDrawer();
       this.scheduleSaveState();
       this.applyPendingTimedLyricsSeek();
 
