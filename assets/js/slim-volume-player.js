@@ -300,6 +300,7 @@
     playerTitlePanFrame: null,
 
     nativeMobileAudioMode: false,
+    presentationMediaQuery: null,
 
     els: {},
 
@@ -373,10 +374,11 @@ init() {
 
   this.root.__svPlayerInitialized = true;
 
-  this.cacheEls();
-      this.setupPlaybackEnvironment();
-      this.setupMediaSession();
-      this.setupPlayerTitlePanHandling();
+this.cacheEls();
+this.setupPlaybackEnvironment();
+this.setupMediaSession();
+this.setupPresentationModeHandling();
+this.setupPlayerTitlePanHandling();
 
       if (
         !this.nativeMobileAudioMode
@@ -465,6 +467,10 @@ hasVisualizerPresentation() {
 
     cacheDesktopViewEls() {
       const els = this.desktopView.els;
+
+      els.root = this.root.querySelector(
+        "[data-sv-desktop-player]",
+      );
 
       els.drawer = this.root.querySelector(
         "[data-sv-drawer]"
@@ -711,6 +717,69 @@ isMobilePresentationMode() {
   return window.matchMedia(
     PLAYER_MOBILE_QUERY,
   ).matches;
+},
+
+updatePresentationMode() {
+  const isMobile =
+    this.isMobilePresentationMode();
+
+  const desktopEls = this.desktopView.els;
+  const mobileEls = this.mobileView.els;
+
+  if (desktopEls.root) {
+    desktopEls.root.hidden = isMobile;
+  }
+
+  if (mobileEls.root) {
+    mobileEls.root.hidden = !isMobile;
+  }
+
+  this.root.classList.toggle(
+    "sv-player--mobile-presentation",
+    isMobile,
+  );
+
+  this.root.classList.toggle(
+    "sv-player--desktop-presentation",
+    !isMobile,
+  );
+
+  if (
+    isMobile
+    && this.presentationState.desktop.drawerOpen
+  ) {
+    this.setDrawerOpen(false);
+  }
+},
+
+setupPresentationModeHandling() {
+  this.presentationMediaQuery =
+    window.matchMedia(
+      PLAYER_MOBILE_QUERY,
+    );
+
+  this.updatePresentationMode();
+
+  const handleChange = () => {
+    this.updatePresentationMode();
+  };
+
+  if (
+    typeof this.presentationMediaQuery
+      .addEventListener === "function"
+  ) {
+    this.presentationMediaQuery.addEventListener(
+      "change",
+      handleChange,
+    );
+  } else if (
+    typeof this.presentationMediaQuery
+      .addListener === "function"
+  ) {
+    this.presentationMediaQuery.addListener(
+      handleChange,
+    );
+  }
 },
 
     setupPlayerTitlePanHandling() {

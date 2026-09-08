@@ -138,7 +138,10 @@ if (! defined('ABSPATH')) {
         </div>
     </section>
 
-    <div class="sv-player__bar">
+    <div
+            class="sv-player__bar"
+            data-sv-desktop-player
+        >
         <div class="sv-player__art" data-sv-player-art></div>
 
         <div class="sv-player__meta">
@@ -236,5 +239,5 @@ if (! defined('ABSPATH')) {
             </button>
         </div>
     </div>
-    
+
 </div>
