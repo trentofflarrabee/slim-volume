@@ -1722,6 +1722,10 @@ body.sv-ajax-loading [data-sv-page-content] {
 /* ==========================================================================
    Responsive: Base + Player Bar
    ========================================================================== */
+/*
+ * Authoritative player presentation breakpoint: 760px.
+ * Keep in sync with PLAYER_MOBILE_BREAKPOINT in slim-volume-player.js.
+ */
 @media (max-width: 760px) {
   .sv-player__icon-button {
     width: 40px;
