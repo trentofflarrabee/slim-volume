@@ -1566,6 +1566,10 @@ body.sv-ajax-loading [data-sv-page-content] {
   box-shadow: 0 -18px 40px rgba(0, 0, 0, 0.28);
 }
 
+.sv-player [hidden] {
+  display: none !important;
+}
+
 .sv-player__bar {
   display: grid;
   grid-template-columns:
