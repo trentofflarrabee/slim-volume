@@ -184,6 +184,67 @@
       },
     },
 
+    audioEnvironmentAdapter: {
+  isNativeMobileAudioEnvironment() {
+    const userAgent = String(
+      navigator.userAgent || "",
+    );
+
+    const platform = String(
+      navigator.platform || "",
+    );
+
+    const maxTouchPoints = Number(
+      navigator.maxTouchPoints || 0,
+    );
+
+    const isIOS =
+      /iPhone|iPad|iPod/i.test(userAgent)
+      || (
+        platform === "MacIntel"
+        && maxTouchPoints > 1
+      );
+
+    const isAndroid =
+      /Android/i.test(userAgent);
+
+    return isIOS || isAndroid;
+  },
+
+  setup(app) {
+    const nativeMobileAudioMode =
+      this.isNativeMobileAudioEnvironment();
+
+    if (app.root) {
+      app.root.classList.toggle(
+        "sv-player--native-mobile-audio",
+        nativeMobileAudioMode,
+      );
+    }
+
+    if (
+      nativeMobileAudioMode
+      && navigator.audioSession
+      && "type" in navigator.audioSession
+    ) {
+      try {
+        navigator.audioSession.type = "playback";
+      } catch (err) {
+        if (app.isDebugEnabled()) {
+          console.debug(
+            "[SVPlayer] Audio Session playback mode is unavailable.",
+            err,
+          );
+        }
+      }
+    }
+
+    return {
+      nativeMobileAudioMode,
+    };
+  },
+},
+
     storageKey: "slimVolumePlayerState:v1",
     saveStateTimer: null,
     pendingRestoreTime: null,
@@ -436,64 +497,17 @@ hasVisualizerPresentation() {
     },
 
 setupPlaybackEnvironment() {
+  const environment =
+    this.audioEnvironmentAdapter.setup(this);
+
   this.nativeMobileAudioMode =
-    this.isNativeMobileAudioEnvironment();
-
-  if (this.root) {
-    this.root.classList.toggle(
-      "sv-player--native-mobile-audio",
-      this.nativeMobileAudioMode,
-    );
-  }
-
-  /*
-   * Safari exposes part of the Audio Session API on modern iOS.
-   * Music playback should identify itself as continuous playback rather
-   * than relying on the browser's default ambient-audio behavior.
-   */
-  if (
-    this.nativeMobileAudioMode
-    && navigator.audioSession
-    && "type" in navigator.audioSession
-  ) {
-    try {
-      navigator.audioSession.type = "playback";
-    } catch (err) {
-      if (this.isDebugEnabled()) {
-        console.debug(
-          "[SVPlayer] Audio Session playback mode is unavailable.",
-          err,
-        );
-      }
-    }
-  }
+    !!environment.nativeMobileAudioMode;
 },
 
-    isNativeMobileAudioEnvironment() {
-      const userAgent = String(
-        navigator.userAgent || "",
-      );
-
-      const platform = String(
-        navigator.platform || "",
-      );
-
-      const maxTouchPoints = Number(
-        navigator.maxTouchPoints || 0,
-      );
-
-      const isIOS =
-        /iPhone|iPad|iPod/i.test(userAgent)
-        || (
-          platform === "MacIntel"
-          && maxTouchPoints > 1
-        );
-
-      const isAndroid =
-        /Android/i.test(userAgent);
-
-      return isIOS || isAndroid;
-    },
+isNativeMobileAudioEnvironment() {
+  return this.audioEnvironmentAdapter
+    .isNativeMobileAudioEnvironment();
+},
 
 
     setupPlayerTitlePanHandling() {
