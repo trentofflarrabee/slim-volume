@@ -574,7 +574,8 @@ hasVisualizerPresentation() {
         case "queue":
         case "playback":
         case "metadata":
-          this.renderDrawer();
+        case "presentation":
+          this.renderMobileMiniPlayer(state);
           break;
 
         default:
@@ -719,6 +720,30 @@ isMobilePresentationMode() {
   ).matches;
 },
 
+openMobilePlayer() {
+  if (!this.isMobilePresentationMode()) {
+    return;
+  }
+
+  if (this.presentationState.mobile.surface === "player") {
+    return;
+  }
+
+  this.presentationState.mobile.surface = "player";
+
+  this.notifyState("presentation");
+},
+
+minimizeMobilePlayer() {
+  if (this.presentationState.mobile.surface === "closed") {
+    return;
+  }
+
+  this.presentationState.mobile.surface = "closed";
+
+  this.notifyState("presentation");
+},
+
 updatePresentationMode() {
   const isMobile =
     this.isMobilePresentationMode();
@@ -750,6 +775,9 @@ updatePresentationMode() {
   ) {
     this.setDrawerOpen(false);
   }
+  if (!isMobile) {
+  this.presentationState.mobile.surface = "closed";
+}
 },
 
 setupPresentationModeHandling() {
@@ -920,6 +948,12 @@ getState() {
       audio && Number.isFinite(audio.duration)
         ? audio.duration
         : 0,
+
+          presentation: {
+            mobileSurface:
+              this.presentationState.mobile.surface,
+          },
+
     isPlaying:
       !!audio
       && !audio.paused
@@ -1189,28 +1223,51 @@ refreshPage(options = {}) {
 },
 
 bindCoreControls() {
-  if (this.els.playToggle) {
-    this.els.playToggle.addEventListener("click", () => {
-      if (this.audio && !this.audio.paused && !this.audio.ended) {
-        this.pause();
-      } else {
-        this.play();
-      }
-    });
-  }
-
-  if (this.mobileView.els.playToggle) {
-    this.mobileView.els.playToggle.addEventListener(
-      "click",
-      () => {
-        if (this.audio && !this.audio.paused && !this.audio.ended) {
-          this.pause();
-        } else {
-          this.play();
+        if (this.els.playToggle) {
+          this.els.playToggle.addEventListener("click", () => {
+            if (this.audio && !this.audio.paused && !this.audio.ended) {
+              this.pause();
+            } else {
+              this.play();
+            }
+          });
         }
-      },
-    );
-  }
+
+        if (this.mobileView.els.playToggle) {
+          this.mobileView.els.playToggle.addEventListener(
+            "click",
+            () => {
+              if (this.audio && !this.audio.paused && !this.audio.ended) {
+                this.pause();
+              } else {
+                this.play();
+              }
+            },
+          );
+        }
+
+        if (this.mobileView.els.mini) {
+        this.mobileView.els.mini.addEventListener(
+          "click",
+          (event) => {
+            const target =
+              event.target instanceof Element
+                ? event.target
+                : null;
+
+            if (
+              target
+              && target.closest(
+                "[data-sv-mobile-play-toggle]",
+              )
+            ) {
+              return;
+            }
+
+            this.openMobilePlayer();
+          },
+        );
+      }
 
   if (this.els.prev) {
         this.els.prev.addEventListener("click", (event) => {
