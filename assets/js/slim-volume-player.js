@@ -18,9 +18,18 @@
       desktop: {
         drawerOpen: false,
       },
+
+      mobile: {
+        surface: "closed",
+      },
     },
 
     desktopView: {
+      els: {},
+      unsubscribe: null,
+    },
+
+    mobileView: {
       els: {},
       unsubscribe: null,
     },
@@ -394,6 +403,7 @@ init() {
       this.bindPageQueueButtons();
       this.bindTimedLyrics();
       this.bindDesktopViewState();
+      this.bindMobileViewState();
       this.syncNowPlayingUi();
       this.syncPlayButtonState();
       this.drawVisualizerIdle();
@@ -509,6 +519,38 @@ hasVisualizerPresentation() {
       );
     },
 
+    cacheMobileViewEls() {
+  const els = this.mobileView.els;
+
+  els.root = this.root.querySelector(
+    "[data-sv-mobile-player]",
+  );
+
+  els.mini = this.root.querySelector(
+    "[data-sv-mobile-mini]",
+  );
+
+  els.art = this.root.querySelector(
+    "[data-sv-mobile-art]",
+  );
+
+  els.title = this.root.querySelector(
+    "[data-sv-mobile-title]",
+  );
+
+  els.release = this.root.querySelector(
+    "[data-sv-mobile-release]",
+  );
+
+  els.playToggle = this.root.querySelector(
+    "[data-sv-mobile-play-toggle]",
+  );
+
+  els.playIcon = this.root.querySelector(
+    "[data-sv-mobile-play-icon]",
+  );
+},
+
     bindDesktopViewState() {
   if (typeof this.desktopView.unsubscribe === "function") {
     this.desktopView.unsubscribe();
@@ -527,6 +569,98 @@ hasVisualizerPresentation() {
         case "playback":
         case "metadata":
           this.renderDrawer();
+          break;
+
+        default:
+          break;
+      }
+    },
+  );
+},
+
+renderMobileMiniPlayer(state) {
+  const els = this.mobileView.els;
+
+  if (!els.root) {
+    return;
+  }
+
+  const track = state.currentTrack;
+
+  if (els.title) {
+    els.title.textContent =
+      track && track.title
+        ? track.title
+        : "Nothing playing";
+  }
+
+  let releaseTitle = "";
+
+  if (
+    track
+    && track.release
+    && typeof track.release.title === "string"
+  ) {
+    releaseTitle = track.release.title;
+  }
+
+  if (els.release) {
+    els.release.textContent = releaseTitle;
+  }
+
+  if (els.playToggle) {
+    els.playToggle.disabled = !track;
+
+    els.playToggle.setAttribute(
+      "aria-label",
+      state.isPlaying ? "Pause" : "Play",
+    );
+  }
+
+  if (els.playIcon) {
+    els.playIcon.textContent =
+      state.isPlaying ? "⏸" : "▶";
+  }
+
+  if (els.art) {
+    els.art.innerHTML = "";
+
+    const artworkUrl =
+      track
+      && track.artwork
+      && typeof track.artwork.url === "string"
+        ? track.artwork.url
+        : "";
+
+    if (artworkUrl) {
+      const img = document.createElement("img");
+
+      img.src = artworkUrl;
+      img.alt = "";
+
+      els.art.appendChild(img);
+    }
+  }
+},
+
+bindMobileViewState() {
+  if (typeof this.mobileView.unsubscribe === "function") {
+    this.mobileView.unsubscribe();
+  }
+
+  this.mobileView.unsubscribe = this.subscribe(
+    (state, change) => {
+      if (!change || !change.type) {
+        return;
+      }
+
+      switch (change.type) {
+        case "initial":
+        case "track":
+        case "queue":
+        case "playback":
+        case "metadata":
+          this.renderMobileMiniPlayer(state);
           break;
 
         default:
@@ -556,7 +690,7 @@ hasVisualizerPresentation() {
 
 
       this.cacheDesktopViewEls();
-
+      this.cacheMobileViewEls();
       this.refreshVisualizerEls();
     },
 
@@ -985,18 +1119,31 @@ refreshPage(options = {}) {
   this.refreshVisualizerAfterPageChange();
 },
 
-    bindCoreControls() {
-      if (this.els.playToggle) {
-        this.els.playToggle.addEventListener("click", () => {
-          if (this.audio && !this.audio.paused && !this.audio.ended) {
-            this.pause();
-          } else {
-            this.play();
-          }
-        });
+bindCoreControls() {
+  if (this.els.playToggle) {
+    this.els.playToggle.addEventListener("click", () => {
+      if (this.audio && !this.audio.paused && !this.audio.ended) {
+        this.pause();
+      } else {
+        this.play();
       }
+    });
+  }
 
-      if (this.els.prev) {
+  if (this.mobileView.els.playToggle) {
+    this.mobileView.els.playToggle.addEventListener(
+      "click",
+      () => {
+        if (this.audio && !this.audio.paused && !this.audio.ended) {
+          this.pause();
+        } else {
+          this.play();
+        }
+      },
+    );
+  }
+
+  if (this.els.prev) {
         this.els.prev.addEventListener("click", (event) => {
           event.preventDefault();
           this.previous();

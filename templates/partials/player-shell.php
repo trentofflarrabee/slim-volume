@@ -193,4 +193,48 @@ if (! defined('ABSPATH')) {
             <span class="sv-player__queue-count" data-sv-queue-count hidden>0</span>
         </button>
     </div>
+
+        <div
+        class="sv-player-mobile"
+        data-sv-mobile-player
+        hidden
+    >
+        <div
+            class="sv-player-mobile__mini"
+            data-sv-mobile-mini
+        >
+            <div
+                class="sv-player-mobile__art"
+                data-sv-mobile-art
+                aria-hidden="true"
+            ></div>
+
+            <div class="sv-player-mobile__meta">
+                <div
+                    class="sv-player-mobile__title"
+                    data-sv-mobile-title
+                >
+                    <?php esc_html_e('Nothing playing', 'slim-volume'); ?>
+                </div>
+
+                <div
+                    class="sv-player-mobile__release"
+                    data-sv-mobile-release
+                ></div>
+            </div>
+
+            <button
+                type="button"
+                class="sv-player__button sv-player-mobile__play"
+                data-sv-mobile-play-toggle
+                aria-label="<?php esc_attr_e('Play', 'slim-volume'); ?>"
+            >
+                <span
+                    data-sv-mobile-play-icon
+                    aria-hidden="true"
+                >▶</span>
+            </button>
+        </div>
+    </div>
+    
 </div>
