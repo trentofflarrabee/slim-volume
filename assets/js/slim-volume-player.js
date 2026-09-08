@@ -269,12 +269,7 @@ hasVisualizerPresentation() {
       this.els.currentTime = this.root.querySelector("[data-sv-current-time]");
       this.els.duration = this.root.querySelector("[data-sv-duration]");
 
-      this.els.visualizerPresetName = this.root.querySelector(
-        "[data-sv-visualizer-preset-name]",
-      );
-      this.els.visualizerNextPreset = this.root.querySelector(
-        "[data-sv-visualizer-next-preset]",
-      );
+
 
       this.cacheDesktopViewEls();
 
@@ -3013,18 +3008,19 @@ setDrawerOpen(open) {
     },
 
     setVisualizerVisible(visible, options = {}) {
-      this.refreshVisualizerEls();
+        this.refreshVisualizerEls();
 
-      const shouldPersist = options.persist !== false;
+        const els = this.visualizerView.els;
+        const shouldPersist = options.persist !== false;
 
-      this.visualizerVisible = !!visible;
+        this.visualizerVisible = !!visible;
 
-      if (this.els.visualizer) {
-        this.els.visualizer.classList.toggle(
-          "is-hidden",
-          !this.visualizerVisible,
-        );
-      }
+        if (els.visualizer) {
+          els.visualizer.classList.toggle(
+            "is-hidden",
+            !this.visualizerVisible,
+          );
+        }
 
       this.updateVisualizerToggle();
 
@@ -3046,29 +3042,37 @@ setDrawerOpen(open) {
       }
     },
 
-    updateVisualizerToggle() {
-      if (!this.els.visualizerToggle) {
-        return;
-      }
+updateVisualizerToggle() {
+  const els = this.visualizerView.els;
 
-      const isEnabled = this.isVisualizerEnabled();
+  if (!els.visualizerToggle) {
+    return;
+  }
 
-      this.els.visualizerToggle.disabled = !isEnabled;
-      this.els.visualizerToggle.classList.toggle("is-disabled", !isEnabled);
-      this.els.visualizerToggle.setAttribute(
-        "aria-pressed",
-        this.visualizerVisible ? "true" : "false",
-      );
+  const isEnabled = this.isVisualizerEnabled();
 
-      if (!isEnabled) {
-        this.els.visualizerToggle.textContent = "Viz Off";
-        return;
-      }
+  els.visualizerToggle.disabled = !isEnabled;
 
-      this.els.visualizerToggle.textContent = this.visualizerVisible
-        ? "Hide Viz"
-        : "Show Viz";
-    },
+  els.visualizerToggle.classList.toggle(
+    "is-disabled",
+    !isEnabled,
+  );
+
+  els.visualizerToggle.setAttribute(
+    "aria-pressed",
+    this.visualizerVisible ? "true" : "false",
+  );
+
+  if (!isEnabled) {
+    els.visualizerToggle.textContent = "Viz Off";
+    return;
+  }
+
+  els.visualizerToggle.textContent =
+    this.visualizerVisible
+      ? "Hide Viz"
+      : "Show Viz";
+},
 
     isVisualizerVisible() {
       return this.visualizerVisible && this.isVisualizerEnabled();
@@ -3084,8 +3088,12 @@ setDrawerOpen(open) {
       });
 
       if (window.ResizeObserver) {
-        const observerTarget =
-          this.els.visualizer || this.els.visualizerCanvas || this.root;
+      const els = this.visualizerView.els;
+
+      const observerTarget =
+        els.visualizer
+        || els.visualizerCanvas
+        || this.root;
 
         if (observerTarget) {
           this.visualizerResizeObserver = new ResizeObserver(() => {
@@ -3284,8 +3292,12 @@ setDrawerOpen(open) {
             this.root.classList.remove("sv-player--butterchurn-ready");
           }
 
-          if (this.els.visualizer) {
-            this.els.visualizer.classList.remove("is-unavailable");
+          const els = this.visualizerView.els;
+
+          if (els.visualizer) {
+            els.visualizer.classList.remove(
+              "is-unavailable",
+            );
           }
         },
 
@@ -3317,9 +3329,11 @@ setDrawerOpen(open) {
         return;
       }
 
-      if (!this.audio || !this.els.visualizerCanvas) {
-        return;
-      }
+const els = this.visualizerView.els;
+
+if (!this.audio || !els.visualizerCanvas) {
+  return;
+}
 
       const graph = this.getAudioGraph();
 
@@ -3335,7 +3349,7 @@ setDrawerOpen(open) {
         this.visualizer.source = graph.source;
         this.visualizer.data = new Uint8Array(graph.analyser.frequencyBinCount);
         this.visualizer.canvasContext =
-          this.els.visualizerCanvas.getContext("2d");
+  els.visualizerCanvas.getContext("2d");
         this.visualizer.initialized = true;
 
         this.root.classList.add("sv-player--visualizer-ready");
@@ -3479,9 +3493,11 @@ canUseFullscreen() {
 isVisualizerFullscreen() {
   this.refreshVisualizerEls();
 
+  const visualizer = this.visualizerView.els.visualizer;
+
   return Boolean(
-    this.els.visualizer &&
-      this.getFullscreenElement() === this.els.visualizer,
+    visualizer &&
+      this.getFullscreenElement() === visualizer,
   );
 },
 
@@ -3497,7 +3513,7 @@ toggleVisualizerFullscreen() {
 requestVisualizerFullscreen() {
   this.refreshVisualizerEls();
 
-  const target = this.els.visualizer;
+  const target = this.visualizerView.els.visualizer;
 
   if (!target || !this.canUseFullscreen()) {
     return;
@@ -3559,7 +3575,8 @@ handleVisualizerFullscreenChange() {
 updateVisualizerFullscreenUI() {
   this.refreshVisualizerEls();
 
-  const button = this.els.visualizerFullscreen;
+  const button =
+    this.visualizerView.els.visualizerFullscreen;
 
   if (!button) {
     return;
@@ -3574,12 +3591,18 @@ updateVisualizerFullscreenUI() {
   }
 
   const isFullscreen = this.isVisualizerFullscreen();
-  const enterLabel = button.dataset.svFullscreenLabel || "Fullscreen";
-  const exitLabel = button.dataset.svExitFullscreenLabel || "Exit Fullscreen";
-  const label = isFullscreen ? exitLabel : enterLabel;
+  const enterLabel =
+    button.dataset.svFullscreenLabel || "Fullscreen";
+  const exitLabel =
+    button.dataset.svExitFullscreenLabel || "Exit Fullscreen";
+  const label =
+    isFullscreen ? exitLabel : enterLabel;
 
   button.textContent = label;
-  button.setAttribute("aria-pressed", isFullscreen ? "true" : "false");
+  button.setAttribute(
+    "aria-pressed",
+    isFullscreen ? "true" : "false",
+  );
   button.setAttribute("aria-label", label);
 },
 
@@ -3648,40 +3671,52 @@ updateVisualizerFullscreenUI() {
   return formatted;
 },
 
-    updateVisualizerPresetUI(presetName = "") {
-      this.refreshVisualizerEls();
+updateVisualizerPresetUI(presetName = "") {
+  this.refreshVisualizerEls();
 
-if (this.els.visualizerPresetName) {
-  const mode = this.getVisualizerMode();
+  const els = this.visualizerView.els;
 
-  let label = presetName;
+  if (els.visualizerPresetName) {
+    const mode = this.getVisualizerMode();
 
-  if (!label) {
-    label = mode === "butterchurn" ? "Butterchurn" : "Bars";
+    let label = presetName;
+
+    if (!label) {
+      label =
+        mode === "butterchurn"
+          ? "Butterchurn"
+          : "Bars";
+    }
+
+    const displayLabel =
+      this.formatVisualizerPresetName(label);
+
+    els.visualizerPresetName.textContent =
+      displayLabel;
+
+    els.visualizerPresetName.title = label;
   }
 
-  const displayLabel = this.formatVisualizerPresetName(label);
+  if (els.visualizerNextPreset) {
+    const canChangePreset = !!(
+      this.getVisualizerMode() === "butterchurn"
+      && this.visualizer.butterchurnInstance
+      && typeof this.visualizer.butterchurnInstance
+        .loadRandomPreset === "function"
+    );
 
-  this.els.visualizerPresetName.textContent = displayLabel;
-  this.els.visualizerPresetName.title = label;
-}
+    els.visualizerNextPreset.hidden =
+      !canChangePreset;
 
-      if (this.els.visualizerNextPreset) {
-        const canChangePreset = !!(
-          this.getVisualizerMode() === "butterchurn" &&
-          this.visualizer.butterchurnInstance &&
-          typeof this.visualizer.butterchurnInstance.loadRandomPreset ===
-            "function"
-        );
+    els.visualizerNextPreset.disabled =
+      !canChangePreset;
 
-        this.els.visualizerNextPreset.hidden = !canChangePreset;
-        this.els.visualizerNextPreset.disabled = !canChangePreset;
-        this.els.visualizerNextPreset.classList.toggle(
-          "is-disabled",
-          !canChangePreset,
-        );
-      }
-    },
+    els.visualizerNextPreset.classList.toggle(
+      "is-disabled",
+      !canChangePreset,
+    );
+  }
+},
 
     nextButterchurnPreset() {
       const instance = this.visualizer.butterchurnInstance;
@@ -3716,17 +3751,11 @@ if (this.els.visualizerPresetName) {
         return null;
       }
 
-      if (!this.els.visualizerCanvas && this.root) {
-        this.els.visualizerCanvas = this.root.querySelector(
-          "[data-sv-visualizer-canvas]",
-        );
-      }
+      this.refreshVisualizerEls();
 
-      if (!this.els.visualizer && this.root) {
-        this.els.visualizer = this.root.querySelector("[data-sv-visualizer]");
-      }
+      const els = this.visualizerView.els;
 
-      if (!this.audio || !this.els.visualizerCanvas) {
+      if (!this.audio || !els.visualizerCanvas) {
         return null;
       }
 
@@ -3740,11 +3769,11 @@ if (this.els.visualizerPresetName) {
       try {
         this.stopBarsVisualizer();
 
-        const instance = window.SVButterchurn.create({
-          canvas: this.els.visualizerCanvas,
-          audio: this.audio,
-          audioGraph: graph,
-        });
+      const instance = window.SVButterchurn.create({
+        canvas: els.visualizerCanvas,
+        audio: this.audio,
+        audioGraph: graph,
+      });
 
         this.visualizer.butterchurnInstance = instance;
         this.refreshVisualizerEls();
@@ -3760,8 +3789,8 @@ if (this.els.visualizerPresetName) {
           this.root.classList.add("sv-player--butterchurn-ready");
         }
 
-        if (this.els.visualizer) {
-          this.els.visualizer.classList.remove("is-unavailable");
+        if (els.visualizer) {
+          els.visualizer.classList.remove("is-unavailable");
         }
 
         this.resizeButterchurnVisualizer();
@@ -3867,9 +3896,11 @@ if (this.els.visualizerPresetName) {
         return;
       }
 
-      if (!this.els.visualizerCanvas) {
-        return;
-      }
+        const canvas = this.visualizerView.els.visualizerCanvas;
+
+        if (!canvas) {
+          return;
+        }
 
       this.updateVisualizerPresetUI(
         this.getVisualizerMode() === "butterchurn" ? "Bars fallback" : "Bars",
@@ -3911,7 +3942,7 @@ if (this.els.visualizerPresetName) {
     },
 
     drawBarsVisualizerFrame() {
-      const canvas = this.els.visualizerCanvas;
+      const canvas = this.visualizerView.els.visualizerCanvas;
       const ctx = this.visualizer.canvasContext;
       const analyser = this.visualizer.analyser;
       const data = this.visualizer.data;
@@ -3968,7 +3999,7 @@ if (this.els.visualizerPresetName) {
         return;
       }
 
-      const canvas = this.els.visualizerCanvas;
+      const canvas = this.visualizerView.els.visualizerCanvas;
 
       if (!canvas) {
         return;
@@ -4012,13 +4043,16 @@ if (this.els.visualizerPresetName) {
       }
     },
 
-    markBarsVisualizerUnavailable() {
-      if (this.els.visualizer) {
-        this.els.visualizer.classList.add("is-unavailable");
-      }
+markBarsVisualizerUnavailable() {
+  const visualizer =
+    this.visualizerView.els.visualizer;
 
-      this.drawBarsVisualizerIdle();
-    },
+  if (visualizer) {
+    visualizer.classList.add("is-unavailable");
+  }
+
+  this.drawBarsVisualizerIdle();
+},
 
     roundRect(ctx, x, y, width, height, radius) {
       const safeRadius = Math.min(radius, width / 2, height / 2);
