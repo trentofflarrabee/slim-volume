@@ -294,17 +294,77 @@
 
     els: {},
 
-    init() {
-      this.root = document.querySelector("[data-sv-player]");
-      if (!this.root) return;
+    reportTemplateIssue(message, details = {}) {
+      if (!this.isDebugEnabled()) {
+        return;
+      }
 
-      if (this.root.__svPlayerInitialized) return;
-      this.root.__svPlayerInitialized = true;
+      console.warn(
+        "[SVPlayer] Player shell compatibility issue:",
+        message,
+        details,
+      );
+    },
 
-      this.audio = this.root.querySelector("[data-sv-audio]");
-      if (!this.audio) return;
+    validatePlayerShell() {
+  const issues = [];
 
-      this.cacheEls();
+  if (!this.root) {
+    issues.push("Missing [data-sv-player] root.");
+  }
+
+  if (!this.audio) {
+    issues.push("Missing required [data-sv-audio] element.");
+  }
+
+  const audioElements =
+    this.root
+      ? this.root.querySelectorAll("[data-sv-audio]")
+      : [];
+
+  if (audioElements.length > 1) {
+    issues.push(
+      `Expected exactly one [data-sv-audio] element, found ${audioElements.length}.`,
+    );
+  }
+
+  if (issues.length) {
+    this.reportTemplateIssue(
+      "The active player-shell.php override may be outdated or incompatible.",
+      {
+        issues,
+      },
+    );
+
+    return false;
+  }
+
+  return true;
+},
+
+init() {
+  this.root = document.querySelector("[data-sv-player]");
+
+  if (!this.root) {
+    this.reportTemplateIssue(
+      "Missing required [data-sv-player] root.",
+    );
+    return;
+  }
+
+  if (this.root.__svPlayerInitialized) {
+    return;
+  }
+
+  this.audio = this.root.querySelector("[data-sv-audio]");
+
+  if (!this.validatePlayerShell()) {
+    return;
+  }
+
+  this.root.__svPlayerInitialized = true;
+
+  this.cacheEls();
       this.setupPlaybackEnvironment();
       this.setupMediaSession();
       this.setupPlayerTitlePanHandling();
