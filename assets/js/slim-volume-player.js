@@ -31,6 +31,7 @@
     mobileView: {
       els: {},
       unsubscribe: null,
+      previouslyFocusedElement: null,
     },
 
     visualizerView: {
@@ -712,6 +713,64 @@
       });
     },
 
+    focusMobilePlayer() {
+  const sheet = this.mobileView.els.sheet;
+
+  if (!sheet) {
+    return;
+  }
+
+  const activeElement =
+    document.activeElement instanceof HTMLElement
+      ? document.activeElement
+      : null;
+
+  if (
+    activeElement
+    && activeElement !== document.body
+    && !sheet.contains(activeElement)
+  ) {
+    this.mobileView.previouslyFocusedElement =
+      activeElement;
+  }
+
+  window.requestAnimationFrame(() => {
+    if (
+      this.presentationState.mobile.surface
+        !== "player"
+    ) {
+      return;
+    }
+
+    const minimize =
+      this.mobileView.els.minimize;
+
+    if (minimize) {
+      minimize.focus();
+      return;
+    }
+
+    sheet.focus();
+  });
+},
+
+restoreMobilePlayerFocus() {
+  const previous =
+    this.mobileView.previouslyFocusedElement;
+
+  this.mobileView.previouslyFocusedElement = null;
+
+  if (
+    previous
+    && document.contains(previous)
+    && typeof previous.focus === "function"
+  ) {
+    window.requestAnimationFrame(() => {
+      previous.focus();
+    });
+  }
+},
+
     cacheEls() {
       this.els.title = this.root.querySelector("[data-sv-player-title]");
       this.els.release = this.root.querySelector("[data-sv-player-release]");
@@ -761,6 +820,7 @@
 
       this.syncMobilePlayerLifecycle();
       this.notifyState("presentation");
+      this.focusMobilePlayer();
     },
 
     minimizeMobilePlayer() {
@@ -772,6 +832,7 @@
 
       this.syncMobilePlayerLifecycle();
       this.notifyState("presentation");
+      this.restoreMobilePlayerFocus();
     },
 
     updatePresentationMode() {
@@ -797,6 +858,7 @@
       }
       if (!isMobile) {
         this.presentationState.mobile.surface = "closed";
+        this.mobileView.previouslyFocusedElement = null;
       }
       this.syncMobilePlayerLifecycle();
     },

@@ -241,6 +241,10 @@ if (! defined('ABSPATH')) {
         <div
             class="sv-player-mobile__sheet"
             data-sv-mobile-sheet
+            role="dialog"
+            aria-modal="true"
+            aria-label="<?php esc_attr_e('Now playing', 'slim-volume'); ?>"
+            tabindex="-1"
             hidden
         >
             <div class="sv-player-mobile__sheet-header">
