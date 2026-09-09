@@ -576,6 +576,38 @@ els.sheetRelease = this.root.querySelector(
   "[data-sv-mobile-sheet-release]",
 );
 
+els.seek = this.root.querySelector(
+  "[data-sv-mobile-seek]",
+);
+
+els.seekFill = this.root.querySelector(
+  "[data-sv-mobile-seek-fill]",
+);
+
+els.currentTime = this.root.querySelector(
+  "[data-sv-mobile-current-time]",
+);
+
+els.duration = this.root.querySelector(
+  "[data-sv-mobile-duration]",
+);
+
+els.prev = this.root.querySelector(
+  "[data-sv-mobile-prev]",
+);
+
+els.next = this.root.querySelector(
+  "[data-sv-mobile-next]",
+);
+
+els.sheetPlay = this.root.querySelector(
+  "[data-sv-mobile-sheet-play]",
+);
+
+els.sheetPlayIcon = this.root.querySelector(
+  "[data-sv-mobile-sheet-play-icon]",
+);
+
 },
 
     bindDesktopViewState() {
@@ -710,6 +742,93 @@ renderMobileMiniPlayer(state) {
           els.sheetArt.appendChild(img);
         }
       }
+      if (els.sheetPlay) {
+          els.sheetPlay.disabled = !track;
+
+          els.sheetPlay.setAttribute(
+            "aria-label",
+            state.isPlaying ? "Pause" : "Play",
+          );
+        }
+
+        if (els.sheetPlayIcon) {
+          els.sheetPlayIcon.textContent =
+            state.isPlaying ? "⏸" : "▶";
+        }
+
+        const duration =
+          Number.isFinite(state.duration)
+            ? state.duration
+            : 0;
+
+        const currentTime =
+          Number.isFinite(state.currentTime)
+            ? state.currentTime
+            : 0;
+
+        const progress =
+          duration > 0
+            ? Math.max(
+                0,
+                Math.min(1, currentTime / duration),
+              )
+            : 0;
+
+        if (els.seekFill) {
+          els.seekFill.style.width =
+            `${progress * 100}%`;
+        }
+
+        if (els.currentTime) {
+          els.currentTime.textContent =
+            this.formatTime(currentTime);
+        }
+
+        if (els.duration) {
+          els.duration.textContent =
+            this.formatTime(duration);
+        }
+},
+
+renderMobilePlaybackProgress() {
+  const els = this.mobileView.els;
+
+  if (!this.audio) {
+    return;
+  }
+
+  const duration =
+    Number.isFinite(this.audio.duration)
+      ? this.audio.duration
+      : 0;
+
+  const currentTime =
+    Number.isFinite(this.audio.currentTime)
+      ? this.audio.currentTime
+      : 0;
+
+  const progress =
+    duration > 0
+      ? Math.max(
+          0,
+          Math.min(1, currentTime / duration),
+        )
+      : 0;
+
+  if (els.seekFill) {
+    els.seekFill.style.width =
+      `${progress * 100}%`;
+  }
+
+  if (els.currentTime) {
+    els.currentTime.textContent =
+      this.formatTime(currentTime);
+  }
+
+  if (els.duration) {
+    els.duration.textContent =
+      this.formatTime(duration);
+  }
 },
 
 bindMobileViewState() {
@@ -1341,6 +1460,75 @@ bindCoreControls() {
         );
       }
 
+      if (this.mobileView.els.sheetPlay) {
+  this.mobileView.els.sheetPlay.addEventListener(
+    "click",
+    () => {
+      if (
+        this.audio
+        && !this.audio.paused
+        && !this.audio.ended
+      ) {
+        this.pause();
+      } else {
+        this.play();
+      }
+    },
+  );
+}
+
+if (this.mobileView.els.prev) {
+  this.mobileView.els.prev.addEventListener(
+    "click",
+    (event) => {
+      event.preventDefault();
+      this.previous();
+    },
+  );
+}
+
+if (this.mobileView.els.next) {
+  this.mobileView.els.next.addEventListener(
+    "click",
+    (event) => {
+      event.preventDefault();
+      this.next();
+    },
+  );
+}
+
+if (this.mobileView.els.seek) {
+  this.mobileView.els.seek.addEventListener(
+    "click",
+    (event) => {
+      if (!this.audio || !this.audio.duration) {
+        return;
+      }
+
+      const rect =
+        this.mobileView.els.seek
+          .getBoundingClientRect();
+
+      if (!rect.width) {
+        return;
+      }
+
+      const percent = Math.max(
+        0,
+        Math.min(
+          1,
+          (event.clientX - rect.left)
+            / rect.width,
+        ),
+      );
+
+      this.seek(
+        percent * this.audio.duration,
+      );
+    },
+  );
+}
+
   if (this.els.prev) {
         this.els.prev.addEventListener("click", (event) => {
           event.preventDefault();
@@ -1686,9 +1874,11 @@ if (queue) {
 
       this.audio.addEventListener("timeupdate", () => {
         this.updateProgressUi();
+        this.renderMobilePlaybackProgress();
         this.syncTimedLyrics();
         this.scheduleSaveState();
       });
+
       window.addEventListener("beforeunload", () => {
         if (this.saveStateTimer) {
           window.clearTimeout(this.saveStateTimer);

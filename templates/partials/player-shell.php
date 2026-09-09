@@ -272,6 +272,56 @@ if (! defined('ABSPATH')) {
                     class="sv-player-mobile__sheet-release"
                     data-sv-mobile-sheet-release
                 ></div>
+                <div class="sv-player-mobile__progress">
+                    <button
+                        type="button"
+                        class="sv-player-mobile__seek"
+                        data-sv-mobile-seek
+                        aria-label="<?php esc_attr_e('Seek', 'slim-volume'); ?>"
+                    >
+                        <span
+                            class="sv-player-mobile__seek-fill"
+                            data-sv-mobile-seek-fill
+                        ></span>
+                    </button>
+
+                    <div class="sv-player-mobile__time">
+                        <span data-sv-mobile-current-time>0:00</span>
+                        <span data-sv-mobile-duration>0:00</span>
+                    </div>
+                </div>
+
+                <div class="sv-player-mobile__transport">
+                    <button
+                        type="button"
+                        class="sv-player__button"
+                        data-sv-mobile-prev
+                        aria-label="<?php esc_attr_e('Previous track', 'slim-volume'); ?>"
+                    >
+                        <span aria-hidden="true">⏮</span>
+                    </button>
+
+                    <button
+                        type="button"
+                        class="sv-player__button sv-player-mobile__sheet-play"
+                        data-sv-mobile-sheet-play
+                        aria-label="<?php esc_attr_e('Play', 'slim-volume'); ?>"
+                    >
+                        <span
+                            data-sv-mobile-sheet-play-icon
+                            aria-hidden="true"
+                        >▶</span>
+                    </button>
+
+                    <button
+                        type="button"
+                        class="sv-player__button"
+                        data-sv-mobile-next
+                        aria-label="<?php esc_attr_e('Next track', 'slim-volume'); ?>"
+                    >
+                        <span aria-hidden="true">⏭</span>
+                    </button>
+                </div>
             </div>
         </div>
     </div>
