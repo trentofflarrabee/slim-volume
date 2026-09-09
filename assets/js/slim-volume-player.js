@@ -504,6 +504,19 @@
       els.sheetPlayIcon = this.root.querySelector(
         "[data-sv-mobile-sheet-play-icon]",
       );
+
+      els.queue = this.root.querySelector(
+        "[data-sv-mobile-queue]",
+      );
+
+      els.queueCount = this.root.querySelector(
+        "[data-sv-mobile-queue-count]",
+      );
+
+      els.clearQueue = this.root.querySelector(
+        "[data-sv-mobile-clear-queue]",
+      );
+
     },
 
     bindDesktopViewState() {
@@ -524,6 +537,7 @@
           case "metadata":
           case "presentation":
             this.renderMobileMiniPlayer(state);
+            this.renderMobileQueue();
             break;
 
           default:
@@ -1500,6 +1514,94 @@ containMobileSheetFocus(event) {
           event.preventDefault();
           this.seek(Math.max(0, Math.min(duration, nextTime)));
         });
+      }
+
+      const mobileQueue =
+        this.mobileView.els.queue;
+
+      if (mobileQueue) {
+        mobileQueue.addEventListener(
+          "click",
+          (event) => {
+            const target =
+              event.target instanceof Element
+                ? event.target
+                : null;
+
+            if (!target) return;
+
+            const removeButton =
+              target.closest(
+                "[data-sv-mobile-remove-queue-index]",
+              );
+
+            if (removeButton) {
+              event.preventDefault();
+              event.stopPropagation();
+
+              const removeIndex =
+                parseInt(
+                  removeButton.getAttribute(
+                    "data-sv-mobile-remove-queue-index",
+                  ) || "-1",
+                  10,
+                );
+
+              this.removeTrackFromQueue(
+                removeIndex,
+              );
+
+              return;
+            }
+
+            const button =
+              target.closest(
+                "[data-sv-mobile-queue-index]",
+              );
+
+            if (!button) return;
+
+            event.preventDefault();
+
+            const index =
+              parseInt(
+                button.getAttribute(
+                  "data-sv-mobile-queue-index",
+                ) || "-1",
+                10,
+              );
+
+            if (
+              !Number.isFinite(index)
+              || index < 0
+            ) {
+              return;
+            }
+
+            if (!this.playlist[index]) {
+              return;
+            }
+
+            this.loadPlaylist(
+              this.playlist,
+              {
+                startIndex: index,
+                autoplay: true,
+                load: true,
+              },
+            );
+          },
+        );
+      }
+
+      if (this.mobileView.els.clearQueue) {
+        this.mobileView.els.clearQueue.addEventListener(
+          "click",
+          (event) => {
+            event.preventDefault();
+            this.clearQueue();
+          },
+        );
       }
 
       if (this.desktopView.els.drawerToggle) {
@@ -3494,6 +3596,275 @@ containMobileSheetFocus(event) {
             `Remove ${track.title || "track"} from queue`,
           );
           removeButton.textContent = "Remove";
+
+          item.appendChild(removeButton);
+        }
+
+        els.queue.appendChild(item);
+      });
+    },
+
+    renderMobileQueue() {
+      const els = this.mobileView.els;
+
+      if (!els.queue) return;
+
+      const tracks =
+        this.playlist.length
+          ? this.playlist
+          : this.albumTracklist;
+
+      if (els.clearQueue) {
+        const hasActiveAudio =
+          this.hasActiveAudio();
+
+        const canClear =
+          this.playlist.length > 1
+          || (!hasActiveAudio && this.playlist.length > 0);
+
+        const label =
+          hasActiveAudio
+            ? "Clear Upcoming"
+            : "Clear Queue";
+
+        els.clearQueue.hidden = !canClear;
+        els.clearQueue.disabled = !canClear;
+        els.clearQueue.textContent = label;
+        els.clearQueue.setAttribute(
+          "aria-label",
+          label,
+        );
+      }
+
+      if (els.queueCount) {
+        if (tracks.length) {
+          els.queueCount.hidden = false;
+          els.queueCount.textContent =
+            String(tracks.length);
+        } else {
+          els.queueCount.hidden = true;
+          els.queueCount.textContent = "0";
+        }
+      }
+
+      els.queue.innerHTML = "";
+
+      if (!tracks.length) {
+        const empty =
+          document.createElement("div");
+
+        empty.className =
+          "sv-player-mobile__queue-empty";
+
+        empty.textContent =
+          "Your queue is empty. Add tracks from a release or track page.";
+
+        els.queue.appendChild(empty);
+        return;
+      }
+
+      const currentTrack =
+        this.getCurrentTrack();
+
+      const isPlaying =
+        !!this.audio
+        && !this.audio.paused
+        && !this.audio.ended;
+
+      tracks.forEach((track, index) => {
+        const item =
+          document.createElement("div");
+
+        item.className =
+          "sv-player-mobile__queue-item";
+
+        item.setAttribute(
+          "data-sv-mobile-queue-item-index",
+          String(index),
+        );
+
+        const isCurrent =
+          currentTrack
+          && String(currentTrack.id)
+            === String(track.id);
+
+        item.classList.toggle(
+          "is-current",
+          !!isCurrent,
+        );
+
+        item.classList.toggle(
+          "is-playing",
+          !!isCurrent && isPlaying,
+        );
+
+        const button =
+          document.createElement("button");
+
+        button.type = "button";
+        button.className =
+          "sv-player-mobile__queue-button";
+
+        button.setAttribute(
+          "data-sv-mobile-queue-index",
+          String(index),
+        );
+
+        if (!track.audioUrl) {
+          button.disabled = true;
+          button.classList.add(
+            "is-disabled",
+          );
+        }
+
+        const art =
+          document.createElement("span");
+
+        art.className =
+          "sv-player-mobile__queue-art";
+
+        const artworkUrl =
+          track.artwork && track.artwork.url
+            ? track.artwork.url
+            : "";
+
+        if (artworkUrl) {
+          const img =
+            document.createElement("img");
+
+          img.src = artworkUrl;
+
+          img.alt =
+            track.artwork && track.artwork.alt
+              ? track.artwork.alt
+              : track.title || "";
+
+          img.loading = "lazy";
+          img.decoding = "async";
+
+          art.appendChild(img);
+        }
+
+        const body =
+          document.createElement("span");
+
+        body.className =
+          "sv-player-mobile__queue-body";
+
+        const title =
+          document.createElement("span");
+
+        title.className =
+          "sv-player-mobile__queue-title";
+
+        title.textContent =
+          track.title || "";
+
+        const meta =
+          document.createElement("span");
+
+        meta.className =
+          "sv-player-mobile__queue-meta";
+
+        const metaParts = [];
+
+        if (track.trackNumber) {
+          metaParts.push(
+            `#${track.trackNumber}`,
+          );
+        }
+
+        if (track.duration) {
+          metaParts.push(
+            track.duration,
+          );
+        }
+
+        if (
+          track.release
+          && track.release.title
+        ) {
+          metaParts.push(
+            track.release.title,
+          );
+        }
+
+        meta.textContent =
+          metaParts.join(" • ");
+
+        const status =
+          document.createElement("span");
+
+        status.className =
+          "sv-player-mobile__queue-status";
+
+        const isQueuedList =
+          this.playlist.length > 0;
+
+        if (!track.audioUrl) {
+          status.textContent =
+            "No audio";
+        } else if (isCurrent && isPlaying) {
+          status.textContent =
+            "Playing";
+        } else if (isCurrent) {
+          status.textContent =
+            "Paused";
+        } else if (
+          isQueuedList
+          && !currentTrack
+          && index === this.currentIndex
+        ) {
+          status.textContent =
+            "Ready";
+        } else if (
+          isQueuedList
+          && currentTrack
+          && index === this.currentIndex + 1
+        ) {
+          status.textContent =
+            "Next";
+        } else if (isQueuedList) {
+          status.textContent =
+            "Queued";
+        } else {
+          status.textContent = "";
+        }
+
+        body.appendChild(title);
+        body.appendChild(meta);
+
+        button.appendChild(art);
+        button.appendChild(body);
+        button.appendChild(status);
+
+        item.appendChild(button);
+
+        const canRemove =
+          !isCurrent
+          || !this.hasActiveAudio();
+
+        if (canRemove) {
+          const removeButton =
+            document.createElement("button");
+
+          removeButton.type = "button";
+
+          removeButton.className =
+            "sv-player-mobile__queue-remove";
+
+          removeButton.setAttribute(
+            "data-sv-mobile-remove-queue-index",
+            String(index),
+          );
+
+          removeButton.setAttribute(
+            "aria-label",
+            `Remove ${track.title || "track"} from queue`,
+          );
+
+          removeButton.textContent =
+            "Remove";
 
           item.appendChild(removeButton);
         }

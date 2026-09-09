@@ -1907,6 +1907,124 @@ body.sv-ajax-loading [data-sv-page-content] {
   }
 }
 
+.sv-player-mobile__queue-section {
+  width: 100%;
+  margin-top: 28px;
+  padding-top: 18px;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.sv-player-mobile__queue-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.sv-player-mobile__queue-heading {
+  min-width: 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.sv-player-mobile__queue-count {
+  margin-left: 6px;
+  color: var(--sv-player-muted);
+  font-size: 0.8rem;
+  font-weight: 400;
+}
+
+.sv-player-mobile__queue-clear {
+  flex: 0 0 auto;
+  min-height: 36px;
+}
+
+.sv-player-mobile__queue {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.sv-player-mobile__queue-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.sv-player-mobile__queue-button {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 6px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+}
+
+.sv-player-mobile__queue-item.is-current
+  .sv-player-mobile__queue-button {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.sv-player-mobile__queue-art {
+  width: 44px;
+  height: 44px;
+  overflow: hidden;
+  border-radius: var(--sv-radius-small);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.sv-player-mobile__queue-art img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.sv-player-mobile__queue-body {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.sv-player-mobile__queue-title,
+.sv-player-mobile__queue-meta {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.sv-player-mobile__queue-title {
+  font-weight: 600;
+}
+
+.sv-player-mobile__queue-meta {
+  margin-top: 2px;
+  color: var(--sv-player-muted);
+  font-size: 0.75rem;
+}
+
+.sv-player-mobile__queue-status {
+  font-size: 0.72rem;
+  color: var(--sv-player-muted);
+}
+
+.sv-player-mobile__queue-remove {
+  flex: 0 0 auto;
+}
+
+.sv-player-mobile__queue-empty {
+  padding: 12px 0;
+  color: var(--sv-player-muted);
+  font-size: 0.85rem;
+}
+
 }
 
 /* ==========================================================================

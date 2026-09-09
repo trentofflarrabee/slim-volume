@@ -326,6 +326,31 @@ if (! defined('ABSPATH')) {
                         <span aria-hidden="true">⏭</span>
                     </button>
                 </div>
+                <div class="sv-player-mobile__queue-section">
+                    <div class="sv-player-mobile__queue-header">
+                        <div class="sv-player-mobile__queue-heading">
+                            <?php esc_html_e('Up next', 'slim-volume'); ?>
+
+                            <span
+                                class="sv-player-mobile__queue-count"
+                                data-sv-mobile-queue-count
+                            ></span>
+                        </div>
+
+                        <button
+                            type="button"
+                            class="sv-player-mobile__queue-clear"
+                            data-sv-mobile-clear-queue
+                        >
+                            <?php esc_html_e('Clear', 'slim-volume'); ?>
+                        </button>
+                    </div>
+
+                    <div
+                        class="sv-player-mobile__queue"
+                        data-sv-mobile-queue
+                    ></div>
+                </div>
             </div>
         </div>
     </div>
