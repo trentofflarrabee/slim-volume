@@ -771,6 +771,82 @@ restoreMobilePlayerFocus() {
   }
 },
 
+getMobileSheetFocusableElements() {
+  const sheet = this.mobileView.els.sheet;
+
+  if (!sheet) {
+    return [];
+  }
+
+  return Array.from(
+    sheet.querySelectorAll(
+      [
+        "button:not([disabled])",
+        "a[href]",
+        "input:not([disabled])",
+        "select:not([disabled])",
+        "textarea:not([disabled])",
+        '[tabindex]:not([tabindex="-1"])',
+      ].join(","),
+    ),
+  ).filter((element) => {
+    return (
+      element instanceof HTMLElement
+      && !element.hidden
+      && element.offsetParent !== null
+    );
+  });
+},
+
+containMobileSheetFocus(event) {
+  if (
+    event.key !== "Tab"
+    || this.presentationState.mobile.surface !== "player"
+    || !this.isMobilePresentationMode()
+  ) {
+    return;
+  }
+
+  const sheet = this.mobileView.els.sheet;
+
+  if (!sheet) {
+    return;
+  }
+
+  const focusable =
+    this.getMobileSheetFocusableElements();
+
+  if (!focusable.length) {
+    event.preventDefault();
+    sheet.focus();
+    return;
+  }
+
+  const first = focusable[0];
+  const last = focusable[focusable.length - 1];
+  const active = document.activeElement;
+
+  if (event.shiftKey) {
+    if (
+      active === first
+      || !sheet.contains(active)
+    ) {
+      event.preventDefault();
+      last.focus();
+    }
+
+    return;
+  }
+
+  if (
+    active === last
+    || !sheet.contains(active)
+  ) {
+    event.preventDefault();
+    first.focus();
+  }
+},
+
     cacheEls() {
       this.els.title = this.root.querySelector("[data-sv-player-title]");
       this.els.release = this.root.querySelector("[data-sv-player-release]");
@@ -1611,6 +1687,7 @@ restoreMobilePlayerFocus() {
       }
 
       document.addEventListener("keydown", (event) => {
+        this.containMobileSheetFocus(event);
         if (
           event.key === "Escape" &&
           this.presentationState.desktop.drawerOpen
