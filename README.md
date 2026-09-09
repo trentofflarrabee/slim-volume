@@ -2,13 +2,29 @@
 
 Slim Volume is a WordPress-native music catalog and audio player plugin for artists, bands, labels, and music projects.
 
-It provides release archives, single release pages, track deep-dive pages, admin workflow tools, a persistent frontend audio player, queue drawer, theming settings, and optional Butterchurn visualizer support.
+It provides release archives, single release pages, track deep-dive pages, admin workflow tools, a persistent frontend audio player, responsive desktop/mobile player surfaces, queue management, theming settings, and optional Butterchurn visualizer support.
 
 ## Current Status
 
-`v0.5.0-beta`
+`v0.6.0`
 
-Slim Volume is ready for controlled production use and early customer projects. APIs, templates, settings, and markup may still change before the first stable release.
+Slim Volume is still in beta and is intended for controlled production use and early customer projects. APIs, templates, settings, and markup may still change before the first stable release.
+
+## Highlights in 0.6.0
+
+- Added a dedicated mobile mini-player below the 760px player breakpoint.
+- Added an expanded mobile Now Playing sheet with artwork, metadata, transport controls, progress, seeking, and queue access.
+- Preserved one authoritative audio element and shared playback/queue state across desktop and mobile presentations.
+- Added uninterrupted breakpoint switching without reloading audio or resetting playback position.
+- Added mobile sheet lifecycle behavior including scroll locking, Escape-to-close, focus entry/restore, and keyboard focus containment.
+- Added a dedicated mobile queue with current/next hierarchy, track selection, removal, and clear controls.
+- Refactored desktop drawer and visualizer presentation ownership away from shared playback state.
+- Added shared player state subscriptions while keeping high-frequency progress updates isolated.
+- Hardened AJAX refresh behavior so the persistent player survives navigation without replacing the active audio element.
+- Isolated Media Session and native mobile audio environment handling behind adapters.
+- Hardened `player-shell.php` compatibility validation and debug diagnostics.
+- Preserved the public `window.SVPlayer` compatibility facade.
+- Cleaned up responsive player CSS and removed obsolete mobile desktop-bar rules.
 
 ## Features
 
@@ -29,7 +45,10 @@ Slim Volume is ready for controlled production use and early customer projects. 
 - Configurable editorial font family, size, line height, and link color
 - Release and track frontend templates
 - Persistent frontend audio player
-- Queue drawer with reorder/remove controls
+- Responsive desktop and mobile player presentations
+- Mobile mini-player and expanded Now Playing sheet
+- Desktop queue drawer with reorder/remove controls
+- Mobile queue with track selection, remove, and clear controls
 - Release-level and per-track playback actions
 - Accessible compact track hero playback controls
 - Player state persistence
@@ -74,6 +93,30 @@ Clean music URLs should use formats such as:
 
 If the permalink structure contains `/index.php/`, WordPress may instead generate URLs such as `/index.php/music/`. This behavior comes from the WordPress or web-server permalink configuration rather than Slim Volume's routing.
 
+## Responsive Player
+
+Slim Volume uses one persistent playback engine with separate presentation surfaces:
+
+- Desktop presentation above 760px
+- Mobile presentation at 760px and below
+- One authoritative `<audio>` element across both
+- Shared track, queue, and playback state
+- Transient presentation state for desktop drawer and mobile sheet behavior
+
+Crossing the player breakpoint does not intentionally reload the active audio source, replace the audio element, or reset playback position.
+
+The mobile player includes:
+
+- Compact persistent mini-player
+- Expanded Now Playing sheet
+- Artwork and release metadata
+- Play/pause, previous, and next controls
+- Seek/progress display
+- Mobile queue
+- Scroll locking while expanded
+- Escape-to-close
+- Keyboard focus management and containment
+
 ## Butterchurn Visualizer
 
 Butterchurn mode requires these files:
@@ -84,6 +127,8 @@ assets/vendor/butterchurn/butterchurn-presets.min.js
 ```
 
 If those files are missing, Slim Volume falls back to the built-in bars visualizer option.
+
+Visualizer presentation is optional; missing visualizer markup should not prevent the core player from initializing.
 
 ## Template Overrides
 
@@ -101,6 +146,8 @@ your-theme/slim-volume/single-sv_release.php
 your-theme/slim-volume/single-sv_track.php
 your-theme/slim-volume/partials/player-shell.php
 ```
+
+Player-shell overrides are a compatibility surface. When Slim Volume debug mode is enabled, incompatible player-shell markup can emit diagnostic warnings for missing or duplicate required player elements.
 
 ## Settings
 
@@ -131,17 +178,17 @@ Administrators can export the current Slim Volume music catalog through **Music 
 
 The JSON export preserves portable music-domain information including:
 
-* Catalog fallback artist/project identity
-* Artists and projects
-* Releases and tracks
-* Release and track relationships
-* Publication and scheduling state
-* Release dates and track ordering
-* Editorial content and excerpts
-* Lyrics and timed lyrics
-* Credits
-* Streaming, purchase, external, audio, and download destinations
-* Descriptive artwork, audio, and download media references
+- Catalog fallback artist/project identity
+- Artists and projects
+- Releases and tracks
+- Release and track relationships
+- Publication and scheduling state
+- Release dates and track ordering
+- Editorial content and excerpts
+- Lyrics and timed lyrics
+- Credits
+- Streaming, purchase, external, audio, and download destinations
+- Descriptive artwork, audio, and download media references
 
 Audio, artwork, and downloadable files themselves are not bundled into the export. Persistent descriptive references are preserved where available.
 
@@ -181,7 +228,7 @@ Slim Volume does not replace WordPress or a general SEO plugin for canonical URL
 - Extra Butterchurn preset packs
 - More template override documentation
 - More developer hooks and filters
-- Accessibility audit pass
+- Broader automated accessibility coverage
 - PHPUnit/WP test coverage
 
 ## Development Notes
@@ -197,8 +244,10 @@ CSS prefix: sv-
 JS global: window.SVPlayer
 ```
 
+The public `window.SVPlayer` object is treated as a compatibility facade. Internal presentation state, renderer ownership, and platform adapters are not exposed directly.
+
 ## Version
 
 Current beta release:
 
-`v0.5.0-beta`
+`v0.6.0`
