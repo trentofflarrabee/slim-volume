@@ -24,6 +24,11 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v6
 
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
       - name: Read and validate release version
         id: version
         shell: bash
@@ -70,7 +75,7 @@ jobs:
           echo "Release version: $plugin_header_version"
           echo "version=$plugin_header_version" >> "$GITHUB_OUTPUT"
 
-      - name: Build release archive
+      - name: Stage release files
         shell: bash
         run: |
           rm -rf build
@@ -81,6 +86,52 @@ jobs:
             ./ \
             build/staging/slim-volume/
 
+      - name: Minify release assets
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          while IFS= read -r -d '' file; do
+            echo "Minifying JS: $file"
+
+            temp_file="${file}.tmp"
+
+            npx --yes terser@5 \
+              "$file" \
+              --compress \
+              --mangle \
+              --output "$temp_file"
+
+            mv "$temp_file" "$file"
+          done < <(
+            find build/staging/slim-volume/assets/js \
+              -type f \
+              -name '*.js' \
+              ! -name '*.min.js' \
+              -print0
+          )
+
+          while IFS= read -r -d '' file; do
+            echo "Minifying CSS: $file"
+
+            temp_file="${file}.tmp"
+
+            npx --yes clean-css-cli@5 \
+              -o "$temp_file" \
+              "$file"
+
+            mv "$temp_file" "$file"
+          done < <(
+            find build/staging/slim-volume/assets/css \
+              -type f \
+              -name '*.css' \
+              ! -name '*.min.css' \
+              -print0
+          )
+
+      - name: Build release archive
+        shell: bash
+        run: |
           (
             cd build/staging
             zip -qr "../slim-volume-${{ steps.version.outputs.version }}.zip" slim-volume
