@@ -3475,6 +3475,15 @@ containMobileSheetFocus(event) {
 
         item.classList.toggle("is-current", !!isCurrent);
         item.classList.toggle("is-playing", !!isCurrent && isPlaying);
+        const isNext =
+          this.playlist.length > 0
+          && currentTrack
+          && index === this.currentIndex + 1;
+
+        item.classList.toggle(
+          "is-next",
+          !!isNext,
+        );
         item.classList.toggle(
           "is-queued",
           !currentTrack && index === this.currentIndex,
