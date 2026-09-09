@@ -1391,6 +1391,37 @@ containMobileSheetFocus(event) {
         });
       }
 
+      if (this.mobileView.els.mini) {
+  this.mobileView.els.mini.addEventListener(
+    "keydown",
+    (event) => {
+      if (
+        event.key !== "Enter"
+        && event.key !== " "
+      ) {
+        return;
+      }
+
+      const target =
+        event.target instanceof Element
+          ? event.target
+          : null;
+
+      if (
+        target
+        && target.closest(
+          "[data-sv-mobile-play-toggle]",
+        )
+      ) {
+        return;
+      }
+
+      event.preventDefault();
+      this.openMobilePlayer();
+    },
+  );
+}
+
       if (this.mobileView.els.minimize) {
         this.mobileView.els.minimize.addEventListener("click", (event) => {
           event.preventDefault();

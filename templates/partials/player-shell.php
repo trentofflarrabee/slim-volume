@@ -205,6 +205,9 @@ if (! defined('ABSPATH')) {
         <div
             class="sv-player-mobile__mini"
             data-sv-mobile-mini
+            role="button"
+            tabindex="0"
+            aria-label="<?php esc_attr_e('Open now playing', 'slim-volume'); ?>"
         >
             <div
                 class="sv-player-mobile__art"
