@@ -2214,6 +2214,10 @@ body.sv-player-drawer-open {
   padding-bottom: 500px;
 }
 
+body.sv-player-mobile-sheet-open {
+  overflow: hidden;
+}
+
 .sv-player__drawer[hidden] {
   display: none;
 }

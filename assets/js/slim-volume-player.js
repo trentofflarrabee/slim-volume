@@ -2,8 +2,7 @@
   "use strict";
 
   const PLAYER_MOBILE_BREAKPOINT = 760;
-  const PLAYER_MOBILE_QUERY =
-    `(max-width: ${PLAYER_MOBILE_BREAKPOINT}px)`;
+  const PLAYER_MOBILE_QUERY = `(max-width: ${PLAYER_MOBILE_BREAKPOINT}px)`;
 
   const SV = {
     root: null,
@@ -62,33 +61,28 @@
           },
         };
 
-        Object.entries(actions).forEach(
-          ([action, handler]) => {
-            try {
-              navigator.mediaSession.setActionHandler(
-                action,
-                handler,
+        Object.entries(actions).forEach(([action, handler]) => {
+          try {
+            navigator.mediaSession.setActionHandler(action, handler);
+          } catch (err) {
+            /*
+             * Individual Media Session actions can vary by browser.
+             * Unsupported actions should not affect normal playback.
+             */
+            if (app.isDebugEnabled()) {
+              console.debug(
+                `[SVPlayer] Media Session action "${action}" is unavailable.`,
+                err,
               );
-            } catch (err) {
-              /*
-              * Individual Media Session actions can vary by browser.
-              * Unsupported actions should not affect normal playback.
-              */
-              if (app.isDebugEnabled()) {
-                console.debug(
-                  `[SVPlayer] Media Session action "${action}" is unavailable.`,
-                  err,
-                );
-              }
             }
-          },
-        );
+          }
+        });
       },
 
       syncMetadata(app, track) {
         if (
-          !("mediaSession" in navigator)
-          || typeof window.MediaMetadata !== "function"
+          !("mediaSession" in navigator) ||
+          typeof window.MediaMetadata !== "function"
         ) {
           return;
         }
@@ -108,31 +102,23 @@
           return;
         }
 
-        const title =
-          typeof track.title === "string"
-            ? track.title.trim()
-            : "";
+        const title = typeof track.title === "string" ? track.title.trim() : "";
 
         let artist = "";
 
         if (typeof track.artist === "string") {
           artist = track.artist.trim();
-        } else if (
-          track.artist
-          && typeof track.artist.name === "string"
-        ) {
+        } else if (track.artist && typeof track.artist.name === "string") {
           artist = track.artist.name.trim();
         }
 
         const album =
-          track.release
-          && typeof track.release.title === "string"
+          track.release && typeof track.release.title === "string"
             ? track.release.title.trim()
             : "";
 
         const artworkUrl =
-          track.artwork
-          && typeof track.artwork.url === "string"
+          track.artwork && typeof track.artwork.url === "string"
             ? track.artwork.url.trim()
             : "";
 
@@ -151,8 +137,7 @@
         }
 
         try {
-          navigator.mediaSession.metadata =
-            new window.MediaMetadata(metadata);
+          navigator.mediaSession.metadata = new window.MediaMetadata(metadata);
         } catch (err) {
           if (app.isDebugEnabled()) {
             console.debug(
@@ -169,22 +154,12 @@
         }
 
         try {
-          if (
-            app.audio
-            && !app.audio.paused
-            && !app.audio.ended
-          ) {
-            navigator.mediaSession.playbackState =
-              "playing";
-          } else if (
-            app.audio
-            && (app.audio.currentSrc || app.audio.src)
-          ) {
-            navigator.mediaSession.playbackState =
-              "paused";
+          if (app.audio && !app.audio.paused && !app.audio.ended) {
+            navigator.mediaSession.playbackState = "playing";
+          } else if (app.audio && (app.audio.currentSrc || app.audio.src)) {
+            navigator.mediaSession.playbackState = "paused";
           } else {
-            navigator.mediaSession.playbackState =
-              "none";
+            navigator.mediaSession.playbackState = "none";
           }
         } catch (err) {
           if (app.isDebugEnabled()) {
@@ -198,65 +173,54 @@
     },
 
     audioEnvironmentAdapter: {
-  isNativeMobileAudioEnvironment() {
-    const userAgent = String(
-      navigator.userAgent || "",
-    );
+      isNativeMobileAudioEnvironment() {
+        const userAgent = String(navigator.userAgent || "");
 
-    const platform = String(
-      navigator.platform || "",
-    );
+        const platform = String(navigator.platform || "");
 
-    const maxTouchPoints = Number(
-      navigator.maxTouchPoints || 0,
-    );
+        const maxTouchPoints = Number(navigator.maxTouchPoints || 0);
 
-    const isIOS =
-      /iPhone|iPad|iPod/i.test(userAgent)
-      || (
-        platform === "MacIntel"
-        && maxTouchPoints > 1
-      );
+        const isIOS =
+          /iPhone|iPad|iPod/i.test(userAgent) ||
+          (platform === "MacIntel" && maxTouchPoints > 1);
 
-    const isAndroid =
-      /Android/i.test(userAgent);
+        const isAndroid = /Android/i.test(userAgent);
 
-    return isIOS || isAndroid;
-  },
+        return isIOS || isAndroid;
+      },
 
-  setup(app) {
-    const nativeMobileAudioMode =
-      this.isNativeMobileAudioEnvironment();
+      setup(app) {
+        const nativeMobileAudioMode = this.isNativeMobileAudioEnvironment();
 
-    if (app.root) {
-      app.root.classList.toggle(
-        "sv-player--native-mobile-audio",
-        nativeMobileAudioMode,
-      );
-    }
-
-    if (
-      nativeMobileAudioMode
-      && navigator.audioSession
-      && "type" in navigator.audioSession
-    ) {
-      try {
-        navigator.audioSession.type = "playback";
-      } catch (err) {
-        if (app.isDebugEnabled()) {
-          console.debug(
-            "[SVPlayer] Audio Session playback mode is unavailable.",
-            err,
+        if (app.root) {
+          app.root.classList.toggle(
+            "sv-player--native-mobile-audio",
+            nativeMobileAudioMode,
           );
         }
-      }
-    }
 
-    return {
-      nativeMobileAudioMode,
-    };
-  },
-},
+        if (
+          nativeMobileAudioMode &&
+          navigator.audioSession &&
+          "type" in navigator.audioSession
+        ) {
+          try {
+            navigator.audioSession.type = "playback";
+          } catch (err) {
+            if (app.isDebugEnabled()) {
+              console.debug(
+                "[SVPlayer] Audio Session playback mode is unavailable.",
+                err,
+              );
+            }
+          }
+        }
+
+        return {
+          nativeMobileAudioMode,
+        };
+      },
+    },
 
     storageKey: "slimVolumePlayerState:v1",
     saveStateTimer: null,
@@ -317,73 +281,67 @@
     },
 
     validatePlayerShell() {
-  const issues = [];
+      const issues = [];
 
-  if (!this.root) {
-    issues.push("Missing [data-sv-player] root.");
-  }
+      if (!this.root) {
+        issues.push("Missing [data-sv-player] root.");
+      }
 
-  if (!this.audio) {
-    issues.push("Missing required [data-sv-audio] element.");
-  }
+      if (!this.audio) {
+        issues.push("Missing required [data-sv-audio] element.");
+      }
 
-  const audioElements =
-    this.root
-      ? this.root.querySelectorAll("[data-sv-audio]")
-      : [];
+      const audioElements = this.root
+        ? this.root.querySelectorAll("[data-sv-audio]")
+        : [];
 
-  if (audioElements.length > 1) {
-    issues.push(
-      `Expected exactly one [data-sv-audio] element, found ${audioElements.length}.`,
-    );
-  }
+      if (audioElements.length > 1) {
+        issues.push(
+          `Expected exactly one [data-sv-audio] element, found ${audioElements.length}.`,
+        );
+      }
 
-  if (issues.length) {
-    this.reportTemplateIssue(
-      "The active player-shell.php override may be outdated or incompatible.",
-      {
-        issues,
-      },
-    );
+      if (issues.length) {
+        this.reportTemplateIssue(
+          "The active player-shell.php override may be outdated or incompatible.",
+          {
+            issues,
+          },
+        );
 
-    return false;
-  }
+        return false;
+      }
 
-  return true;
-},
+      return true;
+    },
 
-init() {
-  this.root = document.querySelector("[data-sv-player]");
+    init() {
+      this.root = document.querySelector("[data-sv-player]");
 
-  if (!this.root) {
-    this.reportTemplateIssue(
-      "Missing required [data-sv-player] root.",
-    );
-    return;
-  }
+      if (!this.root) {
+        this.reportTemplateIssue("Missing required [data-sv-player] root.");
+        return;
+      }
 
-  if (this.root.__svPlayerInitialized) {
-    return;
-  }
+      if (this.root.__svPlayerInitialized) {
+        return;
+      }
 
-  this.audio = this.root.querySelector("[data-sv-audio]");
+      this.audio = this.root.querySelector("[data-sv-audio]");
 
-  if (!this.validatePlayerShell()) {
-    return;
-  }
+      if (!this.validatePlayerShell()) {
+        return;
+      }
 
-  this.root.__svPlayerInitialized = true;
+      this.root.__svPlayerInitialized = true;
 
-this.cacheEls();
-this.setupPlaybackEnvironment();
-this.setupMediaSession();
-this.setupPresentationModeHandling();
-this.setupPlayerTitlePanHandling();
+      this.cacheEls();
+      this.setupPlaybackEnvironment();
+      this.setupMediaSession();
+      this.setupPresentationModeHandling();
+      this.setupPlayerTitlePanHandling();
 
-      if (
-        !this.nativeMobileAudioMode
-        && this.hasVisualizerPresentation()
-      ) {
+      if (!this.nativeMobileAudioMode && this.hasVisualizerPresentation()) {
         this.setupVisualizerController();
         this.restoreVisualizerVisibility();
         this.setupVisualizerResizeHandling();
@@ -423,286 +381,211 @@ this.setupPlayerTitlePanHandling();
       window.SVPlayer = publicApi;
     },
 
-refreshVisualizerEls() {
-  if (!this.root) {
-    return;
-  }
+    refreshVisualizerEls() {
+      if (!this.root) {
+        return;
+      }
 
-  const els = this.visualizerView.els;
+      const els = this.visualizerView.els;
 
-  els.visualizer = this.root.querySelector(
-    "[data-sv-visualizer]",
-  );
+      els.visualizer = this.root.querySelector("[data-sv-visualizer]");
 
-  els.visualizerCanvas = this.root.querySelector(
-    "[data-sv-visualizer-canvas]",
-  );
+      els.visualizerCanvas = this.root.querySelector(
+        "[data-sv-visualizer-canvas]",
+      );
 
-  els.visualizerToggle = this.root.querySelector(
-    "[data-sv-visualizer-toggle]",
-  );
+      els.visualizerToggle = this.root.querySelector(
+        "[data-sv-visualizer-toggle]",
+      );
 
-  els.visualizerPresetName = this.root.querySelector(
-    "[data-sv-visualizer-preset-name]",
-  );
+      els.visualizerPresetName = this.root.querySelector(
+        "[data-sv-visualizer-preset-name]",
+      );
 
-  els.visualizerNextPreset = this.root.querySelector(
-    "[data-sv-visualizer-next-preset]",
-  );
+      els.visualizerNextPreset = this.root.querySelector(
+        "[data-sv-visualizer-next-preset]",
+      );
 
-  els.visualizerFullscreen = this.root.querySelector(
-    "[data-sv-visualizer-fullscreen]",
-  );
-},
+      els.visualizerFullscreen = this.root.querySelector(
+        "[data-sv-visualizer-fullscreen]",
+      );
+    },
 
-hasVisualizerPresentation() {
-  const els = this.visualizerView.els;
+    hasVisualizerPresentation() {
+      const els = this.visualizerView.els;
 
-  return !!(
-    els.visualizer
-    || els.visualizerCanvas
-    || els.visualizerToggle
-  );
-},
+      return !!(els.visualizer || els.visualizerCanvas || els.visualizerToggle);
+    },
 
     cacheDesktopViewEls() {
       const els = this.desktopView.els;
 
-      els.root = this.root.querySelector(
-        "[data-sv-desktop-player]",
-      );
+      els.root = this.root.querySelector("[data-sv-desktop-player]");
 
-      els.drawer = this.root.querySelector(
-        "[data-sv-drawer]"
-      );
+      els.drawer = this.root.querySelector("[data-sv-drawer]");
 
-      els.drawerToggle = this.root.querySelector(
-        "[data-sv-drawer-toggle]"
-      );
+      els.drawerToggle = this.root.querySelector("[data-sv-drawer-toggle]");
 
       els.drawerToggleLabel = this.root.querySelector(
-        "[data-sv-drawer-toggle-label]"
+        "[data-sv-drawer-toggle-label]",
       );
 
-      els.drawerClose = this.root.querySelector(
-        "[data-sv-drawer-close]"
-      );
+      els.drawerClose = this.root.querySelector("[data-sv-drawer-close]");
 
-      els.drawerArt = this.root.querySelector(
-        "[data-sv-drawer-art]"
-      );
+      els.drawerArt = this.root.querySelector("[data-sv-drawer-art]");
 
-      els.drawerTitle = this.root.querySelector(
-        "[data-sv-drawer-title]"
-      );
+      els.drawerTitle = this.root.querySelector("[data-sv-drawer-title]");
 
-      els.drawerRelease = this.root.querySelector(
-        "[data-sv-drawer-release]"
-      );
+      els.drawerRelease = this.root.querySelector("[data-sv-drawer-release]");
 
       els.drawerTrackLink = this.root.querySelector(
-        "[data-sv-drawer-track-link]"
+        "[data-sv-drawer-track-link]",
       );
 
       els.drawerReleaseLink = this.root.querySelector(
-        "[data-sv-drawer-release-link]"
+        "[data-sv-drawer-release-link]",
       );
 
-      els.drawerLinks = this.root.querySelector(
-        "[data-sv-drawer-links]"
-      );
+      els.drawerLinks = this.root.querySelector("[data-sv-drawer-links]");
 
-      els.queue = this.root.querySelector(
-        "[data-sv-queue]"
-      );
+      els.queue = this.root.querySelector("[data-sv-queue]");
 
-      els.queueCount = this.root.querySelector(
-        "[data-sv-queue-count]"
-      );
+      els.queueCount = this.root.querySelector("[data-sv-queue-count]");
 
-      els.clearQueue = this.root.querySelector(
-        "[data-sv-clear-queue]"
-      );
+      els.clearQueue = this.root.querySelector("[data-sv-clear-queue]");
     },
 
     cacheMobileViewEls() {
-  const els = this.mobileView.els;
+      const els = this.mobileView.els;
 
-  els.root = this.root.querySelector(
-    "[data-sv-mobile-player]",
-  );
+      els.root = this.root.querySelector("[data-sv-mobile-player]");
 
-  els.mini = this.root.querySelector(
-    "[data-sv-mobile-mini]",
-  );
+      els.mini = this.root.querySelector("[data-sv-mobile-mini]");
 
-  els.art = this.root.querySelector(
-    "[data-sv-mobile-art]",
-  );
+      els.art = this.root.querySelector("[data-sv-mobile-art]");
 
-  els.title = this.root.querySelector(
-    "[data-sv-mobile-title]",
-  );
+      els.title = this.root.querySelector("[data-sv-mobile-title]");
 
-  els.release = this.root.querySelector(
-    "[data-sv-mobile-release]",
-  );
+      els.release = this.root.querySelector("[data-sv-mobile-release]");
 
-  els.playToggle = this.root.querySelector(
-    "[data-sv-mobile-play-toggle]",
-  );
+      els.playToggle = this.root.querySelector("[data-sv-mobile-play-toggle]");
 
-  els.playIcon = this.root.querySelector(
-    "[data-sv-mobile-play-icon]",
-  );
+      els.playIcon = this.root.querySelector("[data-sv-mobile-play-icon]");
 
-  els.sheet = this.root.querySelector(
-  "[data-sv-mobile-sheet]",
-);
+      els.sheet = this.root.querySelector("[data-sv-mobile-sheet]");
 
-els.minimize = this.root.querySelector(
-  "[data-sv-mobile-minimize]",
-);
+      els.minimize = this.root.querySelector("[data-sv-mobile-minimize]");
 
-els.sheetArt = this.root.querySelector(
-  "[data-sv-mobile-sheet-art]",
-);
+      els.sheetArt = this.root.querySelector("[data-sv-mobile-sheet-art]");
 
-els.sheetTitle = this.root.querySelector(
-  "[data-sv-mobile-sheet-title]",
-);
+      els.sheetTitle = this.root.querySelector("[data-sv-mobile-sheet-title]");
 
-els.sheetRelease = this.root.querySelector(
-  "[data-sv-mobile-sheet-release]",
-);
+      els.sheetRelease = this.root.querySelector(
+        "[data-sv-mobile-sheet-release]",
+      );
 
-els.seek = this.root.querySelector(
-  "[data-sv-mobile-seek]",
-);
+      els.seek = this.root.querySelector("[data-sv-mobile-seek]");
 
-els.seekFill = this.root.querySelector(
-  "[data-sv-mobile-seek-fill]",
-);
+      els.seekFill = this.root.querySelector("[data-sv-mobile-seek-fill]");
 
-els.currentTime = this.root.querySelector(
-  "[data-sv-mobile-current-time]",
-);
+      els.currentTime = this.root.querySelector(
+        "[data-sv-mobile-current-time]",
+      );
 
-els.duration = this.root.querySelector(
-  "[data-sv-mobile-duration]",
-);
+      els.duration = this.root.querySelector("[data-sv-mobile-duration]");
 
-els.prev = this.root.querySelector(
-  "[data-sv-mobile-prev]",
-);
+      els.prev = this.root.querySelector("[data-sv-mobile-prev]");
 
-els.next = this.root.querySelector(
-  "[data-sv-mobile-next]",
-);
+      els.next = this.root.querySelector("[data-sv-mobile-next]");
 
-els.sheetPlay = this.root.querySelector(
-  "[data-sv-mobile-sheet-play]",
-);
+      els.sheetPlay = this.root.querySelector("[data-sv-mobile-sheet-play]");
 
-els.sheetPlayIcon = this.root.querySelector(
-  "[data-sv-mobile-sheet-play-icon]",
-);
-
-},
+      els.sheetPlayIcon = this.root.querySelector(
+        "[data-sv-mobile-sheet-play-icon]",
+      );
+    },
 
     bindDesktopViewState() {
-  if (typeof this.desktopView.unsubscribe === "function") {
-    this.desktopView.unsubscribe();
-  }
+      if (typeof this.desktopView.unsubscribe === "function") {
+        this.desktopView.unsubscribe();
+      }
 
-  this.desktopView.unsubscribe = this.subscribe(
-    (state, change) => {
-      if (!change || !change.type) {
+      this.desktopView.unsubscribe = this.subscribe((state, change) => {
+        if (!change || !change.type) {
+          return;
+        }
+
+        switch (change.type) {
+          case "initial":
+          case "track":
+          case "queue":
+          case "playback":
+          case "metadata":
+          case "presentation":
+            this.renderMobileMiniPlayer(state);
+            break;
+
+          default:
+            break;
+        }
+      });
+    },
+
+    renderMobileMiniPlayer(state) {
+      const els = this.mobileView.els;
+
+      if (!els.root) {
         return;
       }
 
-      switch (change.type) {
-        case "initial":
-        case "track":
-        case "queue":
-        case "playback":
-        case "metadata":
-        case "presentation":
-          this.renderMobileMiniPlayer(state);
-          break;
+      const track = state.currentTrack;
 
-        default:
-          break;
+      if (els.title) {
+        els.title.textContent =
+          track && track.title ? track.title : "Nothing playing";
       }
-    },
-  );
-},
 
-renderMobileMiniPlayer(state) {
-  const els = this.mobileView.els;
+      let releaseTitle = "";
 
-  if (!els.root) {
-    return;
-  }
+      if (track && track.release && typeof track.release.title === "string") {
+        releaseTitle = track.release.title;
+      }
 
-  const track = state.currentTrack;
+      if (els.release) {
+        els.release.textContent = releaseTitle;
+      }
 
-  if (els.title) {
-    els.title.textContent =
-      track && track.title
-        ? track.title
-        : "Nothing playing";
-  }
+      if (els.playToggle) {
+        els.playToggle.disabled = !track;
 
-  let releaseTitle = "";
+        els.playToggle.setAttribute(
+          "aria-label",
+          state.isPlaying ? "Pause" : "Play",
+        );
+      }
 
-  if (
-    track
-    && track.release
-    && typeof track.release.title === "string"
-  ) {
-    releaseTitle = track.release.title;
-  }
+      if (els.playIcon) {
+        els.playIcon.textContent = state.isPlaying ? "⏸" : "▶";
+      }
 
-  if (els.release) {
-    els.release.textContent = releaseTitle;
-  }
+      if (els.art) {
+        els.art.innerHTML = "";
 
-  if (els.playToggle) {
-    els.playToggle.disabled = !track;
+        const artworkUrl =
+          track && track.artwork && typeof track.artwork.url === "string"
+            ? track.artwork.url
+            : "";
 
-    els.playToggle.setAttribute(
-      "aria-label",
-      state.isPlaying ? "Pause" : "Play",
-    );
-  }
+        if (artworkUrl) {
+          const img = document.createElement("img");
 
-  if (els.playIcon) {
-    els.playIcon.textContent =
-      state.isPlaying ? "⏸" : "▶";
-  }
+          img.src = artworkUrl;
+          img.alt = "";
 
-  if (els.art) {
-    els.art.innerHTML = "";
-
-    const artworkUrl =
-      track
-      && track.artwork
-      && typeof track.artwork.url === "string"
-        ? track.artwork.url
-        : "";
-
-    if (artworkUrl) {
-      const img = document.createElement("img");
-
-      img.src = artworkUrl;
-      img.alt = "";
-
-      els.art.appendChild(img);
-          }
+          els.art.appendChild(img);
         }
-        const isPlayerOpen =
-        this.presentationState.mobile.surface === "player";
+      }
+      const isPlayerOpen = this.presentationState.mobile.surface === "player";
 
       if (els.mini) {
         els.mini.hidden = isPlayerOpen;
@@ -714,9 +597,7 @@ renderMobileMiniPlayer(state) {
 
       if (els.sheetTitle) {
         els.sheetTitle.textContent =
-          track && track.title
-            ? track.title
-            : "Nothing playing";
+          track && track.title ? track.title : "Nothing playing";
       }
 
       if (els.sheetRelease) {
@@ -727,9 +608,7 @@ renderMobileMiniPlayer(state) {
         els.sheetArt.innerHTML = "";
 
         const artworkUrl =
-          track
-          && track.artwork
-          && typeof track.artwork.url === "string"
+          track && track.artwork && typeof track.artwork.url === "string"
             ? track.artwork.url
             : "";
 
@@ -743,120 +622,95 @@ renderMobileMiniPlayer(state) {
         }
       }
       if (els.sheetPlay) {
-          els.sheetPlay.disabled = !track;
+        els.sheetPlay.disabled = !track;
 
-          els.sheetPlay.setAttribute(
-            "aria-label",
-            state.isPlaying ? "Pause" : "Play",
-          );
-        }
+        els.sheetPlay.setAttribute(
+          "aria-label",
+          state.isPlaying ? "Pause" : "Play",
+        );
+      }
 
-        if (els.sheetPlayIcon) {
-          els.sheetPlayIcon.textContent =
-            state.isPlaying ? "⏸" : "▶";
-        }
+      if (els.sheetPlayIcon) {
+        els.sheetPlayIcon.textContent = state.isPlaying ? "⏸" : "▶";
+      }
 
-        const duration =
-          Number.isFinite(state.duration)
-            ? state.duration
-            : 0;
+      const duration = Number.isFinite(state.duration) ? state.duration : 0;
 
-        const currentTime =
-          Number.isFinite(state.currentTime)
-            ? state.currentTime
-            : 0;
+      const currentTime = Number.isFinite(state.currentTime)
+        ? state.currentTime
+        : 0;
 
-        const progress =
-          duration > 0
-            ? Math.max(
-                0,
-                Math.min(1, currentTime / duration),
-              )
-            : 0;
+      const progress =
+        duration > 0 ? Math.max(0, Math.min(1, currentTime / duration)) : 0;
 
-        if (els.seekFill) {
-          els.seekFill.style.width =
-            `${progress * 100}%`;
-        }
+      if (els.seekFill) {
+        els.seekFill.style.width = `${progress * 100}%`;
+      }
 
-        if (els.currentTime) {
-          els.currentTime.textContent =
-            this.formatTime(currentTime);
-        }
+      if (els.currentTime) {
+        els.currentTime.textContent = this.formatTime(currentTime);
+      }
 
-        if (els.duration) {
-          els.duration.textContent =
-            this.formatTime(duration);
-        }
-},
+      if (els.duration) {
+        els.duration.textContent = this.formatTime(duration);
+      }
+    },
 
-renderMobilePlaybackProgress() {
-  const els = this.mobileView.els;
+    renderMobilePlaybackProgress() {
+      const els = this.mobileView.els;
 
-  if (!this.audio) {
-    return;
-  }
-
-  const duration =
-    Number.isFinite(this.audio.duration)
-      ? this.audio.duration
-      : 0;
-
-  const currentTime =
-    Number.isFinite(this.audio.currentTime)
-      ? this.audio.currentTime
-      : 0;
-
-  const progress =
-    duration > 0
-      ? Math.max(
-          0,
-          Math.min(1, currentTime / duration),
-        )
-      : 0;
-
-  if (els.seekFill) {
-    els.seekFill.style.width =
-      `${progress * 100}%`;
-  }
-
-  if (els.currentTime) {
-    els.currentTime.textContent =
-      this.formatTime(currentTime);
-  }
-
-  if (els.duration) {
-    els.duration.textContent =
-      this.formatTime(duration);
-  }
-},
-
-bindMobileViewState() {
-  if (typeof this.mobileView.unsubscribe === "function") {
-    this.mobileView.unsubscribe();
-  }
-
-  this.mobileView.unsubscribe = this.subscribe(
-    (state, change) => {
-      if (!change || !change.type) {
+      if (!this.audio) {
         return;
       }
 
-      switch (change.type) {
-        case "initial":
-        case "track":
-        case "queue":
-        case "playback":
-        case "metadata":
-          this.renderMobileMiniPlayer(state);
-          break;
+      const duration = Number.isFinite(this.audio.duration)
+        ? this.audio.duration
+        : 0;
 
-        default:
-          break;
+      const currentTime = Number.isFinite(this.audio.currentTime)
+        ? this.audio.currentTime
+        : 0;
+
+      const progress =
+        duration > 0 ? Math.max(0, Math.min(1, currentTime / duration)) : 0;
+
+      if (els.seekFill) {
+        els.seekFill.style.width = `${progress * 100}%`;
+      }
+
+      if (els.currentTime) {
+        els.currentTime.textContent = this.formatTime(currentTime);
+      }
+
+      if (els.duration) {
+        els.duration.textContent = this.formatTime(duration);
       }
     },
-  );
-},
+
+    bindMobileViewState() {
+      if (typeof this.mobileView.unsubscribe === "function") {
+        this.mobileView.unsubscribe();
+      }
+
+      this.mobileView.unsubscribe = this.subscribe((state, change) => {
+        if (!change || !change.type) {
+          return;
+        }
+
+        switch (change.type) {
+          case "initial":
+          case "track":
+          case "queue":
+          case "playback":
+          case "metadata":
+            this.renderMobileMiniPlayer(state);
+            break;
+
+          default:
+            break;
+        }
+      });
+    },
 
     cacheEls() {
       this.els.title = this.root.querySelector("[data-sv-player-title]");
@@ -875,121 +729,105 @@ bindMobileViewState() {
       this.els.currentTime = this.root.querySelector("[data-sv-current-time]");
       this.els.duration = this.root.querySelector("[data-sv-duration]");
 
-
-
       this.cacheDesktopViewEls();
       this.cacheMobileViewEls();
       this.refreshVisualizerEls();
     },
 
-setupPlaybackEnvironment() {
-  const environment =
-    this.audioEnvironmentAdapter.setup(this);
+    setupPlaybackEnvironment() {
+      const environment = this.audioEnvironmentAdapter.setup(this);
 
-  this.nativeMobileAudioMode =
-    !!environment.nativeMobileAudioMode;
-},
+      this.nativeMobileAudioMode = !!environment.nativeMobileAudioMode;
+    },
 
-isNativeMobileAudioEnvironment() {
-  return this.audioEnvironmentAdapter
-    .isNativeMobileAudioEnvironment();
-},
+    isNativeMobileAudioEnvironment() {
+      return this.audioEnvironmentAdapter.isNativeMobileAudioEnvironment();
+    },
 
-isMobilePresentationMode() {
-  return window.matchMedia(
-    PLAYER_MOBILE_QUERY,
-  ).matches;
-},
+    isMobilePresentationMode() {
+      return window.matchMedia(PLAYER_MOBILE_QUERY).matches;
+    },
 
-openMobilePlayer() {
-  if (!this.isMobilePresentationMode()) {
-    return;
-  }
+    openMobilePlayer() {
+      if (!this.isMobilePresentationMode()) {
+        return;
+      }
 
-  if (this.presentationState.mobile.surface === "player") {
-    return;
-  }
+      if (this.presentationState.mobile.surface === "player") {
+        return;
+      }
 
-  this.presentationState.mobile.surface = "player";
+      this.presentationState.mobile.surface = "player";
 
-  this.notifyState("presentation");
-},
+      this.syncMobilePlayerLifecycle();
+      this.notifyState("presentation");
+    },
 
-minimizeMobilePlayer() {
-  if (this.presentationState.mobile.surface === "closed") {
-    return;
-  }
+    minimizeMobilePlayer() {
+      if (this.presentationState.mobile.surface === "closed") {
+        return;
+      }
 
-  this.presentationState.mobile.surface = "closed";
+      this.presentationState.mobile.surface = "closed";
 
-  this.notifyState("presentation");
-},
+      this.syncMobilePlayerLifecycle();
+      this.notifyState("presentation");
+    },
 
-updatePresentationMode() {
-  const isMobile =
-    this.isMobilePresentationMode();
+    updatePresentationMode() {
+      const isMobile = this.isMobilePresentationMode();
 
-  const desktopEls = this.desktopView.els;
-  const mobileEls = this.mobileView.els;
+      const desktopEls = this.desktopView.els;
+      const mobileEls = this.mobileView.els;
 
-  if (desktopEls.root) {
-    desktopEls.root.hidden = isMobile;
-  }
+      if (desktopEls.root) {
+        desktopEls.root.hidden = isMobile;
+      }
 
-  if (mobileEls.root) {
-    mobileEls.root.hidden = !isMobile;
-  }
+      if (mobileEls.root) {
+        mobileEls.root.hidden = !isMobile;
+      }
 
-  this.root.classList.toggle(
-    "sv-player--mobile-presentation",
-    isMobile,
-  );
+      this.root.classList.toggle("sv-player--mobile-presentation", isMobile);
 
-  this.root.classList.toggle(
-    "sv-player--desktop-presentation",
-    !isMobile,
-  );
+      this.root.classList.toggle("sv-player--desktop-presentation", !isMobile);
 
-  if (
-    isMobile
-    && this.presentationState.desktop.drawerOpen
-  ) {
-    this.setDrawerOpen(false);
-  }
-  if (!isMobile) {
-  this.presentationState.mobile.surface = "closed";
-}
-},
+      if (isMobile && this.presentationState.desktop.drawerOpen) {
+        this.setDrawerOpen(false);
+      }
+      if (!isMobile) {
+        this.presentationState.mobile.surface = "closed";
+      }
+      this.syncMobilePlayerLifecycle();
+    },
 
-setupPresentationModeHandling() {
-  this.presentationMediaQuery =
-    window.matchMedia(
-      PLAYER_MOBILE_QUERY,
-    );
+    syncMobilePlayerLifecycle() {
+      const isOpen =
+        this.isMobilePresentationMode() &&
+        this.presentationState.mobile.surface === "player";
 
-  this.updatePresentationMode();
+      this.root.classList.toggle("sv-player--mobile-sheet-open", isOpen);
 
-  const handleChange = () => {
-    this.updatePresentationMode();
-  };
+      document.body.classList.toggle("sv-player-mobile-sheet-open", isOpen);
+    },
 
-  if (
-    typeof this.presentationMediaQuery
-      .addEventListener === "function"
-  ) {
-    this.presentationMediaQuery.addEventListener(
-      "change",
-      handleChange,
-    );
-  } else if (
-    typeof this.presentationMediaQuery
-      .addListener === "function"
-  ) {
-    this.presentationMediaQuery.addListener(
-      handleChange,
-    );
-  }
-},
+    setupPresentationModeHandling() {
+      this.presentationMediaQuery = window.matchMedia(PLAYER_MOBILE_QUERY);
+
+      this.updatePresentationMode();
+
+      const handleChange = () => {
+        this.updatePresentationMode();
+      };
+
+      if (typeof this.presentationMediaQuery.addEventListener === "function") {
+        this.presentationMediaQuery.addEventListener("change", handleChange);
+      } else if (
+        typeof this.presentationMediaQuery.addListener === "function"
+      ) {
+        this.presentationMediaQuery.addListener(handleChange);
+      }
+    },
 
     setupPlayerTitlePanHandling() {
       if (!this.els.title) {
@@ -1046,8 +884,7 @@ setupPresentationModeHandling() {
         return;
       }
 
-      const isMobile =
-        this.isMobilePresentationMode();
+      const isMobile = this.isMobilePresentationMode();
 
       const reduceMotion = window.matchMedia(
         "(prefers-reduced-motion: reduce)",
@@ -1059,9 +896,7 @@ setupPresentationModeHandling() {
 
       const availableWidth = title.clientWidth;
       const contentWidth = title.scrollWidth;
-      const overflow = Math.ceil(
-        contentWidth - availableWidth,
-      );
+      const overflow = Math.ceil(contentWidth - availableWidth);
 
       /*
        * A few pixels of tolerance prevents tiny font-rendering differences
@@ -1077,18 +912,9 @@ setupPresentationModeHandling() {
        * Longer titles receive proportionally more travel time while keeping
        * the movement comfortably slow.
        */
-      const duration = Math.min(
-        18,
-        Math.max(
-          8,
-          6 + travel / 24,
-        ),
-      );
+      const duration = Math.min(18, Math.max(8, 6 + travel / 24));
 
-      title.style.setProperty(
-        "--sv-player-title-travel",
-        `-${travel}px`,
-      );
+      title.style.setProperty("--sv-player-title-travel", `-${travel}px`);
 
       title.style.setProperty(
         "--sv-player-title-duration",
@@ -1098,101 +924,82 @@ setupPresentationModeHandling() {
       title.classList.add("is-overflowing");
     },
 
-  setupMediaSession() {
+    setupMediaSession() {
       this.mediaSessionAdapter.setup(this);
     },
 
-syncMediaSessionMetadata(track) {
-  this.mediaSessionAdapter.syncMetadata(
-    this,
-    track,
-  );
-},
+    syncMediaSessionMetadata(track) {
+      this.mediaSessionAdapter.syncMetadata(this, track);
+    },
 
-syncMediaSessionPlaybackState() {
-  this.mediaSessionAdapter.syncPlaybackState(
-    this,
-  );
-},
+    syncMediaSessionPlaybackState() {
+      this.mediaSessionAdapter.syncPlaybackState(this);
+    },
 
-getState() {
-  const audio = this.audio;
-  const track = this.getCurrentTrack();
+    getState() {
+      const audio = this.audio;
+      const track = this.getCurrentTrack();
 
-  return {
-    currentTrack: track || null,
-    playlist: this.playlist.slice(),
-    albumTracklist: this.albumTracklist.slice(),
-    currentIndex: this.currentIndex,
-    currentTime: audio ? audio.currentTime || 0 : 0,
-    duration:
-      audio && Number.isFinite(audio.duration)
-        ? audio.duration
-        : 0,
+      return {
+        currentTrack: track || null,
+        playlist: this.playlist.slice(),
+        albumTracklist: this.albumTracklist.slice(),
+        currentIndex: this.currentIndex,
+        currentTime: audio ? audio.currentTime || 0 : 0,
+        duration: audio && Number.isFinite(audio.duration) ? audio.duration : 0,
 
-          presentation: {
-            mobileSurface:
-              this.presentationState.mobile.surface,
-          },
+        presentation: {
+          mobileSurface: this.presentationState.mobile.surface,
+        },
 
-    isPlaying:
-      !!audio
-      && !audio.paused
-      && !audio.ended,
-    isLoading:
-      !!audio
-      && audio.readyState < HTMLMediaElement.HAVE_FUTURE_DATA
-      && !!(audio.currentSrc || audio.src),
-    canGoPrevious:
-      this.currentIndex > 0,
-    canGoNext:
-      this.currentIndex >= 0
-      && this.currentIndex < this.playlist.length - 1,
-  };
-},
+        isPlaying: !!audio && !audio.paused && !audio.ended,
+        isLoading:
+          !!audio &&
+          audio.readyState < HTMLMediaElement.HAVE_FUTURE_DATA &&
+          !!(audio.currentSrc || audio.src),
+        canGoPrevious: this.currentIndex > 0,
+        canGoNext:
+          this.currentIndex >= 0 &&
+          this.currentIndex < this.playlist.length - 1,
+      };
+    },
 
-subscribe(callback) {
-  if (typeof callback !== "function") {
-    return () => {};
-  }
-
-  this.stateSubscribers.add(callback);
-
-  callback(this.getState(), {
-    type: "initial",
-  });
-
-  return () => {
-    this.stateSubscribers.delete(callback);
-  };
-},
-
-notifyState(type = "change") {
-  if (!this.stateSubscribers.size) {
-    return;
-  }
-
-  const state = this.getState();
-  const change = {
-    type,
-  };
-
-  this.stateSubscribers.forEach((callback) => {
-    try {
-      callback(state, change);
-    } catch (err) {
-      if (this.isDebugEnabled()) {
-        console.error(
-          "[SVPlayer] State subscriber failed.",
-          err,
-        );
+    subscribe(callback) {
+      if (typeof callback !== "function") {
+        return () => {};
       }
-    }
-  });
-},
 
+      this.stateSubscribers.add(callback);
 
+      callback(this.getState(), {
+        type: "initial",
+      });
 
+      return () => {
+        this.stateSubscribers.delete(callback);
+      };
+    },
+
+    notifyState(type = "change") {
+      if (!this.stateSubscribers.size) {
+        return;
+      }
+
+      const state = this.getState();
+      const change = {
+        type,
+      };
+
+      this.stateSubscribers.forEach((callback) => {
+        try {
+          callback(state, change);
+        } catch (err) {
+          if (this.isDebugEnabled()) {
+            console.error("[SVPlayer] State subscriber failed.", err);
+          }
+        }
+      });
+    },
 
     publicApi() {
       const app = this;
@@ -1209,7 +1016,6 @@ notifyState(type = "change") {
         subscribe(callback) {
           return app.subscribe(callback);
         },
-
 
         play() {
           return app.play();
@@ -1282,9 +1088,7 @@ notifyState(type = "change") {
         },
 
         toggleDrawer() {
-          app.setDrawerOpen(
-            !app.presentationState.desktop.drawerOpen
-          );
+          app.setDrawerOpen(!app.presentationState.desktop.drawerOpen);
         },
 
         renderDrawer() {
@@ -1374,162 +1178,120 @@ notifyState(type = "change") {
     },
 
     refreshVisualizerAfterPageChange() {
-  if (!this.hasVisualizerPresentation()) {
-    return;
-  }
+      if (!this.hasVisualizerPresentation()) {
+        return;
+      }
 
-  if (!this.hasActiveAudio()) {
-    this.drawVisualizerIdle();
-  }
+      if (!this.hasActiveAudio()) {
+        this.drawVisualizerIdle();
+      }
 
-  if (this.isVisualizerVisible()) {
-    this.scheduleVisualizerResize(80);
-  }
-},
+      if (this.isVisualizerVisible()) {
+        this.scheduleVisualizerResize(80);
+      }
+    },
 
-refreshPage(options = {}) {
-  const preserveActive =
-    !!options.preserveActive;
+    refreshPage(options = {}) {
+      const preserveActive = !!options.preserveActive;
 
-  this.configureFromPage({
-    preserveActive,
-  });
+      this.configureFromPage({
+        preserveActive,
+      });
 
-  this.refreshPageBindings();
+      this.refreshPageBindings();
 
-  this.syncNowPlayingUi();
-  this.syncPlayButtonState();
+      this.syncNowPlayingUi();
+      this.syncPlayButtonState();
 
-  this.refreshVisualizerAfterPageChange();
-},
+      this.refreshVisualizerAfterPageChange();
+    },
 
-bindCoreControls() {
-        if (this.els.playToggle) {
-          this.els.playToggle.addEventListener("click", () => {
-            if (this.audio && !this.audio.paused && !this.audio.ended) {
-              this.pause();
-            } else {
-              this.play();
-            }
-          });
-        }
+    bindCoreControls() {
+      if (this.els.playToggle) {
+        this.els.playToggle.addEventListener("click", () => {
+          if (this.audio && !this.audio.paused && !this.audio.ended) {
+            this.pause();
+          } else {
+            this.play();
+          }
+        });
+      }
 
-        if (this.mobileView.els.playToggle) {
-          this.mobileView.els.playToggle.addEventListener(
-            "click",
-            () => {
-              if (this.audio && !this.audio.paused && !this.audio.ended) {
-                this.pause();
-              } else {
-                this.play();
-              }
-            },
-          );
-        }
+      if (this.mobileView.els.playToggle) {
+        this.mobileView.els.playToggle.addEventListener("click", () => {
+          if (this.audio && !this.audio.paused && !this.audio.ended) {
+            this.pause();
+          } else {
+            this.play();
+          }
+        });
+      }
 
-        if (this.mobileView.els.mini) {
-        this.mobileView.els.mini.addEventListener(
-          "click",
-          (event) => {
-            const target =
-              event.target instanceof Element
-                ? event.target
-                : null;
+      if (this.mobileView.els.mini) {
+        this.mobileView.els.mini.addEventListener("click", (event) => {
+          const target = event.target instanceof Element ? event.target : null;
 
-            if (
-              target
-              && target.closest(
-                "[data-sv-mobile-play-toggle]",
-              )
-            ) {
-              return;
-            }
+          if (target && target.closest("[data-sv-mobile-play-toggle]")) {
+            return;
+          }
 
-            this.openMobilePlayer();
-          },
-        );
+          this.openMobilePlayer();
+        });
       }
 
       if (this.mobileView.els.minimize) {
-        this.mobileView.els.minimize.addEventListener(
-          "click",
-          (event) => {
-            event.preventDefault();
-            this.minimizeMobilePlayer();
-          },
-        );
+        this.mobileView.els.minimize.addEventListener("click", (event) => {
+          event.preventDefault();
+          this.minimizeMobilePlayer();
+        });
       }
 
       if (this.mobileView.els.sheetPlay) {
-  this.mobileView.els.sheetPlay.addEventListener(
-    "click",
-    () => {
-      if (
-        this.audio
-        && !this.audio.paused
-        && !this.audio.ended
-      ) {
-        this.pause();
-      } else {
-        this.play();
-      }
-    },
-  );
-}
-
-if (this.mobileView.els.prev) {
-  this.mobileView.els.prev.addEventListener(
-    "click",
-    (event) => {
-      event.preventDefault();
-      this.previous();
-    },
-  );
-}
-
-if (this.mobileView.els.next) {
-  this.mobileView.els.next.addEventListener(
-    "click",
-    (event) => {
-      event.preventDefault();
-      this.next();
-    },
-  );
-}
-
-if (this.mobileView.els.seek) {
-  this.mobileView.els.seek.addEventListener(
-    "click",
-    (event) => {
-      if (!this.audio || !this.audio.duration) {
-        return;
+        this.mobileView.els.sheetPlay.addEventListener("click", () => {
+          if (this.audio && !this.audio.paused && !this.audio.ended) {
+            this.pause();
+          } else {
+            this.play();
+          }
+        });
       }
 
-      const rect =
-        this.mobileView.els.seek
-          .getBoundingClientRect();
-
-      if (!rect.width) {
-        return;
+      if (this.mobileView.els.prev) {
+        this.mobileView.els.prev.addEventListener("click", (event) => {
+          event.preventDefault();
+          this.previous();
+        });
       }
 
-      const percent = Math.max(
-        0,
-        Math.min(
-          1,
-          (event.clientX - rect.left)
-            / rect.width,
-        ),
-      );
+      if (this.mobileView.els.next) {
+        this.mobileView.els.next.addEventListener("click", (event) => {
+          event.preventDefault();
+          this.next();
+        });
+      }
 
-      this.seek(
-        percent * this.audio.duration,
-      );
-    },
-  );
-}
+      if (this.mobileView.els.seek) {
+        this.mobileView.els.seek.addEventListener("click", (event) => {
+          if (!this.audio || !this.audio.duration) {
+            return;
+          }
 
-  if (this.els.prev) {
+          const rect = this.mobileView.els.seek.getBoundingClientRect();
+
+          if (!rect.width) {
+            return;
+          }
+
+          const percent = Math.max(
+            0,
+            Math.min(1, (event.clientX - rect.left) / rect.width),
+          );
+
+          this.seek(percent * this.audio.duration);
+        });
+      }
+
+      if (this.els.prev) {
         this.els.prev.addEventListener("click", (event) => {
           event.preventDefault();
           this.previous();
@@ -1603,23 +1365,15 @@ if (this.mobileView.els.seek) {
       }
 
       if (this.desktopView.els.drawerToggle) {
-        this.desktopView.els.drawerToggle.addEventListener(
-          "click",
-          () => {
-            this.setDrawerOpen(
-              !this.presentationState.desktop.drawerOpen
-            );
-          },
-        );
+        this.desktopView.els.drawerToggle.addEventListener("click", () => {
+          this.setDrawerOpen(!this.presentationState.desktop.drawerOpen);
+        });
       }
 
       if (this.desktopView.els.drawerClose) {
-        this.desktopView.els.drawerClose.addEventListener(
-          "click",
-          () => {
-            this.setDrawerOpen(false);
-          },
-        );
+        this.desktopView.els.drawerClose.addEventListener("click", () => {
+          this.setDrawerOpen(false);
+        });
       }
 
       //visualizerToggle
@@ -1655,52 +1409,51 @@ if (this.mobileView.els.seek) {
           this.toggleVisualizerFullscreen();
           return;
         }
-
       });
 
-const queue = this.desktopView.els.queue;
+      const queue = this.desktopView.els.queue;
 
-if (queue) {
-  queue.addEventListener("click", (event) => {
-    const target = event.target instanceof Element ? event.target : null;
+      if (queue) {
+        queue.addEventListener("click", (event) => {
+          const target = event.target instanceof Element ? event.target : null;
 
-    if (!target) return;
+          if (!target) return;
 
-    const removeButton = target.closest("[data-sv-remove-queue-index]");
+          const removeButton = target.closest("[data-sv-remove-queue-index]");
 
-    if (removeButton) {
-      event.preventDefault();
-      event.stopPropagation();
+          if (removeButton) {
+            event.preventDefault();
+            event.stopPropagation();
 
-      const removeIndex = parseInt(
-        removeButton.getAttribute("data-sv-remove-queue-index") || "-1",
-        10,
-      );
+            const removeIndex = parseInt(
+              removeButton.getAttribute("data-sv-remove-queue-index") || "-1",
+              10,
+            );
 
-      this.removeTrackFromQueue(removeIndex);
-      return;
-    }
+            this.removeTrackFromQueue(removeIndex);
+            return;
+          }
 
-    const button = target.closest("[data-sv-queue-index]");
-    if (!button) return;
+          const button = target.closest("[data-sv-queue-index]");
+          if (!button) return;
 
-    event.preventDefault();
+          event.preventDefault();
 
-    const index = parseInt(
-      button.getAttribute("data-sv-queue-index") || "-1",
-      10,
-    );
+          const index = parseInt(
+            button.getAttribute("data-sv-queue-index") || "-1",
+            10,
+          );
 
-    if (!Number.isFinite(index) || index < 0) return;
-    if (!this.playlist[index]) return;
+          if (!Number.isFinite(index) || index < 0) return;
+          if (!this.playlist[index]) return;
 
-    this.loadPlaylist(this.playlist, {
-      startIndex: index,
-      autoplay: true,
-      load: true,
-    });
-  });
-}
+          this.loadPlaylist(this.playlist, {
+            startIndex: index,
+            autoplay: true,
+            load: true,
+          });
+        });
+      }
 
       if (queue) {
         queue.addEventListener("dragstart", (event) => {
@@ -1789,28 +1542,37 @@ if (queue) {
       }
 
       if (this.desktopView.els.clearQueue) {
-        this.desktopView.els.clearQueue.addEventListener(
-          "click",
-          (event) => {
-            event.preventDefault();
-            this.clearQueue();
-          },
-        );
+        this.desktopView.els.clearQueue.addEventListener("click", (event) => {
+          event.preventDefault();
+          this.clearQueue();
+        });
       }
 
       document.addEventListener("keydown", (event) => {
         if (
-          event.key === "Escape"
-          && this.presentationState.desktop.drawerOpen
+          event.key === "Escape" &&
+          this.presentationState.desktop.drawerOpen
         ) {
           this.setDrawerOpen(false);
         }
 
         if (
+          event.key === "Escape"
+          && this.presentationState.mobile.surface === "player"
+        ) {
+          this.minimizeMobilePlayer();
+        }
+
+        if (
           this.timedLyrics.root &&
-          ["ArrowUp", "ArrowDown", "PageUp", "PageDown", "Home", "End"].includes(
-            event.key,
-          )
+          [
+            "ArrowUp",
+            "ArrowDown",
+            "PageUp",
+            "PageDown",
+            "Home",
+            "End",
+          ].includes(event.key)
         ) {
           this.suppressTimedLyricsAutoFollow();
         }
@@ -2169,20 +1931,20 @@ if (queue) {
             allPlayableTracksAlreadyQueued,
           );
 
-        button.classList.toggle("is-queued", allPlayableTracksAlreadyQueued);
+          button.classList.toggle("is-queued", allPlayableTracksAlreadyQueued);
 
-        if (allPlayableTracksAlreadyQueued) {
-          button.textContent = "Queued";
-          button.setAttribute(
-            "aria-label",
-            "This release is already in the queue",
-          );
+          if (allPlayableTracksAlreadyQueued) {
+            button.textContent = "Queued";
+            button.setAttribute(
+              "aria-label",
+              "This release is already in the queue",
+            );
+            return;
+          }
+
+          button.textContent = "Queue Release";
+          button.setAttribute("aria-label", "Add this release to the queue");
           return;
-        }
-
-        button.textContent = "Queue Release";
-        button.setAttribute("aria-label", "Add this release to the queue");
-        return;
         }
 
         if (activeQueueMatchesPage) {
@@ -2411,22 +2173,22 @@ if (queue) {
       return true;
     },
 
-clearQueueDragClasses() {
-  const els = this.desktopView.els;
+    clearQueueDragClasses() {
+      const els = this.desktopView.els;
 
-  if (!els.queue) return;
+      if (!els.queue) return;
 
-  els.queue
-    .querySelectorAll(
-      ".sv-player__queue-item--dragging, .sv-player__queue-item--drag-over",
-    )
-    .forEach((item) => {
-      item.classList.remove(
-        "sv-player__queue-item--dragging",
-        "sv-player__queue-item--drag-over",
-      );
-    });
-},
+      els.queue
+        .querySelectorAll(
+          ".sv-player__queue-item--dragging, .sv-player__queue-item--drag-over",
+        )
+        .forEach((item) => {
+          item.classList.remove(
+            "sv-player__queue-item--dragging",
+            "sv-player__queue-item--drag-over",
+          );
+        });
+    },
 
     loadPlaylist(tracks, options = {}) {
       if (!Array.isArray(tracks) || !tracks.length) return;
@@ -2606,10 +2368,7 @@ clearQueueDragClasses() {
     },
 
     next() {
-      const nextIndex = this.getAdjacentPlayableIndex(
-        this.currentIndex,
-        1,
-      );
+      const nextIndex = this.getAdjacentPlayableIndex(this.currentIndex, 1);
 
       if (nextIndex < 0) {
         return;
@@ -2655,17 +2414,17 @@ clearQueueDragClasses() {
       return match || null;
     },
 
-syncNowPlayingUi() {
-  const track = this.getCurrentTrack();
+    syncNowPlayingUi() {
+      const track = this.getCurrentTrack();
 
-  this.updateMetaUi(track);
-  this.syncMediaSessionMetadata(track);
-  this.syncActiveTrackRows(track);
-  this.syncTrackPlayButtons(track);
-  this.updateProgressUi();
-  this.updateDurationUi();
-  this.syncTimedLyrics({ force: true });
-},
+      this.updateMetaUi(track);
+      this.syncMediaSessionMetadata(track);
+      this.syncActiveTrackRows(track);
+      this.syncTrackPlayButtons(track);
+      this.updateProgressUi();
+      this.updateDurationUi();
+      this.syncTimedLyrics({ force: true });
+    },
 
     bindTimedLyrics() {
       const root = document.querySelector("[data-sv-timed-lyrics]");
@@ -2690,9 +2449,7 @@ syncNowPlayingUi() {
         return;
       }
 
-      const lines = Array.from(
-        root.querySelectorAll("[data-sv-lyric-start]"),
-      )
+      const lines = Array.from(root.querySelectorAll("[data-sv-lyric-start]"))
         .map((element) => {
           const start = Number.parseFloat(
             element.getAttribute("data-sv-lyric-start") || "",
@@ -2854,10 +2611,8 @@ syncNowPlayingUi() {
 
       const currentTrack = this.getCurrentTrack();
       const matchesTrack =
-        currentTrack &&
-        String(currentTrack.id) === String(state.trackId);
-      const isPlaying =
-        matchesTrack && !this.audio.paused && !this.audio.ended;
+        currentTrack && String(currentTrack.id) === String(state.trackId);
+      const isPlaying = matchesTrack && !this.audio.paused && !this.audio.ended;
 
       state.root.classList.toggle("is-current-track", !!matchesTrack);
       state.root.classList.toggle("is-following", !!isPlaying);
@@ -2870,11 +2625,7 @@ syncNowPlayingUi() {
         state.activeIndex = -1;
 
         state.lines.forEach((line) => {
-          line.element.classList.remove(
-            "is-active",
-            "is-past",
-            "is-upcoming",
-          );
+          line.element.classList.remove("is-active", "is-past", "is-upcoming");
           line.element.removeAttribute("aria-current");
         });
 
@@ -2934,10 +2685,7 @@ syncNowPlayingUi() {
     },
 
     maybeAutoFollowTimedLyric(element) {
-      if (
-        !element ||
-        Date.now() < this.timedLyrics.suppressAutoFollowUntil
-      ) {
+      if (!element || Date.now() < this.timedLyrics.suppressAutoFollowUntil) {
         return;
       }
 
@@ -2982,24 +2730,19 @@ syncNowPlayingUi() {
       }
 
       if (this.els.title) {
-        this.els.title.textContent =
-          track.title || "";
+        this.els.title.textContent = track.title || "";
       }
 
       if (this.els.release) {
         this.els.release.textContent =
-          track.release && track.release.title
-            ? track.release.title
-            : "";
+          track.release && track.release.title ? track.release.title : "";
       }
 
       if (this.els.art) {
         this.els.art.innerHTML = "";
 
         const artworkUrl =
-          track.artwork && track.artwork.url
-            ? track.artwork.url
-            : "";
+          track.artwork && track.artwork.url ? track.artwork.url : "";
 
         if (artworkUrl) {
           const img = document.createElement("img");
@@ -3153,16 +2896,11 @@ syncNowPlayingUi() {
         const canGoPrevious = previousPlayableIndex >= 0;
 
         this.els.prev.disabled = !canGoPrevious;
-        this.els.prev.classList.toggle(
-          "is-disabled",
-          !canGoPrevious,
-        );
+        this.els.prev.classList.toggle("is-disabled", !canGoPrevious);
 
         this.els.prev.setAttribute(
           "aria-label",
-          canGoPrevious
-            ? "Previous track"
-            : "No previous playable track",
+          canGoPrevious ? "Previous track" : "No previous playable track",
         );
       }
 
@@ -3170,16 +2908,11 @@ syncNowPlayingUi() {
         const canGoNext = nextPlayableIndex >= 0;
 
         this.els.next.disabled = !canGoNext;
-        this.els.next.classList.toggle(
-          "is-disabled",
-          !canGoNext,
-        );
+        this.els.next.classList.toggle("is-disabled", !canGoNext);
 
         this.els.next.setAttribute(
           "aria-label",
-          canGoNext
-            ? "Next track"
-            : "No next playable track",
+          canGoNext ? "Next track" : "No next playable track",
         );
       }
 
@@ -3225,53 +2958,46 @@ syncNowPlayingUi() {
       this.els.duration.textContent = this.formatTime(duration);
     },
 
-setDrawerOpen(open) {
-  const drawerOpen = !!open;
-  const els = this.desktopView.els;
+    setDrawerOpen(open) {
+      const drawerOpen = !!open;
+      const els = this.desktopView.els;
 
-  this.presentationState.desktop.drawerOpen = drawerOpen;
+      this.presentationState.desktop.drawerOpen = drawerOpen;
 
-  this.root.classList.toggle(
-    "sv-player--drawer-open",
-    drawerOpen
-  );
+      this.root.classList.toggle("sv-player--drawer-open", drawerOpen);
 
-  this.root.setAttribute(
-    "data-sv-drawer-state",
-    drawerOpen ? "open" : "closed"
-  );
-
-  document.body.classList.toggle(
-    "sv-player-drawer-open",
-    drawerOpen
-  );
-
-    if (els.drawer) {
-      els.drawer.hidden = !drawerOpen;
-    }
-
-    if (els.drawerToggle) {
-      els.drawerToggle.setAttribute(
-        "aria-expanded",
-        drawerOpen ? "true" : "false"
+      this.root.setAttribute(
+        "data-sv-drawer-state",
+        drawerOpen ? "open" : "closed",
       );
-    }
 
-  if (drawerOpen) {
-    this.scheduleVisualizerResize(60);
+      document.body.classList.toggle("sv-player-drawer-open", drawerOpen);
 
-    window.setTimeout(() => {
-      this.scheduleVisualizerResize();
-    }, 260);
-  }
+      if (els.drawer) {
+        els.drawer.hidden = !drawerOpen;
+      }
 
-    if (els.drawerToggleLabel) {
-      els.drawerToggleLabel.textContent =
-        drawerOpen ? "Close" : "Queue";
-    }
+      if (els.drawerToggle) {
+        els.drawerToggle.setAttribute(
+          "aria-expanded",
+          drawerOpen ? "true" : "false",
+        );
+      }
 
-  this.renderDrawer();
-},
+      if (drawerOpen) {
+        this.scheduleVisualizerResize(60);
+
+        window.setTimeout(() => {
+          this.scheduleVisualizerResize();
+        }, 260);
+      }
+
+      if (els.drawerToggleLabel) {
+        els.drawerToggleLabel.textContent = drawerOpen ? "Close" : "Queue";
+      }
+
+      this.renderDrawer();
+    },
 
     renderDrawer() {
       this.renderDrawerCurrent();
@@ -3286,20 +3012,19 @@ setDrawerOpen(open) {
         if (els.drawerArt) els.drawerArt.innerHTML = "";
 
         if (els.drawerTitle) {
-        els.drawerTitle.textContent = this.playlist.length
-          ? "Ready to play"
-          : "Nothing playing";
+          els.drawerTitle.textContent = this.playlist.length
+            ? "Ready to play"
+            : "Nothing playing";
         }
 
         if (els.drawerRelease) {
-        els.drawerRelease.textContent = this.playlist.length
-          ? `${this.playlist.length} track${this.playlist.length === 1 ? "" : "s"} in queue`
-          : "Add tracks from a release or track page";
+          els.drawerRelease.textContent = this.playlist.length
+            ? `${this.playlist.length} track${this.playlist.length === 1 ? "" : "s"} in queue`
+            : "Add tracks from a release or track page";
         }
 
         if (els.drawerTrackLink) els.drawerTrackLink.hidden = true;
-        if (els.drawerReleaseLink)
-          els.drawerReleaseLink.hidden = true;
+        if (els.drawerReleaseLink) els.drawerReleaseLink.hidden = true;
         if (els.drawerLinks) els.drawerLinks.innerHTML = "";
 
         return;
@@ -3435,8 +3160,7 @@ setDrawerOpen(open) {
           const service = services[key];
           const link = document.createElement("a");
 
-          link.className =
-            `sv-player__service-link sv-player__service-link--${key}`;
+          link.className = `sv-player__service-link sv-player__service-link--${key}`;
 
           link.href = links[key];
           link.innerHTML = service.icon;
@@ -3490,7 +3214,8 @@ setDrawerOpen(open) {
       if (!tracks.length) {
         const empty = document.createElement("li");
         empty.className = "sv-player__queue-empty";
-        empty.textContent = "Your queue is empty. Add tracks from a release or track page.";
+        empty.textContent =
+          "Your queue is empty. Add tracks from a release or track page.";
         els.queue.appendChild(empty);
         return;
       }
@@ -3587,9 +3312,17 @@ setDrawerOpen(open) {
           status.textContent = "Playing";
         } else if (isCurrent) {
           status.textContent = "Paused";
-        } else if (isQueuedList && !currentTrack && index === this.currentIndex) {
+        } else if (
+          isQueuedList &&
+          !currentTrack &&
+          index === this.currentIndex
+        ) {
           status.textContent = "Ready";
-        } else if (isQueuedList && currentTrack && index === this.currentIndex + 1) {
+        } else if (
+          isQueuedList &&
+          currentTrack &&
+          index === this.currentIndex + 1
+        ) {
           status.textContent = "Next";
         } else if (isQueuedList) {
           status.textContent = "Queued";
@@ -3660,19 +3393,16 @@ setDrawerOpen(open) {
     },
 
     setVisualizerVisible(visible, options = {}) {
-        this.refreshVisualizerEls();
+      this.refreshVisualizerEls();
 
-        const els = this.visualizerView.els;
-        const shouldPersist = options.persist !== false;
+      const els = this.visualizerView.els;
+      const shouldPersist = options.persist !== false;
 
-        this.visualizerVisible = !!visible;
+      this.visualizerVisible = !!visible;
 
-        if (els.visualizer) {
-          els.visualizer.classList.toggle(
-            "is-hidden",
-            !this.visualizerVisible,
-          );
-        }
+      if (els.visualizer) {
+        els.visualizer.classList.toggle("is-hidden", !this.visualizerVisible);
+      }
 
       this.updateVisualizerToggle();
 
@@ -3694,37 +3424,33 @@ setDrawerOpen(open) {
       }
     },
 
-updateVisualizerToggle() {
-  const els = this.visualizerView.els;
+    updateVisualizerToggle() {
+      const els = this.visualizerView.els;
 
-  if (!els.visualizerToggle) {
-    return;
-  }
+      if (!els.visualizerToggle) {
+        return;
+      }
 
-  const isEnabled = this.isVisualizerEnabled();
+      const isEnabled = this.isVisualizerEnabled();
 
-  els.visualizerToggle.disabled = !isEnabled;
+      els.visualizerToggle.disabled = !isEnabled;
 
-  els.visualizerToggle.classList.toggle(
-    "is-disabled",
-    !isEnabled,
-  );
+      els.visualizerToggle.classList.toggle("is-disabled", !isEnabled);
 
-  els.visualizerToggle.setAttribute(
-    "aria-pressed",
-    this.visualizerVisible ? "true" : "false",
-  );
+      els.visualizerToggle.setAttribute(
+        "aria-pressed",
+        this.visualizerVisible ? "true" : "false",
+      );
 
-  if (!isEnabled) {
-    els.visualizerToggle.textContent = "Viz Off";
-    return;
-  }
+      if (!isEnabled) {
+        els.visualizerToggle.textContent = "Viz Off";
+        return;
+      }
 
-  els.visualizerToggle.textContent =
-    this.visualizerVisible
-      ? "Hide Viz"
-      : "Show Viz";
-},
+      els.visualizerToggle.textContent = this.visualizerVisible
+        ? "Hide Viz"
+        : "Show Viz";
+    },
 
     isVisualizerVisible() {
       return this.visualizerVisible && this.isVisualizerEnabled();
@@ -3740,12 +3466,10 @@ updateVisualizerToggle() {
       });
 
       if (window.ResizeObserver) {
-      const els = this.visualizerView.els;
+        const els = this.visualizerView.els;
 
-      const observerTarget =
-        els.visualizer
-        || els.visualizerCanvas
-        || this.root;
+        const observerTarget =
+          els.visualizer || els.visualizerCanvas || this.root;
 
         if (observerTarget) {
           this.visualizerResizeObserver = new ResizeObserver(() => {
@@ -3947,9 +3671,7 @@ updateVisualizerToggle() {
           const els = this.visualizerView.els;
 
           if (els.visualizer) {
-            els.visualizer.classList.remove(
-              "is-unavailable",
-            );
+            els.visualizer.classList.remove("is-unavailable");
           }
         },
 
@@ -3981,11 +3703,11 @@ updateVisualizerToggle() {
         return;
       }
 
-const els = this.visualizerView.els;
+      const els = this.visualizerView.els;
 
-if (!this.audio || !els.visualizerCanvas) {
-  return;
-}
+      if (!this.audio || !els.visualizerCanvas) {
+        return;
+      }
 
       const graph = this.getAudioGraph();
 
@@ -4000,8 +3722,7 @@ if (!this.audio || !els.visualizerCanvas) {
         this.visualizer.analyser = graph.analyser;
         this.visualizer.source = graph.source;
         this.visualizer.data = new Uint8Array(graph.analyser.frequencyBinCount);
-        this.visualizer.canvasContext =
-  els.visualizerCanvas.getContext("2d");
+        this.visualizer.canvasContext = els.visualizerCanvas.getContext("2d");
         this.visualizer.initialized = true;
 
         this.root.classList.add("sv-player--visualizer-ready");
@@ -4070,15 +3791,14 @@ if (!this.audio || !els.visualizerCanvas) {
 
     startVisualizer() {
       if (
-        !this.hasVisualizerPresentation()
-        || !this.isVisualizerEnabled()
-        || !this.isVisualizerVisible()
+        !this.hasVisualizerPresentation() ||
+        !this.isVisualizerEnabled() ||
+        !this.isVisualizerVisible()
       ) {
         return;
       }
 
-      const controller =
-        this.getVisualizerController();
+      const controller = this.getVisualizerController();
 
       if (controller) {
         controller.start();
@@ -4090,8 +3810,7 @@ if (!this.audio || !els.visualizerCanvas) {
         return;
       }
 
-      const controller =
-        this.getVisualizerController();
+      const controller = this.getVisualizerController();
 
       if (controller) {
         controller.stop();
@@ -4125,138 +3844,129 @@ if (!this.audio || !els.visualizerCanvas) {
       });
     },
 
-getFullscreenElement() {
-  return (
-    document.fullscreenElement ||
-    document.webkitFullscreenElement ||
-    document.msFullscreenElement ||
-    null
-  );
-},
+    getFullscreenElement() {
+      return (
+        document.fullscreenElement ||
+        document.webkitFullscreenElement ||
+        document.msFullscreenElement ||
+        null
+      );
+    },
 
-canUseFullscreen() {
-  return Boolean(
-    document.fullscreenEnabled ||
-      document.webkitFullscreenEnabled ||
-      document.msFullscreenEnabled,
-  );
-},
+    canUseFullscreen() {
+      return Boolean(
+        document.fullscreenEnabled ||
+        document.webkitFullscreenEnabled ||
+        document.msFullscreenEnabled,
+      );
+    },
 
-isVisualizerFullscreen() {
-  this.refreshVisualizerEls();
+    isVisualizerFullscreen() {
+      this.refreshVisualizerEls();
 
-  const visualizer = this.visualizerView.els.visualizer;
+      const visualizer = this.visualizerView.els.visualizer;
 
-  return Boolean(
-    visualizer &&
-      this.getFullscreenElement() === visualizer,
-  );
-},
+      return Boolean(visualizer && this.getFullscreenElement() === visualizer);
+    },
 
-toggleVisualizerFullscreen() {
-  if (this.isVisualizerFullscreen()) {
-    this.exitVisualizerFullscreen();
-    return;
-  }
+    toggleVisualizerFullscreen() {
+      if (this.isVisualizerFullscreen()) {
+        this.exitVisualizerFullscreen();
+        return;
+      }
 
-  this.requestVisualizerFullscreen();
-},
+      this.requestVisualizerFullscreen();
+    },
 
-requestVisualizerFullscreen() {
-  this.refreshVisualizerEls();
+    requestVisualizerFullscreen() {
+      this.refreshVisualizerEls();
 
-  const target = this.visualizerView.els.visualizer;
+      const target = this.visualizerView.els.visualizer;
 
-  if (!target || !this.canUseFullscreen()) {
-    return;
-  }
+      if (!target || !this.canUseFullscreen()) {
+        return;
+      }
 
-  const request =
-    target.requestFullscreen ||
-    target.webkitRequestFullscreen ||
-    target.msRequestFullscreen;
+      const request =
+        target.requestFullscreen ||
+        target.webkitRequestFullscreen ||
+        target.msRequestFullscreen;
 
-  if (!request) {
-    return;
-  }
+      if (!request) {
+        return;
+      }
 
-  const result = request.call(target);
+      const result = request.call(target);
 
-  if (result && typeof result.catch === "function") {
-    result.catch(() => {
-      this.handleVisualizerFullscreenChange();
-    });
-  }
-},
+      if (result && typeof result.catch === "function") {
+        result.catch(() => {
+          this.handleVisualizerFullscreenChange();
+        });
+      }
+    },
 
-exitVisualizerFullscreen() {
-  const exit =
-    document.exitFullscreen ||
-    document.webkitExitFullscreen ||
-    document.msExitFullscreen;
+    exitVisualizerFullscreen() {
+      const exit =
+        document.exitFullscreen ||
+        document.webkitExitFullscreen ||
+        document.msExitFullscreen;
 
-  if (!exit) {
-    return;
-  }
+      if (!exit) {
+        return;
+      }
 
-  const result = exit.call(document);
+      const result = exit.call(document);
 
-  if (result && typeof result.catch === "function") {
-    result.catch(() => {
-      this.handleVisualizerFullscreenChange();
-    });
-  }
-},
+      if (result && typeof result.catch === "function") {
+        result.catch(() => {
+          this.handleVisualizerFullscreenChange();
+        });
+      }
+    },
 
-handleVisualizerFullscreenChange() {
-  const isFullscreen = this.isVisualizerFullscreen();
+    handleVisualizerFullscreenChange() {
+      const isFullscreen = this.isVisualizerFullscreen();
 
-  document.body.classList.toggle(
-    "sv-visualizer-fullscreen-active",
-    isFullscreen,
-  );
+      document.body.classList.toggle(
+        "sv-visualizer-fullscreen-active",
+        isFullscreen,
+      );
 
-  this.updateVisualizerFullscreenUI();
-  this.scheduleVisualizerResize(80);
+      this.updateVisualizerFullscreenUI();
+      this.scheduleVisualizerResize(80);
 
-  window.setTimeout(() => {
-    this.scheduleVisualizerResize();
-  }, 260);
-},
+      window.setTimeout(() => {
+        this.scheduleVisualizerResize();
+      }, 260);
+    },
 
-updateVisualizerFullscreenUI() {
-  this.refreshVisualizerEls();
+    updateVisualizerFullscreenUI() {
+      this.refreshVisualizerEls();
 
-  const button =
-    this.visualizerView.els.visualizerFullscreen;
+      const button = this.visualizerView.els.visualizerFullscreen;
 
-  if (!button) {
-    return;
-  }
+      if (!button) {
+        return;
+      }
 
-  const available = this.canUseFullscreen();
+      const available = this.canUseFullscreen();
 
-  button.hidden = !available;
+      button.hidden = !available;
 
-  if (!available) {
-    return;
-  }
+      if (!available) {
+        return;
+      }
 
-  const isFullscreen = this.isVisualizerFullscreen();
-  const enterLabel =
-    button.dataset.svFullscreenLabel || "Fullscreen";
-  const exitLabel =
-    button.dataset.svExitFullscreenLabel || "Exit Fullscreen";
-  const label =
-    isFullscreen ? exitLabel : enterLabel;
+      const isFullscreen = this.isVisualizerFullscreen();
+      const enterLabel = button.dataset.svFullscreenLabel || "Fullscreen";
+      const exitLabel =
+        button.dataset.svExitFullscreenLabel || "Exit Fullscreen";
+      const label = isFullscreen ? exitLabel : enterLabel;
 
-  button.textContent = label;
-  button.setAttribute(
-    "aria-pressed",
-    isFullscreen ? "true" : "false",
-  );
-  button.setAttribute("aria-label", label);
-},
+      button.textContent = label;
+      button.setAttribute("aria-pressed", isFullscreen ? "true" : "false");
+      button.setAttribute("aria-label", label);
+    },
 
     destroyVisualizer() {
       const controller = this.getVisualizerController();
@@ -4271,10 +3981,7 @@ updateVisualizerFullscreenUI() {
     },
 
     drawVisualizerIdle() {
-      if (
-        !this.hasVisualizerPresentation()
-        || !this.isVisualizerVisible()
-      ) {
+      if (!this.hasVisualizerPresentation() || !this.isVisualizerVisible()) {
         return;
       }
 
@@ -4303,72 +4010,65 @@ updateVisualizerFullscreenUI() {
     },
 
     formatVisualizerPresetName(name) {
-  if (!name || typeof name !== "string") {
-    return "";
-  }
+      if (!name || typeof name !== "string") {
+        return "";
+      }
 
-  let formatted = name
-    .replace(/\s+/g, " ")
-    .replace(/\s+-\s+/g, " — ")
-    .replace(/\s*\[\s*/g, " [")
-    .replace(/\s*\]\s*/g, "]")
-    .trim();
+      let formatted = name
+        .replace(/\s+/g, " ")
+        .replace(/\s+-\s+/g, " — ")
+        .replace(/\s*\[\s*/g, " [")
+        .replace(/\s*\]\s*/g, "]")
+        .trim();
 
-  const maxLength = 72;
+      const maxLength = 72;
 
-  if (formatted.length > maxLength) {
-    formatted = `${formatted.slice(0, maxLength - 1).trim()}…`;
-  }
+      if (formatted.length > maxLength) {
+        formatted = `${formatted.slice(0, maxLength - 1).trim()}…`;
+      }
 
-  return formatted;
-},
+      return formatted;
+    },
 
-updateVisualizerPresetUI(presetName = "") {
-  this.refreshVisualizerEls();
+    updateVisualizerPresetUI(presetName = "") {
+      this.refreshVisualizerEls();
 
-  const els = this.visualizerView.els;
+      const els = this.visualizerView.els;
 
-  if (els.visualizerPresetName) {
-    const mode = this.getVisualizerMode();
+      if (els.visualizerPresetName) {
+        const mode = this.getVisualizerMode();
 
-    let label = presetName;
+        let label = presetName;
 
-    if (!label) {
-      label =
-        mode === "butterchurn"
-          ? "Butterchurn"
-          : "Bars";
-    }
+        if (!label) {
+          label = mode === "butterchurn" ? "Butterchurn" : "Bars";
+        }
 
-    const displayLabel =
-      this.formatVisualizerPresetName(label);
+        const displayLabel = this.formatVisualizerPresetName(label);
 
-    els.visualizerPresetName.textContent =
-      displayLabel;
+        els.visualizerPresetName.textContent = displayLabel;
 
-    els.visualizerPresetName.title = label;
-  }
+        els.visualizerPresetName.title = label;
+      }
 
-  if (els.visualizerNextPreset) {
-    const canChangePreset = !!(
-      this.getVisualizerMode() === "butterchurn"
-      && this.visualizer.butterchurnInstance
-      && typeof this.visualizer.butterchurnInstance
-        .loadRandomPreset === "function"
-    );
+      if (els.visualizerNextPreset) {
+        const canChangePreset = !!(
+          this.getVisualizerMode() === "butterchurn" &&
+          this.visualizer.butterchurnInstance &&
+          typeof this.visualizer.butterchurnInstance.loadRandomPreset ===
+            "function"
+        );
 
-    els.visualizerNextPreset.hidden =
-      !canChangePreset;
+        els.visualizerNextPreset.hidden = !canChangePreset;
 
-    els.visualizerNextPreset.disabled =
-      !canChangePreset;
+        els.visualizerNextPreset.disabled = !canChangePreset;
 
-    els.visualizerNextPreset.classList.toggle(
-      "is-disabled",
-      !canChangePreset,
-    );
-  }
-},
+        els.visualizerNextPreset.classList.toggle(
+          "is-disabled",
+          !canChangePreset,
+        );
+      }
+    },
 
     nextButterchurnPreset() {
       const instance = this.visualizer.butterchurnInstance;
@@ -4421,11 +4121,11 @@ updateVisualizerPresetUI(presetName = "") {
       try {
         this.stopBarsVisualizer();
 
-      const instance = window.SVButterchurn.create({
-        canvas: els.visualizerCanvas,
-        audio: this.audio,
-        audioGraph: graph,
-      });
+        const instance = window.SVButterchurn.create({
+          canvas: els.visualizerCanvas,
+          audio: this.audio,
+          audioGraph: graph,
+        });
 
         this.visualizer.butterchurnInstance = instance;
         this.refreshVisualizerEls();
@@ -4548,11 +4248,11 @@ updateVisualizerPresetUI(presetName = "") {
         return;
       }
 
-        const canvas = this.visualizerView.els.visualizerCanvas;
+      const canvas = this.visualizerView.els.visualizerCanvas;
 
-        if (!canvas) {
-          return;
-        }
+      if (!canvas) {
+        return;
+      }
 
       this.updateVisualizerPresetUI(
         this.getVisualizerMode() === "butterchurn" ? "Bars fallback" : "Bars",
@@ -4695,16 +4395,15 @@ updateVisualizerPresetUI(presetName = "") {
       }
     },
 
-markBarsVisualizerUnavailable() {
-  const visualizer =
-    this.visualizerView.els.visualizer;
+    markBarsVisualizerUnavailable() {
+      const visualizer = this.visualizerView.els.visualizer;
 
-  if (visualizer) {
-    visualizer.classList.add("is-unavailable");
-  }
+      if (visualizer) {
+        visualizer.classList.add("is-unavailable");
+      }
 
-  this.drawBarsVisualizerIdle();
-},
+      this.drawBarsVisualizerIdle();
+    },
 
     roundRect(ctx, x, y, width, height, radius) {
       const safeRadius = Math.min(radius, width / 2, height / 2);
@@ -4740,10 +4439,7 @@ markBarsVisualizerUnavailable() {
         return false;
       }
 
-      return !(
-        window.SVConfig
-        && window.SVConfig.visualizer === false
-      );
+      return !(window.SVConfig && window.SVConfig.visualizer === false);
     },
 
     getDebugSnapshot() {
