@@ -473,6 +473,10 @@
 
       els.playIcon = this.root.querySelector("[data-sv-mobile-play-icon]");
 
+      els.pauseIcon = this.root.querySelector(
+        "[data-sv-mobile-pause-icon]",
+      );
+
       els.sheet = this.root.querySelector("[data-sv-mobile-sheet]");
 
       els.minimize = this.root.querySelector("[data-sv-mobile-minimize]");
@@ -503,6 +507,10 @@
 
       els.sheetPlayIcon = this.root.querySelector(
         "[data-sv-mobile-sheet-play-icon]",
+      );
+
+      els.sheetPauseIcon = this.root.querySelector(
+        "[data-sv-mobile-sheet-pause-icon]",
       );
 
       els.queue = this.root.querySelector(
@@ -580,7 +588,11 @@
       }
 
       if (els.playIcon) {
-        els.playIcon.textContent = state.isPlaying ? "⏸" : "▶";
+        els.playIcon.hidden = !!state.isPlaying;
+      }
+
+      if (els.pauseIcon) {
+        els.pauseIcon.hidden = !state.isPlaying;
       }
 
       if (els.art) {
@@ -646,7 +658,11 @@
       }
 
       if (els.sheetPlayIcon) {
-        els.sheetPlayIcon.textContent = state.isPlaying ? "⏸" : "▶";
+        els.sheetPlayIcon.hidden = !!state.isPlaying;
+      }
+
+      if (els.sheetPauseIcon) {
+        els.sheetPauseIcon.hidden = !state.isPlaying;
       }
 
       const duration = Number.isFinite(state.duration) ? state.duration : 0;
@@ -867,9 +883,15 @@ containMobileSheetFocus(event) {
       this.els.art = this.root.querySelector("[data-sv-player-art]");
 
       this.els.playToggle = this.root.querySelector("[data-sv-play-toggle]");
+
       this.els.playToggleIcon = this.root.querySelector(
         "[data-sv-play-toggle-icon]",
       );
+
+      this.els.pauseToggleIcon = this.root.querySelector(
+        "[data-sv-pause-toggle-icon]",
+      );
+
       this.els.prev = this.root.querySelector("[data-sv-prev]");
       this.els.next = this.root.querySelector("[data-sv-next]");
 
@@ -3151,7 +3173,11 @@ containMobileSheetFocus(event) {
       }
 
       if (this.els.playToggleIcon) {
-        this.els.playToggleIcon.textContent = isPlaying ? "⏸" : "▶";
+        this.els.playToggleIcon.hidden = isPlaying;
+      }
+
+      if (this.els.pauseToggleIcon) {
+        this.els.pauseToggleIcon.hidden = !isPlaying;
       }
 
       const previousPlayableIndex = this.getAdjacentPlayableIndex(

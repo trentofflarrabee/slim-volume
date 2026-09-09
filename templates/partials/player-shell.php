@@ -154,15 +154,74 @@ if (! defined('ABSPATH')) {
 
         <div class="sv-player__controls">
             <button type="button" class="sv-player__button sv-player__icon-button" data-sv-prev aria-label="<?php esc_attr_e('Previous track', 'slim-volume'); ?>">
-                <span aria-hidden="true">⏮</span>
+                <span aria-hidden="true">
+                    <svg
+                        class="sv-player__icon"
+                        viewBox="0 0 24 24"
+                        aria-hidden="true"
+                        focusable="false"
+                        >
+                        <path
+                            d="M6 5v14M18 6l-8 6 8 6V6z"
+                            fill="currentColor"
+                        />
+                        </svg>
+                </span>
             </button>
 
-            <button type="button" class="sv-player__button sv-player__icon-button sv-player__play-button" data-sv-play-toggle aria-label="<?php esc_attr_e('Play', 'slim-volume'); ?>">
-                <span data-sv-play-toggle-icon aria-hidden="true">▶</span>
+            <button
+                type="button"
+                class="sv-player__button sv-player__icon-button sv-player__play-button"
+                data-sv-play-toggle
+                aria-label="<?php esc_attr_e('Play', 'slim-volume'); ?>"
+            >
+                <span data-sv-play-toggle-icon aria-hidden="true">
+                    <svg
+                        class="sv-player__icon sv-player__icon--play"
+                        viewBox="0 0 24 24"
+                        aria-hidden="true"
+                        focusable="false"
+                    >
+                        <path
+                            d="M8 5v14l11-7z"
+                            fill="currentColor"
+                        />
+                    </svg>
+                </span>
+
+                <span
+                    data-sv-pause-toggle-icon
+                    aria-hidden="true"
+                    hidden
+                >
+                    <svg
+                        class="sv-player__icon sv-player__icon--pause"
+                        viewBox="0 0 24 24"
+                        aria-hidden="true"
+                        focusable="false"
+                    >
+                        <path
+                            d="M7 5h4v14H7zM13 5h4v14h-4z"
+                            fill="currentColor"
+                        />
+                    </svg>
+                </span>
             </button>
 
             <button type="button" class="sv-player__button sv-player__icon-button" data-sv-next aria-label="<?php esc_attr_e('Next track', 'slim-volume'); ?>">
-                <span aria-hidden="true">⏭</span>
+                <span aria-hidden="true">
+                    <svg
+                        class="sv-player__icon"
+                        viewBox="0 0 24 24"
+                        aria-hidden="true"
+                        focusable="false"
+                        >
+                        <path
+                            d="M18 5v14M6 6l8 6-8 6V6z"
+                            fill="currentColor"
+                        />
+                        </svg>
+                </span>
             </button>
         </div>
 
@@ -238,7 +297,37 @@ if (! defined('ABSPATH')) {
                 <span
                     data-sv-mobile-play-icon
                     aria-hidden="true"
-                >▶</span>
+                >
+                    <svg
+                        class="sv-player__icon sv-player__icon--play"
+                        viewBox="0 0 24 24"
+                        aria-hidden="true"
+                        focusable="false"
+                    >
+                        <path
+                            d="M8 5v14l11-7z"
+                            fill="currentColor"
+                        />
+                    </svg>
+                </span>
+
+                <span
+                    data-sv-mobile-pause-icon
+                    aria-hidden="true"
+                    hidden
+                >
+                    <svg
+                        class="sv-player__icon sv-player__icon--pause"
+                        viewBox="0 0 24 24"
+                        aria-hidden="true"
+                        focusable="false"
+                    >
+                        <path
+                            d="M7 5h4v14H7zM13 5h4v14h-4z"
+                            fill="currentColor"
+                        />
+                    </svg>
+                </span>
             </button>
         </div>
         <div
@@ -257,7 +346,23 @@ if (! defined('ABSPATH')) {
                     data-sv-mobile-minimize
                     aria-label="<?php esc_attr_e('Minimize player', 'slim-volume'); ?>"
                 >
-                    <span aria-hidden="true">⌄</span>
+                    <span aria-hidden="true">
+                        <svg
+                        class="sv-player__icon"
+                        viewBox="0 0 24 24"
+                        aria-hidden="true"
+                        focusable="false"
+                        >
+                        <path
+                            d="M6 9l6 6 6-6"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                        />
+                        </svg>
+                    </span>
                 </button>
             </div>
 
@@ -305,7 +410,19 @@ if (! defined('ABSPATH')) {
                         data-sv-mobile-prev
                         aria-label="<?php esc_attr_e('Previous track', 'slim-volume'); ?>"
                     >
-                        <span aria-hidden="true">⏮</span>
+                        <span aria-hidden="true">
+                            <svg
+                            class="sv-player__icon"
+                            viewBox="0 0 24 24"
+                            aria-hidden="true"
+                            focusable="false"
+                            >
+                            <path
+                                d="M6 5v14M18 6l-8 6 8 6V6z"
+                                fill="currentColor"
+                            />
+                            </svg>
+                        </span>
                     </button>
 
                     <button
@@ -317,7 +434,37 @@ if (! defined('ABSPATH')) {
                         <span
                             data-sv-mobile-sheet-play-icon
                             aria-hidden="true"
-                        >▶</span>
+                        >
+                            <svg
+                                class="sv-player__icon sv-player__icon--play"
+                                viewBox="0 0 24 24"
+                                aria-hidden="true"
+                                focusable="false"
+                            >
+                                <path
+                                    d="M8 5v14l11-7z"
+                                    fill="currentColor"
+                                />
+                            </svg>
+                        </span>
+
+                        <span
+                            data-sv-mobile-sheet-pause-icon
+                            aria-hidden="true"
+                            hidden
+                        >
+                            <svg
+                                class="sv-player__icon sv-player__icon--pause"
+                                viewBox="0 0 24 24"
+                                aria-hidden="true"
+                                focusable="false"
+                            >
+                                <path
+                                    d="M7 5h4v14H7zM13 5h4v14h-4z"
+                                    fill="currentColor"
+                                />
+                            </svg>
+                        </span>
                     </button>
 
                     <button
@@ -326,7 +473,19 @@ if (! defined('ABSPATH')) {
                         data-sv-mobile-next
                         aria-label="<?php esc_attr_e('Next track', 'slim-volume'); ?>"
                     >
-                        <span aria-hidden="true">⏭</span>
+                        <span aria-hidden="true">
+                            <svg
+                                class="sv-player__icon"
+                                viewBox="0 0 24 24"
+                                aria-hidden="true"
+                                focusable="false"
+                                >
+                                <path
+                                    d="M18 5v14M6 6l8 6-8 6V6z"
+                                    fill="currentColor"
+                                />
+                                </svg>
+                        </span>
                     </button>
                 </div>
                 <div class="sv-player-mobile__queue-section">
