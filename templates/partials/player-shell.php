@@ -250,9 +250,33 @@ if (! defined('ABSPATH')) {
             data-sv-drawer-toggle
             aria-controls="sv-player-drawer"
             aria-expanded="false"
+            aria-label="<?php esc_attr_e('Open queue', 'slim-volume'); ?>"
         >
-            <span data-sv-drawer-toggle-label><?php esc_html_e('Queue', 'slim-volume'); ?></span>
-            <span class="sv-player__queue-count" data-sv-queue-count hidden>0</span>
+            <span
+                class="sv-player__drawer-toggle-label"
+                data-sv-drawer-toggle-label
+            >
+                <?php esc_html_e('Queue', 'slim-volume'); ?>
+            </span>
+
+            <svg
+                class="sv-player__drawer-toggle-icon"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+                focusable="false"
+            >
+                <path
+                    d="M4.5 7.5h15M4.5 12h15M4.5 16.5h11"
+                ></path>
+            </svg>
+
+            <span
+                class="sv-player__queue-count"
+                data-sv-queue-count
+                hidden
+            >
+                0
+            </span>
         </button>
     </div>
 
