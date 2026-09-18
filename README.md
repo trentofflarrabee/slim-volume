@@ -6,25 +6,19 @@ It provides release archives, single release pages, track deep-dive pages, admin
 
 ## Current Status
 
-`v0.6.0`
+`v0.6.1`
 
 Slim Volume is still in beta and is intended for controlled production use and early customer projects. APIs, templates, settings, and markup may still change before the first stable release.
 
-## Highlights in 0.6.0
+## Highlights in 0.6.1
 
-- Added a dedicated mobile mini-player below the 760px player breakpoint.
-- Added an expanded mobile Now Playing sheet with artwork, metadata, transport controls, progress, seeking, and queue access.
-- Preserved one authoritative audio element and shared playback/queue state across desktop and mobile presentations.
-- Added uninterrupted breakpoint switching without reloading audio or resetting playback position.
-- Added mobile sheet lifecycle behavior including scroll locking, Escape-to-close, focus entry/restore, and keyboard focus containment.
-- Added a dedicated mobile queue with current/next hierarchy, track selection, removal, and clear controls.
-- Refactored desktop drawer and visualizer presentation ownership away from shared playback state.
-- Added shared player state subscriptions while keeping high-frequency progress updates isolated.
-- Hardened AJAX refresh behavior so the persistent player survives navigation without replacing the active audio element.
-- Isolated Media Session and native mobile audio environment handling behind adapters.
-- Hardened `player-shell.php` compatibility validation and debug diagnostics.
-- Preserved the public `window.SVPlayer` compatibility facade.
-- Cleaned up responsive player CSS and removed obsolete mobile desktop-bar rules.
+- Refined desktop and mobile player visuals with tighter spacing, clearer hierarchy, and more consistent control sizing.
+- Replaced legacy transport glyphs with a consistent inline SVG icon system.
+- Reworked the desktop queue toggle as a compact icon control with accessible open/close labeling.
+- Improved desktop and mobile queue presentation with clearer current/next hierarchy and quieter secondary actions.
+- Corrected desktop and mobile presentation-state rendering so each presentation updates through its own renderer.
+- Added a visible mobile seek thumb indicator for clearer seeking affordance.
+- Improved responsive interaction states, focus behavior, and final player regression polish.
 
 ## Features
 
@@ -250,4 +244,4 @@ The public `window.SVPlayer` object is treated as a compatibility facade. Intern
 
 Current beta release:
 
-`v0.6.0`
+`v0.6.1`

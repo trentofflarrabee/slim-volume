@@ -106,16 +106,16 @@ Yes. Tracks with plain lyrics and playable audio can be synchronized line by lin
 
 == Changelog ==
 
-## 0.6.1
-
-- Refined desktop and mobile player visuals.
-- Replaced legacy transport glyphs with a consistent SVG icon system.
-- Improved queue controls and queue presentation across desktop and mobile.
-- Fixed desktop/mobile presentation-state rendering separation.
-- Improved queue button accessibility labels.
-- Added a draggable-style mobile seek thumb indicator.
-- Polished responsive spacing, control sizing, and visual hierarchy.
-- Performed final player regression cleanup.
+= 0.6.1 =
+* Refined desktop and mobile player visuals with tighter spacing, clearer hierarchy, and more consistent control sizing.
+* Replaced legacy CSS-drawn transport glyphs with a consistent inline SVG icon system.
+* Reworked the desktop queue toggle as a compact icon control while preserving accessible open/close labeling.
+* Improved desktop and mobile queue presentation with clearer current/next hierarchy and quieter secondary actions.
+* Fixed desktop presentation-state rendering so desktop updates are handled by the desktop drawer renderer.
+* Fixed mobile presentation-state rendering so opening, minimizing, and closing the mobile player respond correctly to presentation changes.
+* Removed obsolete CSS pseudo-element transport icons that could cause duplicate play/pause rendering.
+* Added a visible mobile seek thumb indicator for clearer seeking affordance.
+* Improved responsive spacing, interaction states, focus behavior, and final player regression polish.
 
 = 0.6.0 =
 

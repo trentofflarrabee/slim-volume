@@ -2,6 +2,25 @@
 
 All notable changes to Slim Volume are documented here.
 
+## 0.6.1
+
+### Added
+- Added a visible mobile seek thumb indicator to improve seek-bar affordance.
+
+### Changed
+- Refined desktop and mobile player visuals for clearer hierarchy, spacing, and control balance.
+- Replaced legacy CSS-drawn transport glyphs with a consistent inline SVG icon system.
+- Reworked the desktop queue toggle to use a compact queue icon while preserving accessible labeling.
+- Harmonized desktop and mobile queue presentation with flatter rows, clearer current/next states, and quieter secondary actions.
+- Improved desktop player-bar density and mobile Now Playing proportions.
+- Improved responsive control sizing and interaction states across player presentations.
+
+### Fixed
+- Fixed desktop presentation subscriptions so desktop state changes render through the desktop drawer renderer.
+- Fixed mobile presentation subscriptions so opening, minimizing, and closing the mobile player respond correctly to presentation-state changes.
+- Fixed duplicate play/pause rendering caused by obsolete CSS pseudo-element transport icons.
+- Improved queue-toggle accessibility by synchronizing its expanded state and accessible label.
+
 ## 0.6.0
 
 ### Added
