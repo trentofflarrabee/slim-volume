@@ -1866,9 +1866,36 @@ body.sv-ajax-loading [data-sv-page-content] {
     width: 0;
     height: 4px;
     border-radius: 999px;
-    background: currentColor;
+    background: var(--sv-button-bg);
     transform: translateY(-50%);
   }
+
+  .sv-player-mobile__seek-fill::after {
+  position: absolute;
+  top: 50%;
+  right: 0;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--sv-button-bg);
+  content: "";
+  transform: translate(50%, -50%);
+  transition:
+    width 120ms ease,
+    height 120ms ease,
+    box-shadow 120ms ease;
+}
+
+.sv-player-mobile__seek:hover .sv-player-mobile__seek-fill::after,
+.sv-player-mobile__seek:focus-visible .sv-player-mobile__seek-fill::after {
+  width: 14px;
+  height: 14px;
+}
+
+.sv-player-mobile__seek:active .sv-player-mobile__seek-fill::after {
+  width: 16px;
+  height: 16px;
+}
 
   .sv-player-mobile__time {
     display: flex;
