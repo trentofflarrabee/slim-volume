@@ -2,7 +2,7 @@
 Tags: music, audio player, albums, lyrics, artists
 Requires at least: 6.0
 Tested up to: 7.1
-Stable tag: 0.6.0
+Stable tag: 0.6.1
 Requires PHP: 8.0
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -31,7 +31,7 @@ It provides:
 * Theme, player, and visualizer settings.
 * Theme template overrides.
 
-Version 0.6.0 remains a beta release intended for controlled production use and early customer projects. Back up the WordPress site before installing an update.
+Version 0.6.1 remains a beta release intended for controlled production use and early customer projects. Back up the WordPress site before installing an update.
 
 == Installation ==
 
@@ -105,6 +105,17 @@ Export files may contain unpublished or private catalog information, so keep dow
 Yes. Tracks with plain lyrics and playable audio can be synchronized line by line through the Lyrics Sync administration workspace.
 
 == Changelog ==
+
+## 0.6.1
+
+- Refined desktop and mobile player visuals.
+- Replaced legacy transport glyphs with a consistent SVG icon system.
+- Improved queue controls and queue presentation across desktop and mobile.
+- Fixed desktop/mobile presentation-state rendering separation.
+- Improved queue button accessibility labels.
+- Added a draggable-style mobile seek thumb indicator.
+- Polished responsive spacing, control sizing, and visual hierarchy.
+- Performed final player regression cleanup.
 
 = 0.6.0 =
 
