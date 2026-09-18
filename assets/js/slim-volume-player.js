@@ -544,8 +544,7 @@
           case "playback":
           case "metadata":
           case "presentation":
-            this.renderMobileMiniPlayer(state);
-            this.renderMobileQueue();
+            this.renderDrawer();
             break;
 
           default:
@@ -734,6 +733,7 @@
           case "queue":
           case "playback":
           case "metadata":
+          case "presentation":
             this.renderMobileMiniPlayer(state);
             break;
 
@@ -3279,6 +3279,11 @@ containMobileSheetFocus(event) {
         els.drawerToggle.setAttribute(
           "aria-expanded",
           drawerOpen ? "true" : "false",
+        );
+
+        els.drawerToggle.setAttribute(
+          "aria-label",
+          drawerOpen ? "Close queue" : "Open queue",
         );
       }
 
