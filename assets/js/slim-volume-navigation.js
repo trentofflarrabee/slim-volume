@@ -7,7 +7,7 @@
 
   const Nav = {
     contentSelector: config.contentSelector || "[data-sv-page-content]",
-    musicBaseUrl: config.musicBaseUrl || "/music/",
+    musicBaseUrl: config.musicBaseUrl || "",
     currentRequest: null,
     isNavigating: false,
     lastUrl: window.location.href,
@@ -140,12 +140,16 @@
     },
 
     isMusicUrl(url) {
+      if (!this.musicBaseUrl) {
+        return false;
+      }
+
       let base;
 
       try {
         base = new URL(this.musicBaseUrl, window.location.origin);
       } catch (err) {
-        return url.pathname.startsWith("/music");
+        return false;
       }
 
       const basePath = base.pathname.replace(/\/+$/, "");

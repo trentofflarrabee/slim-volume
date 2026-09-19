@@ -10,6 +10,7 @@ declare(strict_types=1);
 namespace SlimVolume\Admin;
 
 use WP_Post;
+use SlimVolume\Catalog;
 
 if (! defined('ABSPATH')) {
     exit;
@@ -863,7 +864,8 @@ final class TrackContextMetaBox
 
         return home_url(
             sprintf(
-                '/music/%s/%s/',
+                '/%s/%s/%s/',
+                Catalog::get_base(),
                 rawurlencode($release_slug),
                 rawurlencode($track_slug)
             )

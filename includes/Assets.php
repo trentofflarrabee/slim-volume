@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace SlimVolume;
 
+use SlimVolume\Catalog;
+
 if (! defined('ABSPATH')) {
     exit;
 }
@@ -129,7 +131,7 @@ if (file_exists($butterchurn_adapter_path)) {
                 'visualizerMode'   => $visualizer_mode,
                 'debug'            => ! empty($settings['debug']) || (defined('SCRIPT_DEBUG') && SCRIPT_DEBUG),
                 'contentSelector'  => '[data-sv-page-content]',
-                'musicBaseUrl'     => home_url('/music/'),
+                'musicBaseUrl'     => Catalog::get_archive_url(),
             ]
         ) . ';',
         'before'
