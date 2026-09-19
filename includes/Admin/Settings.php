@@ -551,7 +551,6 @@ public static function maybe_flush_catalog_rewrite_rules(): void
                 'fields'                 => 'ids',
                 'posts_per_page'         => 1,
                 'no_found_rows'          => true,
-                'suppress_filters'       => true,
                 'update_post_meta_cache' => false,
                 'update_post_term_cache' => false,
             ]
@@ -997,10 +996,11 @@ public static function maybe_flush_catalog_rewrite_rules(): void
 
                     <p class="description">
                         <?php
-                        printf(
-                            esc_html__('Current archive URL: %s', 'slim-volume'),
-                            esc_url(Catalog::get_archive_url())
-                        );
+                            printf(
+                                /* translators: %s: Current Slim Volume catalog archive URL. */
+                                esc_html__('Current archive URL: %s', 'slim-volume'),
+                                esc_url(Catalog::get_archive_url())
+                            );
                         ?>
                     </p>
 
