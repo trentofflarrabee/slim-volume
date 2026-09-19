@@ -8,6 +8,7 @@ if (! defined('ABSPATH')) {
     exit;
 }
 
+require_once SLIM_VOLUME_PATH . 'includes/Catalog.php';
 require_once SLIM_VOLUME_PATH . 'includes/PostTypes.php';
 require_once SLIM_VOLUME_PATH . 'includes/TimedLyrics.php';
 require_once SLIM_VOLUME_PATH . 'includes/Meta.php';
