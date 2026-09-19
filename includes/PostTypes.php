@@ -51,9 +51,9 @@ final class PostTypes
                 'show_in_rest'        => true,
                 'menu_position'       => 25,
                 'menu_icon'           => 'dashicons-format-audio',
-                'has_archive'         => 'music',
-                'rewrite'             => [
-                    'slug'       => 'music',
+                'has_archive' => Catalog::get_base(),
+                'rewrite'     => [
+                    'slug'       => Catalog::get_base(),
                     'with_front' => false,
                 ],
                 'query_var'           => true,

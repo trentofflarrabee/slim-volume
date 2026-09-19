@@ -15,8 +15,8 @@ final class Rewrite
     public static function register(): void
     {
         add_rewrite_rule(
-            '^music/([^/]+)/([^/]+)/?$',
-            'index.php?sv_release_slug=$matches[1]&sv_track_slug=$matches[2]',
+            '^' . preg_quote(Catalog::get_base(), '/') . '/([^/]+)/([^/]+)/?$',
+            'index.php?post_type=sv_track&name=$matches[2]&sv_release_slug=$matches[1]',
             'top'
         );
     }
@@ -143,12 +143,11 @@ final class Rewrite
         }
 
         return home_url(
-            user_trailingslashit(
-                sprintf(
-                    'music/%s/%s',
-                    $release->post_name,
-                    $post->post_name
-                )
+            sprintf(
+                '/%s/%s/%s/',
+                Catalog::get_base(),
+                $release->post_name,
+                $post->post_name
             )
         );
     }
