@@ -8,6 +8,7 @@
 use SlimVolume\Admin\Settings;
 use SlimVolume\Artists\ArtistResolver;
 use SlimVolume\Artists\ProjectTaxonomy;
+use SlimVolume\Catalog;
 use SlimVolume\Frontend\ArchiveQuery;
 
 if (! defined('ABSPATH')) {
@@ -15,6 +16,9 @@ if (! defined('ABSPATH')) {
 }
 
 $settings = Settings::get_settings();
+
+$archive_title = Catalog::get_archive_title();
+$archive_intro = Catalog::get_archive_intro();
 
 $projects_enabled = ! empty(
     $settings['projects_enabled']
@@ -82,7 +86,7 @@ $release_query = ArchiveQuery::query($settings);
 $archive_url = get_post_type_archive_link('sv_release');
 
 if (! $archive_url) {
-    $archive_url = home_url('/music/');
+    $archive_url = Catalog::get_archive_url();
 }
 
 $format_release_meta = static function (int $release_id): array {
@@ -114,16 +118,20 @@ get_header();
 <main id="primary" class="sv-archive sv-music-archive" data-sv-page-content>
     <header class="sv-page-header">
         <p class="sv-breadcrumb">
-            <a href="<?php echo esc_url(home_url('/')); ?>">Home</a>
+            <a href="<?php echo esc_url(home_url('/')); ?>">
+                <?php esc_html_e('Home', 'slim-volume'); ?>
+            </a>
             <span aria-hidden="true"> / </span>
-            <span>Music</span>
+            <span><?php echo esc_html($archive_title); ?></span>
         </p>
 
-        <h1><?php esc_html_e('Discography', 'slim-volume'); ?></h1>
+        <h1><?php echo esc_html($archive_title); ?></h1>
 
-        <p class="sv-page-header__intro">
-            <?php esc_html_e('Browse releases, singles, and track-by-track deep dives.', 'slim-volume'); ?>
-        </p>
+        <?php if ($archive_intro !== '') : ?>
+            <div class="sv-page-header__intro">
+                <?php echo wp_kses_post($archive_intro); ?>
+            </div>
+        <?php endif; ?>
 
         <form class="sv-release-archive-controls<?php echo $show_project_filter && $project_filter_terms ? ' has-project-filter' : ''; ?>" method="get" action="<?php echo esc_url($archive_url); ?>">
             <div class="sv-release-archive-controls__field sv-release-archive-controls__field--search">

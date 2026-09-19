@@ -2,6 +2,7 @@
 
 use SlimVolume\Admin\Settings;
 use SlimVolume\Artists\ArtistResolver;
+use SlimVolume\Catalog;
 use SlimVolume\Frontend\PlayerData;
 
 if (! defined('ABSPATH')) {
@@ -104,7 +105,9 @@ $service_key_from_link = static function (string $label, string $url): string {
     <p class="sv-breadcrumb">
         <a href="<?php echo esc_url(home_url('/')); ?>">Home</a>
         <span aria-hidden="true"> / </span>
-        <a href="<?php echo esc_url(get_post_type_archive_link('sv_release')); ?>">Music</a>
+        <a href="<?php echo esc_url(Catalog::get_archive_url()); ?>">
+            <?php echo esc_html(Catalog::get_archive_title()); ?>
+        </a>
         <span aria-hidden="true"> / </span>
         <span><?php the_title(); ?></span>
     </p>

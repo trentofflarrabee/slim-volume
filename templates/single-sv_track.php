@@ -2,6 +2,7 @@
 
 use SlimVolume\Admin\Settings;
 use SlimVolume\Artists\ArtistResolver;
+use SlimVolume\Catalog;
 use SlimVolume\Frontend\PlayerData;
 use SlimVolume\Rewrite;
 use SlimVolume\TimedLyrics;
@@ -145,7 +146,9 @@ $track_links = array_filter($track_links);
         <p class="sv-breadcrumb">
             <a href="<?php echo esc_url(home_url('/')); ?>">Home</a>
             <span aria-hidden="true"> / </span>
-            <a href="<?php echo esc_url(get_post_type_archive_link('sv_release')); ?>">Music</a>
+            <a href="<?php echo esc_url(Catalog::get_archive_url()); ?>">
+                <?php echo esc_html(Catalog::get_archive_title()); ?>
+            </a>
 
             <?php if ($release_id) : ?>
                 <span aria-hidden="true"> / </span>

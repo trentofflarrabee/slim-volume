@@ -6,6 +6,7 @@ namespace SlimVolume\Frontend;
 
 use SlimVolume\Admin\Settings;
 use SlimVolume\Artists\ArtistResolver;
+use SlimVolume\Catalog;
 use SlimVolume\PostTypes;
 use SlimVolume\Rewrite;
 use WP_Post;
@@ -107,7 +108,7 @@ public static function render(): void
         return;
     }
 
-    // Check singular music pages before the /music archive.
+    // Check singular music pages before the catalog archive.
     //
     // Slim Volume track URLs live under the music base, and depending on the
     // rewrite/query context, WordPress can make the release archive condition
@@ -1068,69 +1069,10 @@ private static function schema_reference(
 
 private static function archive_title(array $settings): string
 {
-    $releases = ArchiveQuery::posts($settings);
+    unset($settings);
 
-    $release_ids = array_map(
-        static fn (WP_Post $release): int => (int) $release->ID,
-        $releases
-    );
-
-    $default_artist = ArtistResolver::default_artist(
-        $settings
-    );
-
-    $artists = ArtistResolver::for_releases(
-        $release_ids,
-        $settings
-    );
-
-    if (! $artists) {
-        $artists = [
-            ArtistResolver::identity_key($default_artist)
-                => $default_artist,
-        ];
-    }
-
-    if (count($artists) > 1) {
-        $site_name = trim(
-            (string) get_bloginfo('name')
-        );
-
-        if ($site_name === '') {
-            $site_name = (string) (
-                $default_artist['name'] ?? ''
-            );
-        }
-
-        return sprintf(
-            /* translators: %s: website or catalog name. */
-            __('Music from %s', 'slim-volume'),
-            $site_name
-        );
-    }
-
-    $artist = reset($artists);
-
-    if (! is_array($artist)) {
-        $artist = $default_artist;
-    }
-
-    $artist_name = self::single_line(
-        (string) (
-            $artist['name']
-            ?? $default_artist['name']
-            ?? ''
-        )
-    );
-
-    if ($artist_name === '') {
-        return __('Music', 'slim-volume');
-    }
-
-    return sprintf(
-        /* translators: %s: artist/project name. */
-        __('Music by %s', 'slim-volume'),
-        $artist_name
+    return self::single_line(
+        Catalog::get_archive_title()
     );
 }
 
@@ -1364,12 +1306,14 @@ private static function track_same_as_links(
         return 0;
     }
 
-    private static function archive_url(): string
-    {
-        $archive_url = get_post_type_archive_link(PostTypes::RELEASE);
+        private static function archive_url(): string
+        {
+            $archive_url = get_post_type_archive_link(PostTypes::RELEASE);
 
-        return $archive_url ? $archive_url : home_url('/music/');
-    }
+            return $archive_url
+                ? $archive_url
+                : Catalog::get_archive_url();
+        }
 
     private static function setting_url(array $settings, string $key): string
     {
