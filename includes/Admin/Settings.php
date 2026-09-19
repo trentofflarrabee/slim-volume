@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace SlimVolume\Admin;
 
+use SlimVolume\Catalog;
 use SlimVolume\PostTypes;
 
 if (! defined('ABSPATH')) {
@@ -13,6 +14,7 @@ if (! defined('ABSPATH')) {
 final class Settings
 {
     public const OPTION_NAME  = 'slim_volume_settings';
+    private const REWRITE_FLUSH_OPTION = 'slim_volume_flush_catalog_rewrites';
     public const OPTION_GROUP = 'slim_volume_settings_group';
     public const MENU_SLUG    = 'slim-volume-settings';
 
@@ -20,11 +22,27 @@ final class Settings
     {
         add_action('admin_menu', [self::class, 'add_settings_page']);
         add_action('admin_init', [self::class, 'register_settings']);
+
+        add_action(
+            'update_option_' . self::OPTION_NAME,
+            [self::class, 'handle_settings_updated'],
+            10,
+            3
+        );
+
+        add_action(
+            'init',
+            [self::class, 'maybe_flush_catalog_rewrite_rules'],
+            99
+        );
     }
 
     public static function defaults(): array
     {
         return [
+            'music_base'    => Catalog::DEFAULT_BASE,
+            'archive_title' => Catalog::DEFAULT_ARCHIVE_TITLE,
+            'archive_intro' => Catalog::DEFAULT_ARCHIVE_INTRO,
             'player_enabled'             => true,
             'release_card_link_behavior' => 'internal',
             'projects_enabled'             => false,
@@ -258,6 +276,52 @@ final class Settings
         );
     }
 
+    public static function handle_settings_updated(
+    $old_value,
+    $new_value,
+    string $option
+): void {
+    if ($option !== self::OPTION_NAME) {
+        return;
+    }
+
+    $old_settings = is_array($old_value) ? $old_value : [];
+    $new_settings = is_array($new_value) ? $new_value : [];
+
+    $old_base = isset($old_settings['music_base'])
+        ? sanitize_title((string) $old_settings['music_base'])
+        : Catalog::DEFAULT_BASE;
+
+    $new_base = isset($new_settings['music_base'])
+        ? sanitize_title((string) $new_settings['music_base'])
+        : Catalog::DEFAULT_BASE;
+
+    if ($old_base === '') {
+        $old_base = Catalog::DEFAULT_BASE;
+    }
+
+    if ($new_base === '') {
+        $new_base = Catalog::DEFAULT_BASE;
+    }
+
+    if ($old_base === $new_base) {
+        return;
+    }
+
+    update_option(self::REWRITE_FLUSH_OPTION, '1', false);
+}
+
+public static function maybe_flush_catalog_rewrite_rules(): void
+{
+    if (get_option(self::REWRITE_FLUSH_OPTION, '') !== '1') {
+        return;
+    }
+
+    delete_option(self::REWRITE_FLUSH_OPTION);
+
+    flush_rewrite_rules(false);
+}
+
     /**
      * Sanitize the complete settings payload.
      *
@@ -270,6 +334,41 @@ final class Settings
         $defaults = self::defaults();
         $presets  = self::appearance_presets();
 
+        $current_settings = get_option(self::OPTION_NAME, []);
+
+        if (! is_array($current_settings)) {
+            $current_settings = [];
+        }
+
+        $current_base = isset($current_settings['music_base'])
+            ? sanitize_title((string) $current_settings['music_base'])
+            : Catalog::DEFAULT_BASE;
+
+        if ($current_base === '') {
+            $current_base = Catalog::DEFAULT_BASE;
+        }
+
+        $music_base = self::sanitize_music_base(
+            $input['music_base'] ?? $current_base,
+            $current_base
+        );
+
+        $archive_title = sanitize_text_field(
+            (string) ($input['archive_title'] ?? $defaults['archive_title'])
+        );
+
+        if ($archive_title === '') {
+            $archive_title = Catalog::DEFAULT_ARCHIVE_TITLE;
+        }
+
+        $archive_intro = wp_kses_post(
+            (string) ($input['archive_intro'] ?? $defaults['archive_intro'])
+        );
+
+        if (trim($archive_intro) === '') {
+            $archive_intro = Catalog::DEFAULT_ARCHIVE_INTRO;
+        }
+
         $preset_key = isset($input['appearance_preset'])
             ? sanitize_key((string) $input['appearance_preset'])
             : 'custom';
@@ -278,98 +377,303 @@ final class Settings
             $preset_key = 'custom';
         }
 
-$appearance = [
-    'appearance_preset' => $preset_key,
+        $appearance = [
+            'appearance_preset' => $preset_key,
 
-    'player_bg'      => self::sanitize_appearance_value('player_bg', $input['player_bg'] ?? $defaults['player_bg'], $defaults['player_bg']),
-    'player_text'    => self::sanitize_appearance_value('player_text', $input['player_text'] ?? $defaults['player_text'], $defaults['player_text']),
-    'player_muted'   => self::sanitize_appearance_value('player_muted', $input['player_muted'] ?? $defaults['player_muted'], $defaults['player_muted']),
-    'player_border'  => self::sanitize_appearance_value('player_border', $input['player_border'] ?? $defaults['player_border'], $defaults['player_border']),
-    'player_accent'  => self::sanitize_appearance_value('player_accent', $input['player_accent'] ?? $defaults['player_accent'], $defaults['player_accent']),
+            'player_bg'      => self::sanitize_appearance_value('player_bg', $input['player_bg'] ?? $defaults['player_bg'], $defaults['player_bg']),
+            'player_text'    => self::sanitize_appearance_value('player_text', $input['player_text'] ?? $defaults['player_text'], $defaults['player_text']),
+            'player_muted'   => self::sanitize_appearance_value('player_muted', $input['player_muted'] ?? $defaults['player_muted'], $defaults['player_muted']),
+            'player_border'  => self::sanitize_appearance_value('player_border', $input['player_border'] ?? $defaults['player_border'], $defaults['player_border']),
+            'player_accent'  => self::sanitize_appearance_value('player_accent', $input['player_accent'] ?? $defaults['player_accent'], $defaults['player_accent']),
 
-    'button_bg'      => self::sanitize_appearance_value('button_bg', $input['button_bg'] ?? $defaults['button_bg'], $defaults['button_bg']),
-    'button_text'    => self::sanitize_appearance_value('button_text', $input['button_text'] ?? $defaults['button_text'], $defaults['button_text']),
-    'button_border'  => self::sanitize_appearance_value('button_border', $input['button_border'] ?? $defaults['button_border'], $defaults['button_border']),
+            'button_bg'      => self::sanitize_appearance_value('button_bg', $input['button_bg'] ?? $defaults['button_bg'], $defaults['button_bg']),
+            'button_text'    => self::sanitize_appearance_value('button_text', $input['button_text'] ?? $defaults['button_text'], $defaults['button_text']),
+            'button_border'  => self::sanitize_appearance_value('button_border', $input['button_border'] ?? $defaults['button_border'], $defaults['button_border']),
 
-    'card_border'    => self::sanitize_appearance_value('card_border', $input['card_border'] ?? $defaults['card_border'], $defaults['card_border']),
+            'card_border'    => self::sanitize_appearance_value('card_border', $input['card_border'] ?? $defaults['card_border'], $defaults['card_border']),
 
-    'content_font_family' => self::sanitize_appearance_value('content_font_family', $input['content_font_family'] ?? $defaults['content_font_family'], $defaults['content_font_family']),
-    'content_font_size'   => self::sanitize_appearance_value('content_font_size', $input['content_font_size'] ?? $defaults['content_font_size'], $defaults['content_font_size']),
-    'content_line_height' => self::sanitize_appearance_value('content_line_height', $input['content_line_height'] ?? $defaults['content_line_height'], $defaults['content_line_height']),
-    'content_link_color'  => self::sanitize_appearance_value('content_link_color', $input['content_link_color'] ?? $defaults['content_link_color'], $defaults['content_link_color']),
+            'content_font_family' => self::sanitize_appearance_value('content_font_family', $input['content_font_family'] ?? $defaults['content_font_family'], $defaults['content_font_family']),
+            'content_font_size'   => self::sanitize_appearance_value('content_font_size', $input['content_font_size'] ?? $defaults['content_font_size'], $defaults['content_font_size']),
+            'content_line_height' => self::sanitize_appearance_value('content_line_height', $input['content_line_height'] ?? $defaults['content_line_height'], $defaults['content_line_height']),
+            'content_link_color'  => self::sanitize_appearance_value('content_link_color', $input['content_link_color'] ?? $defaults['content_link_color'], $defaults['content_link_color']),
 
-    'radius_card'    => self::sanitize_appearance_value('radius_card', $input['radius_card'] ?? $defaults['radius_card'], $defaults['radius_card']),
-    'radius_art'     => self::sanitize_appearance_value('radius_art', $input['radius_art'] ?? $defaults['radius_art'], $defaults['radius_art']),
-    'radius_control' => self::sanitize_appearance_value('radius_control', $input['radius_control'] ?? $defaults['radius_control'], $defaults['radius_control']),
-    'radius_small'   => self::sanitize_appearance_value('radius_small', $input['radius_small'] ?? $defaults['radius_small'], $defaults['radius_small']),
-    'radius_pill'    => self::sanitize_appearance_value('radius_pill', $input['radius_pill'] ?? $defaults['radius_pill'], $defaults['radius_pill']),
-];
+            'radius_card'    => self::sanitize_appearance_value('radius_card', $input['radius_card'] ?? $defaults['radius_card'], $defaults['radius_card']),
+            'radius_art'     => self::sanitize_appearance_value('radius_art', $input['radius_art'] ?? $defaults['radius_art'], $defaults['radius_art']),
+            'radius_control' => self::sanitize_appearance_value('radius_control', $input['radius_control'] ?? $defaults['radius_control'], $defaults['radius_control']),
+            'radius_small'   => self::sanitize_appearance_value('radius_small', $input['radius_small'] ?? $defaults['radius_small'], $defaults['radius_small']),
+            'radius_pill'    => self::sanitize_appearance_value('radius_pill', $input['radius_pill'] ?? $defaults['radius_pill'], $defaults['radius_pill']),
+        ];
 
-if ($preset_key !== 'custom' && ! empty($presets[$preset_key]['values']) && is_array($presets[$preset_key]['values'])) {
-    foreach ($presets[$preset_key]['values'] as $key => $value) {
-        if (array_key_exists($key, $appearance)) {
-            $appearance[$key] = self::sanitize_appearance_value($key, $value, $defaults[$key] ?? '');
+        if ($preset_key !== 'custom' && ! empty($presets[$preset_key]['values']) && is_array($presets[$preset_key]['values'])) {
+            foreach ($presets[$preset_key]['values'] as $key => $value) {
+                if (array_key_exists($key, $appearance)) {
+                    $appearance[$key] = self::sanitize_appearance_value($key, $value, $defaults[$key] ?? '');
+                    }
             }
+        }
+
+        $visualizer_modes = method_exists(self::class, 'visualizer_modes')
+            ? self::visualizer_modes()
+            : ['bars' => __('Bars', 'slim-volume')];
+
+        $visualizer_mode = isset($input['visualizer_mode'])
+            ? sanitize_key((string) $input['visualizer_mode'])
+            : (string) ($defaults['visualizer_mode'] ?? 'bars');
+
+        if (! isset($visualizer_modes[$visualizer_mode])) {
+            $visualizer_mode = 'bars';
+        }
+
+        $release_card_link_behavior = isset($input['release_card_link_behavior'])
+            ? sanitize_key((string) $input['release_card_link_behavior'])
+            : (string) ($defaults['release_card_link_behavior'] ?? 'internal');
+
+        $allowed_release_card_link_behaviors = [
+            'internal',
+            'external_when_available',
+        ];
+
+        if (! in_array($release_card_link_behavior, $allowed_release_card_link_behaviors, true)) {
+            $release_card_link_behavior = 'internal';
+        }
+
+        $seo = [
+            'seo_mode'                => self::normalize_seo_mode(
+                $input['seo_mode'] ?? $defaults['seo_mode'] ?? 'off'
+            ),
+            'seo_artist_name'         => sanitize_text_field((string) ($input['seo_artist_name'] ?? '')),
+            'seo_artist_url'          => esc_url_raw((string) ($input['seo_artist_url'] ?? '')),
+            'seo_artist_same_as' => self::sanitize_url_list(
+            $input['seo_artist_same_as'] ?? ''
+            ),
+            'seo_archive_description' => sanitize_textarea_field((string) ($input['seo_archive_description'] ?? '')),
+            'seo_default_image'       => esc_url_raw((string) ($input['seo_default_image'] ?? '')),
+        ];
+
+    return array_merge(
+        [
+            'music_base'    => $music_base,
+            'archive_title' => $archive_title,
+            'archive_intro' => $archive_intro,
+
+            'player_enabled'             => ! empty($input['player_enabled']),
+            'release_card_link_behavior' => $release_card_link_behavior,
+            'projects_enabled'             => ! empty($input['projects_enabled']),
+            'projects_show_archive'        => ! empty($input['projects_show_archive']),
+            'projects_show_release'        => ! empty($input['projects_show_release']),
+            'projects_show_track'          => ! empty($input['projects_show_track']),
+            'projects_archive_filter'      => ! empty($input['projects_archive_filter']),
+
+            'ajax_navigation' => ! empty($input['ajax_navigation']),
+            'persistence'    => ! empty($input['persistence']),
+            'visualizer'      => ! empty($input['visualizer']),
+            'visualizer_mode' => $visualizer_mode,
+            'debug'           => ! empty($input['debug']),
+        ],
+        $seo,
+        $appearance
+    );
     }
-}
 
-$visualizer_modes = method_exists(self::class, 'visualizer_modes')
-    ? self::visualizer_modes()
-    : ['bars' => __('Bars', 'slim-volume')];
+        private static function sanitize_music_base($value, string $current_base): string
+    {
+        if (! is_scalar($value)) {
+            self::add_music_base_error();
 
-$visualizer_mode = isset($input['visualizer_mode'])
-    ? sanitize_key((string) $input['visualizer_mode'])
-    : (string) ($defaults['visualizer_mode'] ?? 'bars');
+            return $current_base;
+        }
 
-if (! isset($visualizer_modes[$visualizer_mode])) {
-    $visualizer_mode = 'bars';
-}
+        $raw = trim((string) $value);
 
-$release_card_link_behavior = isset($input['release_card_link_behavior'])
-    ? sanitize_key((string) $input['release_card_link_behavior'])
-    : (string) ($defaults['release_card_link_behavior'] ?? 'internal');
+        if (
+            preg_match('#^[a-z][a-z0-9+\-.]*://#i', $raw)
+            || str_contains($raw, '\\')
+        ) {
+            self::add_music_base_error();
 
-$allowed_release_card_link_behaviors = [
-    'internal',
-    'external_when_available',
-];
+            return $current_base;
+        }
 
-if (! in_array($release_card_link_behavior, $allowed_release_card_link_behaviors, true)) {
-    $release_card_link_behavior = 'internal';
-}
+        $raw = trim($raw, '/');
 
-$seo = [
-    'seo_mode'                => self::normalize_seo_mode(
-        $input['seo_mode'] ?? $defaults['seo_mode'] ?? 'off'
-    ),
-    'seo_artist_name'         => sanitize_text_field((string) ($input['seo_artist_name'] ?? '')),
-    'seo_artist_url'          => esc_url_raw((string) ($input['seo_artist_url'] ?? '')),
-    'seo_artist_same_as' => self::sanitize_url_list(
-    $input['seo_artist_same_as'] ?? ''
-    ),
-    'seo_archive_description' => sanitize_textarea_field((string) ($input['seo_archive_description'] ?? '')),
-    'seo_default_image'       => esc_url_raw((string) ($input['seo_default_image'] ?? '')),
-];
+        if ($raw === '' || str_contains($raw, '/')) {
+            self::add_music_base_error();
 
-return array_merge(
-    [
-        'player_enabled'             => ! empty($input['player_enabled']),
-        'release_card_link_behavior' => $release_card_link_behavior,
-        'projects_enabled'             => ! empty($input['projects_enabled']),
-        'projects_show_archive'        => ! empty($input['projects_show_archive']),
-        'projects_show_release'        => ! empty($input['projects_show_release']),
-        'projects_show_track'          => ! empty($input['projects_show_track']),
-        'projects_archive_filter'      => ! empty($input['projects_archive_filter']),
+            return $current_base;
+        }
 
-        'ajax_navigation' => ! empty($input['ajax_navigation']),
-        'persistence'    => ! empty($input['persistence']),
-        'visualizer'      => ! empty($input['visualizer']),
-        'visualizer_mode' => $visualizer_mode,
-        'debug'           => ! empty($input['debug']),
-    ],
-    $seo,
-    $appearance
-);
+        $base = sanitize_title($raw);
+
+        if ($base === '') {
+            self::add_music_base_error();
+
+            return $current_base;
+        }
+
+        if (
+            $base !== $current_base
+            && self::catalog_base_conflicts($base)
+        ) {
+            add_settings_error(
+                self::OPTION_NAME,
+                'slim_volume_music_base_conflict',
+                sprintf(
+                    /* translators: %s: requested catalog URL base */
+                    __(
+                        'The URL base “%s” is already in use. Choose a different URL base, or change the conflicting content first.',
+                        'slim-volume'
+                    ),
+                    $base
+                ),
+                'error'
+            );
+
+            return $current_base;
+        }
+
+        return $base;
+    }
+
+        private static function catalog_base_conflicts(string $base): bool
+    {
+        $page_ids = get_posts(
+            [
+                'post_type'              => 'page',
+                'post_status'            => [
+                    'publish',
+                    'private',
+                    'draft',
+                    'pending',
+                    'future',
+                ],
+                'name'                   => $base,
+                'post_parent'            => 0,
+                'fields'                 => 'ids',
+                'posts_per_page'         => 1,
+                'no_found_rows'          => true,
+                'suppress_filters'       => true,
+                'update_post_meta_cache' => false,
+                'update_post_term_cache' => false,
+            ]
+        );
+
+        if (! empty($page_ids)) {
+            return true;
+        }
+
+        $post_types = get_post_types([], 'objects');
+
+        foreach ($post_types as $post_type) {
+            if (! is_object($post_type)) {
+                continue;
+            }
+
+            if (
+                isset($post_type->name)
+                && $post_type->name === PostTypes::RELEASE
+            ) {
+                continue;
+            }
+
+            $rewrite_slug = '';
+
+            if (
+                isset($post_type->rewrite)
+                && is_array($post_type->rewrite)
+                && isset($post_type->rewrite['slug'])
+            ) {
+                $rewrite_slug = trim(
+                    (string) $post_type->rewrite['slug'],
+                    '/'
+                );
+            }
+
+            $archive_slug = '';
+
+            if (isset($post_type->has_archive)) {
+                if (is_string($post_type->has_archive)) {
+                    $archive_slug = trim($post_type->has_archive, '/');
+                } elseif (
+                    $post_type->has_archive === true
+                    && isset($post_type->name)
+                ) {
+                    $archive_slug = (string) $post_type->name;
+                }
+            }
+
+            if ($base === $rewrite_slug || $base === $archive_slug) {
+                return true;
+            }
+        }
+
+        $taxonomies = get_taxonomies([], 'objects');
+
+        foreach ($taxonomies as $taxonomy) {
+            if (
+                ! is_object($taxonomy)
+                || ! isset($taxonomy->rewrite)
+                || ! is_array($taxonomy->rewrite)
+                || ! isset($taxonomy->rewrite['slug'])
+            ) {
+                continue;
+            }
+
+            $taxonomy_slug = trim(
+                (string) $taxonomy->rewrite['slug'],
+                '/'
+            );
+
+            if ($taxonomy_slug === $base) {
+                return true;
+            }
+        }
+
+        global $wp_rewrite;
+
+        $reserved = [
+            'wp-admin',
+            'wp-content',
+            'wp-includes',
+            'wp-json',
+        ];
+
+        if (is_object($wp_rewrite)) {
+            foreach (
+                [
+                    'author_base',
+                    'search_base',
+                    'comments_base',
+                    'pagination_base',
+                    'comments_pagination_base',
+                    'feed_base',
+                ] as $property
+            ) {
+                if (
+                    isset($wp_rewrite->{$property})
+                    && is_string($wp_rewrite->{$property})
+                ) {
+                    $reserved[] = trim(
+                        $wp_rewrite->{$property},
+                        '/'
+                    );
+                }
+            }
+        }
+
+        return in_array($base, array_filter($reserved), true);
+    }
+
+    private static function add_music_base_error(): void
+    {
+        add_settings_error(
+            self::OPTION_NAME,
+            'slim_volume_music_base_invalid',
+            __(
+                'Enter a single URL base such as “music” or “discography”. Do not enter a full URL or a nested path.',
+                'slim-volume'
+            ),
+            'error'
+        );
     }
 
     private static function sanitize_url_list($value): string
@@ -642,6 +946,74 @@ return array_merge(
                     data-sv-settings-panel="catalog"
                     hidden
                 >
+
+                <div class="sv-settings-section">
+                    <h2><?php echo esc_html__('Music Archive', 'slim-volume'); ?></h2>
+
+                    <p class="description">
+                        <?php
+                        echo esc_html__(
+                            'Control the public URL and identity of the Slim Volume catalog.',
+                            'slim-volume'
+                        );
+                        ?>
+                    </p>
+
+                    <table class="form-table" role="presentation">
+                        <tbody>
+                            <?php self::render_setting_text_row(
+                                'music_base',
+                                __('Music URL base', 'slim-volume'),
+                                $settings,
+                                __(
+                                    'Use only the base name, without slashes. Example: “discography” creates /discography/. Changing this updates archive, release, and track URLs.',
+                                    'slim-volume'
+                                ),
+                                'text',
+                                'regular-text code'
+                            ); ?>
+
+                            <?php self::render_setting_text_row(
+                                'archive_title',
+                                __('Archive title', 'slim-volume'),
+                                $settings,
+                                __(
+                                    'Shown as the main heading for the public music archive.',
+                                    'slim-volume'
+                                )
+                            ); ?>
+
+                            <?php self::render_setting_textarea_row(
+                                'archive_intro',
+                                __('Archive intro', 'slim-volume'),
+                                $settings,
+                                __(
+                                    'Optional introductory text shown above the catalog.',
+                                    'slim-volume'
+                                )
+                            ); ?>
+                        </tbody>
+                    </table>
+
+                    <p class="description">
+                        <?php
+                        printf(
+                            esc_html__('Current archive URL: %s', 'slim-volume'),
+                            esc_url(Catalog::get_archive_url())
+                        );
+                        ?>
+                    </p>
+
+                    <p class="description">
+                        <?php
+                        echo esc_html__(
+                            'Changing the URL base may break existing links unless you add redirects.',
+                            'slim-volume'
+                        );
+                        ?>
+                    </p>
+                </div>
+
                     <div class="sv-settings-section">
                         <h2><?php echo esc_html__('Release Card Links', 'slim-volume'); ?></h2>
                         <p class="description">
