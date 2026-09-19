@@ -2,29 +2,34 @@
 
 Slim Volume is a WordPress-native music catalog and audio player plugin for artists, bands, labels, and music projects.
 
-It provides release archives, single release pages, track deep-dive pages, admin workflow tools, a persistent frontend audio player, responsive desktop/mobile player surfaces, queue management, theming settings, and optional Butterchurn visualizer support.
+It provides release archives, single release pages, track deep-dive pages, admin workflow tools, a persistent frontend audio player, responsive desktop/mobile player surfaces, queue management, theming settings, configurable catalog routing, music-specific SEO controls, and optional Butterchurn visualizer support.
 
 ## Current Status
 
-`v0.6.1`
+`v0.7.0`
 
 Slim Volume is still in beta and is intended for controlled production use and early customer projects. APIs, templates, settings, and markup may still change before the first stable release.
 
-## Highlights in 0.6.1
+## Highlights in 0.7.0
 
-- Refined desktop and mobile player visuals with tighter spacing, clearer hierarchy, and more consistent control sizing.
-- Replaced legacy transport glyphs with a consistent inline SVG icon system.
-- Reworked the desktop queue toggle as a compact icon control with accessible open/close labeling.
-- Improved desktop and mobile queue presentation with clearer current/next hierarchy and quieter secondary actions.
-- Corrected desktop and mobile presentation-state rendering so each presentation updates through its own renderer.
-- Added a visible mobile seek thumb indicator for clearer seeking affordance.
-- Improved responsive interaction states, focus behavior, and final player regression polish.
+- Added configurable catalog routing so the default `/music/` base can be changed to values such as `/discography/` or `/releases/`.
+- Kept archive, release, and nested track URLs under one authoritative catalog base.
+- Added configurable archive title and introductory content.
+- Added URL-base conflict detection to prevent Slim Volume from claiming an existing WordPress route.
+- Preserved unrelated valid settings when a requested catalog base is rejected.
+- Added controlled rewrite-rule rebuilding only after a successful catalog-base change.
+- Updated archive, release, and track breadcrumbs, admin route previews, AJAX navigation, and Slim Volume SEO to follow the configured catalog base.
+- Kept archive intro content separate from the dedicated SEO archive description.
+- Centralized catalog routing and archive identity through the `Catalog` authority.
+- Removed active hardcoded `/music/` URL assumptions from routing, templates, navigation, admin previews, and Slim Volume SEO.
 
 ## Features
 
 - Release and track custom post types
-- Public music archive at `/music/`
-- Nested track URLs at `/music/{release-slug}/{track-slug}/`
+- Public music archive with configurable catalog base, defaulting to `/music/`
+- Nested release and track URLs under the configured catalog base
+- Configurable archive title and introductory content
+- Catalog URL conflict validation for existing WordPress routes
 - Release artwork via featured images
 - Track artwork with release artwork fallback
 - Artist and project attribution
@@ -77,7 +82,7 @@ Slim Volume is still in beta and is intended for controlled production use and e
 4. Open **Settings → Permalinks** and select a pretty permalink structure such as **Post name** (`/%postname%/`).
 5. Save the permalink settings.
 
-Clean music URLs should use formats such as:
+By default, Slim Volume uses:
 
 ```text
 /music/
@@ -85,7 +90,17 @@ Clean music URLs should use formats such as:
 /music/{release-slug}/{track-slug}/
 ```
 
-If the permalink structure contains `/index.php/`, WordPress may instead generate URLs such as `/index.php/music/`. This behavior comes from the WordPress or web-server permalink configuration rather than Slim Volume's routing.
+The catalog URL base can be changed under **Music → Settings**. For example, setting the base to `discography` produces:
+
+```text
+/discography/
+/discography/{release-slug}/
+/discography/{release-slug}/{track-slug}/
+```
+
+Changing the catalog base changes archive, release, and track URLs. Existing links using the previous base may require redirects.
+
+If the permalink structure contains `/index.php/`, WordPress may include `/index.php/` in Slim Volume URLs. This behavior comes from the WordPress or web-server permalink configuration rather than Slim Volume's routing.
 
 ## Responsive Player
 
@@ -105,7 +120,7 @@ The mobile player includes:
 - Expanded Now Playing sheet
 - Artwork and release metadata
 - Play/pause, previous, and next controls
-- Seek/progress display
+- Seek/progress display with visible seek thumb
 - Mobile queue
 - Scroll locking while expanded
 - Escape-to-close
@@ -143,10 +158,15 @@ your-theme/slim-volume/partials/player-shell.php
 
 Player-shell overrides are a compatibility surface. When Slim Volume debug mode is enabled, incompatible player-shell markup can emit diagnostic warnings for missing or duplicate required player elements.
 
+Existing template overrides continue to load and function. Overrides that hardcode archive labels or URLs should use Slim Volume's catalog helpers to reflect customized archive identity and routing.
+
 ## Settings
 
 Slim Volume includes settings for:
 
+- Catalog URL base
+- Archive title
+- Archive introductory content
 - Frontend audio player / catalog-only mode
 - Keep music playing between music pages
 - Remember player state after refresh
@@ -211,7 +231,21 @@ Three SEO modes are available under **Music → Settings → SEO**:
 - **Music Schema Only** — recommended when the site already uses a dedicated SEO plugin. Slim Volume adds music-specific structured data for artists, releases, and tracks while the SEO plugin continues handling normal site SEO.
 - **Full Music Metadata** — intended for sites without another SEO plugin managing music pages. Slim Volume adds music structured data plus descriptions, social metadata, and music-aware page titles.
 
-Slim Volume does not replace WordPress or a general SEO plugin for canonical URLs, robots directives, XML sitemaps, redirects, or other site-wide SEO responsibilities.
+The visible archive introduction and dedicated SEO archive description are intentionally separate settings.
+
+Slim Volume does not replace WordPress or a general SEO plugin for robots directives, XML sitemaps, redirects, or other site-wide SEO responsibilities.
+
+## Development and Source Code
+
+Slim Volume is developed publicly on GitHub:
+
+https://github.com/trentofflarrabee/slim-volume
+
+The repository contains the human-readable PHP, JavaScript, and CSS source used to build distributed releases.
+
+Release packages are built with GitHub Actions. Distribution builds may minify staged CSS and JavaScript files while the readable source remains available in the public repository.
+
+Slim Volume includes Butterchurn and Butterchurn preset distributions for the optional visualizer. Butterchurn is distributed under the MIT License. See the bundled third-party license information under `assets/vendor/butterchurn/`.
 
 ## Known Future Work
 
@@ -244,4 +278,4 @@ The public `window.SVPlayer` object is treated as a compatibility facade. Intern
 
 Current beta release:
 
-`v0.6.1`
+`v0.7.0`

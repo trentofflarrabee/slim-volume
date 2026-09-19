@@ -2,6 +2,33 @@
 
 All notable changes to Slim Volume are documented here.
 
+## 0.7.0
+
+### Added
+- Added a configurable catalog URL base while preserving `/music/` as the default.
+- Added configurable archive title and introductory content.
+- Added deterministic catalog-base conflict validation for existing WordPress routes.
+- Added an authoritative `Catalog` layer for catalog routing, archive URLs, archive title, and archive introduction.
+
+### Changed
+- Release archive and permalink registration now derive from the configured catalog base.
+- Nested track rewrite rules and track permalink generation now derive from the configured catalog base.
+- AJAX music navigation now receives the authoritative catalog archive URL from PHP rather than assuming `/music/`.
+- Archive, release, and track breadcrumbs now reflect the configured archive identity.
+- Admin track route previews now reflect the configured catalog base.
+- Slim Volume archive SEO identity and SEO-facing URLs now follow the configured catalog settings.
+- Archive title now acts as the public archive identity while archive intro remains visible editorial content.
+- Preserved existing `with_front => false` permalink behavior.
+- Updated catalog-related administration copy to avoid assuming a fixed `/music/` route.
+
+### Fixed
+- Prevented conflicting catalog URL bases from being saved when the requested top-level route is already in use.
+- Preserved the previous valid catalog base when a requested base is invalid or conflicting.
+- Preserved unrelated valid settings submitted in the same request when a catalog-base change is rejected.
+- Prevented rewrite-rule flushing when the requested catalog base is rejected or unchanged.
+- Removed active hardcoded `/music/` URL fallbacks from routing, templates, navigation, admin route previews, and Slim Volume SEO.
+- Fixed WordPress Plugin Check issues in the catalog settings validation and archive URL display.
+
 ## 0.6.1
 
 ### Added

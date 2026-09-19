@@ -2,7 +2,7 @@
 Tags: music, audio player, albums, lyrics, artists
 Requires at least: 6.0
 Tested up to: 7.1
-Stable tag: 0.6.1
+Stable tag: 0.7.0
 Requires PHP: 8.0
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -16,8 +16,10 @@ Slim Volume is a WordPress-native music catalog and audio player for artists, ba
 It provides:
 
 * Release and track content types.
-* A public music archive at `/music/`.
-* Nested track URLs at `/music/{release}/{track}/`.
+* A public music archive with a configurable URL base, defaulting to `/music/`.
+* Nested release and track URLs under the configured catalog base.
+* Configurable archive title and introductory content.
+* Catalog URL conflict detection for existing WordPress routes.
 * Release and track administration workflows.
 * Portable JSON discography export for backup and migration.
 * A persistent frontend audio player and queue.
@@ -31,7 +33,7 @@ It provides:
 * Theme, player, and visualizer settings.
 * Theme template overrides.
 
-Version 0.6.1 remains a beta release intended for controlled production use and early customer projects. Back up the WordPress site before installing an update.
+Version 0.7.0 remains a beta release intended for controlled production use and early customer projects. Back up the WordPress site before installing an update.
 
 == Installation ==
 
@@ -40,9 +42,17 @@ Version 0.6.1 remains a beta release intended for controlled production use and 
 3. Open the Music menu in WordPress administration.
 4. Configure the plugin through Music > Settings.
 5. Create a release, then create or assign its tracks.
-6. Visit `/music/` to view the public archive.
+6. Visit `/music/` to view the public archive, or change the catalog URL base under Music > Settings.
 
-For clean music URLs such as `/music/`, open Settings > Permalinks and select a pretty permalink structure such as Post name (`/%postname%/`). The structure should not contain `/index.php/`. Save the permalink settings after making a change. On servers where URL rewriting is unavailable, WordPress may instead use URLs such as `/index.php/music/`.
+Slim Volume defaults to `/music/`, with releases and tracks nested beneath that base. For example:
+
+`/music/`
+`/music/{release-slug}/`
+`/music/{release-slug}/{track-slug}/`
+
+The catalog base can be changed to a value such as `discography`, producing `/discography/` and matching nested release and track URLs.
+
+For clean URLs, open Settings > Permalinks and select a pretty permalink structure such as Post name (`/%postname%/`). The structure should not contain `/index.php/`. Save the permalink settings after making a change. On servers where URL rewriting is unavailable, WordPress may include `/index.php/` in Slim Volume URLs.
 
 == Frequently Asked Questions ==
 
@@ -72,15 +82,27 @@ No. Tracks can use an uploaded audio attachment, an external audio or destinatio
 
 = Where are track pages located? =
 
-Tracks use nested URLs in this format:
+Tracks use nested URLs beneath the configured Slim Volume catalog base.
+
+With the default base:
 
 `/music/{release-slug}/{track-slug}/`
+
+If the catalog base is changed to `discography`, the same track uses:
+
+`/discography/{release-slug}/{track-slug}/`
+
+= Can I change the /music/ URL? =
+
+Yes. Open Music > Settings and change the Music URL base. For example, entering `discography` changes the catalog archive to `/discography/` and updates release and track URLs beneath that base.
+
+Slim Volume rejects a requested base when it conflicts with an existing WordPress route. Changing the base after publishing content may also require redirects for existing external links.
 
 = Why do my music URLs contain index.php or return a 404? =
 
 Open Settings > Permalinks and select a pretty permalink structure such as Post name (`/%postname%/`), then save the settings.
 
-If the permalink structure contains `/index.php/`, WordPress will generate music URLs such as `/index.php/music/`. This is a WordPress or web-server permalink configuration rather than a Slim Volume routing error.
+If the permalink structure contains `/index.php/`, WordPress may include `/index.php/` in Slim Volume URLs. This is a WordPress or web-server permalink configuration rather than a Slim Volume routing error.
 
 = Can a theme override Slim Volume templates? =
 
@@ -104,7 +126,41 @@ Export files may contain unpublished or private catalog information, so keep dow
 
 Yes. Tracks with plain lyrics and playable audio can be synchronized line by line through the Lyrics Sync administration workspace.
 
+== Development and Source Code ==
+
+Slim Volume is developed publicly on GitHub:
+
+https://github.com/trentofflarrabee/slim-volume
+
+The GitHub repository contains the human-readable source code used to build distributed releases.
+
+Release packages are built with GitHub Actions. Distribution builds may minify staged CSS and JavaScript files while the readable source remains available in the public repository.
+
+Slim Volume includes Butterchurn and Butterchurn preset distributions for the optional visualizer.
+
+Butterchurn
+License: MIT
+Source: https://github.com/jberg/butterchurn
+
+The applicable third-party license information is also bundled with the distributed plugin.
+
 == Changelog ==
+
+= 0.7.0 =
+* Added a configurable catalog URL base, with `/music/` preserved as the default.
+* Added configurable archive title and introductory content.
+* Added conflict validation that rejects catalog bases already used by existing WordPress routes.
+* Preserved unrelated valid Slim Volume settings when a requested catalog base is rejected.
+* Rebuilt rewrite rules only after a successful catalog-base change.
+* Centralized catalog routing, archive URLs, and archive identity through the Slim Volume Catalog authority.
+* Updated release and track permalink generation to follow the configured catalog base.
+* Updated AJAX music navigation to receive the authoritative catalog URL from PHP instead of assuming `/music/`.
+* Updated archive, release, and track breadcrumbs to follow the configured archive identity.
+* Updated admin track route previews to use the configured catalog base.
+* Updated Slim Volume archive SEO identity and SEO-facing URLs to follow the configured catalog settings.
+* Kept the visible archive introduction independent from the dedicated SEO archive description.
+* Removed active hardcoded `/music/` URL assumptions from catalog routing, templates, navigation, admin previews, and Slim Volume SEO.
+* Preserved existing `with_front => false` permalink behavior.
 
 = 0.6.1 =
 * Refined desktop and mobile player visuals with tighter spacing, clearer hierarchy, and more consistent control sizing.
