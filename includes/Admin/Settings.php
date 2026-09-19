@@ -876,7 +876,7 @@ public static function maybe_flush_catalog_rewrite_rules(): void
                                 <?php self::render_checkbox_row(
                                     'ajax_navigation',
                                     __('Keep music playing between pages', 'slim-volume'),
-                                    __('Keep audio playing while visitors move between the /music archive, release pages, and track pages.', 'slim-volume'),
+                                    __('Keep audio playing while visitors move between the catalog archive, release pages, and track pages.', 'slim-volume'),
                                     $settings,
                                     __('Requires the frontend player to be enabled.', 'slim-volume')
                                 ); ?>
@@ -1018,7 +1018,7 @@ public static function maybe_flush_catalog_rewrite_rules(): void
                         <h2><?php echo esc_html__('Release Card Links', 'slim-volume'); ?></h2>
                         <p class="description">
                             <?php echo esc_html__(
-                                'Choose what happens when a visitor clicks release artwork or a release title on the /music page.',
+                                'Choose what happens when a visitor clicks release artwork or a release title on the catalog archive.',
                                 'slim-volume'
                             ); ?>
                         </p>
@@ -1070,7 +1070,7 @@ public static function maybe_flush_catalog_rewrite_rules(): void
                                 <?php self::render_checkbox_row(
                                     'projects_show_archive',
                                     __('Show artist/project on archive cards', 'slim-volume'),
-                                    __('Display the resolved artist or project name beneath each release title on /music.', 'slim-volume'),
+                                    __('Display the resolved artist or project name beneath each release title on the catalog archive.', 'slim-volume'),
                                     $settings,
                                     __('Useful for studios, labels, producers, and mixed-artist catalogs. Leave this off for a cleaner single-artist discography.', 'slim-volume')
                                 ); ?>
@@ -1093,7 +1093,7 @@ public static function maybe_flush_catalog_rewrite_rules(): void
 
                                 <?php self::render_checkbox_row(
                                     'projects_archive_filter',
-                                    __('Show artist/project filter on /music', 'slim-volume'),
+                                    __('Show artist/project filter on archive', 'slim-volume'),
                                     __('Add an artist/project dropdown to the public discography filters.', 'slim-volume'),
                                     $settings,
                                     __('The filter lists assigned Artists & Projects. Releases using only the global fallback remain visible under All artists/projects.', 'slim-volume')

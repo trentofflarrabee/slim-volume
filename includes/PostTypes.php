@@ -97,14 +97,14 @@ final class PostTypes
                  * Important:
                  * hierarchical=true allows duplicate track slugs across different
                  * release parents. This supports:
-                 * /music/album-one/intro
-                 * /music/album-two/intro
+                 * /{catalog-base}/album-one/intro
+                 * /{catalog-base}/album-two/intro
                  */
                 'hierarchical'        => true,
 
                 /*
                  * We handle track permalinks ourselves:
-                 * /music/{release-slug}/{track-slug}
+                 * /{catalog-base}/{release-slug}/{track-slug}
                  */
                 'rewrite'             => false,
                 'query_var'           => false,
