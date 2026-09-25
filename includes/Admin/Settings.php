@@ -994,24 +994,55 @@ public static function maybe_flush_catalog_rewrite_rules(): void
                         </tbody>
                     </table>
 
-                    <p class="description">
-                        <?php
-                            printf(
-                                /* translators: %s: Current Slim Volume catalog archive URL. */
-                                esc_html__('Current archive URL: %s', 'slim-volume'),
-                                esc_url(Catalog::get_archive_url())
-                            );
-                        ?>
-                    </p>
+                    <?php
+                    $archive_url  = Catalog::get_archive_url();
+                    $archive_path = wp_parse_url($archive_url, PHP_URL_PATH);
+
+                    if (! is_string($archive_path) || $archive_path === '') {
+                        $archive_path = '/';
+                    }
+                    ?>
+
+
+
+                    <div class="notice notice-info inline sv-settings-notice">
+                        <p>
+                            <strong>
+                                <?php esc_html_e('Add Music to your site navigation', 'slim-volume'); ?>
+                            </strong>
+                        </p>
 
                     <p class="description">
-                        <?php
-                        echo esc_html__(
-                            'Changing the URL base may break existing links unless you add redirects.',
-                            'slim-volume'
-                        );
-                        ?>
+                        <strong>
+                            <?php
+                            printf(
+                                /* translators: %s: Current Slim Volume catalog archive path. */
+                                esc_html__('Current archive path: %s', 'slim-volume'),
+                                '<code>' . esc_html($archive_path) . '</code>'
+                            );
+                            ?>
+                        </strong>
                     </p>
+
+                        <p>
+                            <?php
+                            echo esc_html__(
+                                'Slim Volume uses a virtual archive rather than a WordPress Page. Add a Custom Link using the archive path shown above. You can label the link “Music,” “Discography,” or anything you prefer.',
+                                'slim-volume'
+                            );
+                            ?>
+                        </p>
+
+                        <p>
+                            <?php
+                            echo esc_html__(
+                                'Changing the URL base changes archive, release, and track URLs. Existing links may require redirects, and any custom navigation link to the catalog must be updated manually.',
+                                'slim-volume'
+                            );
+                            ?>
+                        </p>
+                    </div>
+
                 </div>
 
                     <div class="sv-settings-section">

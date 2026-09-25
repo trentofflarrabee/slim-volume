@@ -458,6 +458,19 @@
   margin: 0;
 }
 
+.sv-settings-notice {
+  margin-top: 16px;
+  margin-bottom: 12px;
+}
+
+.sv-settings-notice p:first-child {
+  margin-bottom: 4px;
+}
+
+.sv-settings-notice p:last-child {
+  margin-top: 0;
+}
+
 @media (max-width: 1180px) {
   .sv-settings-appearance-layout {
     grid-template-columns: 1fr;
