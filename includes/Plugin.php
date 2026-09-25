@@ -34,6 +34,7 @@ require_once SLIM_VOLUME_PATH . 'includes/Frontend/TemplateLoader.php';
 require_once SLIM_VOLUME_PATH . 'includes/Frontend/PlayerData.php';
 require_once SLIM_VOLUME_PATH . 'includes/Frontend/ArchiveQuery.php';
 require_once SLIM_VOLUME_PATH . 'includes/Frontend/Seo.php';
+require_once SLIM_VOLUME_PATH . 'includes/Frontend/NavMenu.php';
 require_once SLIM_VOLUME_PATH . 'includes/Admin/ReleaseMetaBoxes.php';
 require_once SLIM_VOLUME_PATH . 'includes/Admin/TrackMetaBoxes.php';
 require_once SLIM_VOLUME_PATH . 'includes/Admin/AdminColumns.php';
@@ -153,6 +154,11 @@ add_filter('template_include', [Frontend\TemplateLoader::class, 'template_includ
 add_filter(
     'document_title_parts',
     [Frontend\Seo::class, 'filter_document_title']
+);
+
+add_filter(
+    'wp_nav_menu_objects',
+    [Frontend\NavMenu::class, 'filter_items']
 );
 
 add_action('wp_head', [Frontend\Seo::class, 'render'], 2);
