@@ -6,9 +6,17 @@ It provides release archives, single release pages, track deep-dive pages, admin
 
 ## Current Status
 
-`v0.7.0`
+`v0.7.1`
 
 Slim Volume is still in beta and is intended for controlled production use and early customer projects. APIs, templates, settings, and markup may still change before the first stable release.
+
+## Highlights in 0.7.1
+
+- Normalized WordPress navigation menu state on Slim Volume archive, release, and track routes.
+- Prevented the configured Blog posts page from appearing active while browsing Slim Volume catalog content.
+- Improved active-state handling for catalog navigation links.
+- Added clearer guidance for adding the Slim Volume virtual archive to site navigation with a Custom Link.
+- Added the current catalog archive path to the settings UI so users can easily copy the correct navigation destination.
 
 ## Highlights in 0.7.0
 
@@ -97,6 +105,8 @@ The catalog URL base can be changed under **Music → Settings**. For example, s
 /discography/{release-slug}/
 /discography/{release-slug}/{track-slug}/
 ```
+
+Slim Volume's catalog is a virtual archive rather than a WordPress Page. To add it to site navigation, add a **Custom Link** using the current archive path shown under **Music → Settings → Catalog**. For example, with the default configuration, use `/music/`. If the catalog base is changed later, update that navigation link to the new path.
 
 Changing the catalog base changes archive, release, and track URLs. Existing links using the previous base may require redirects.
 
@@ -278,4 +288,4 @@ The public `window.SVPlayer` object is treated as a compatibility facade. Intern
 
 Current beta release:
 
-`v0.7.0`
+`v0.7.1`

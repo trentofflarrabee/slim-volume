@@ -2,7 +2,7 @@
 Tags: music, audio player, albums, lyrics, artists
 Requires at least: 6.0
 Tested up to: 7.1
-Stable tag: 0.7.0
+Stable tag: 0.7.1
 Requires PHP: 8.0
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -33,7 +33,7 @@ It provides:
 * Theme, player, and visualizer settings.
 * Theme template overrides.
 
-Version 0.7.0 remains a beta release intended for controlled production use and early customer projects. Back up the WordPress site before installing an update.
+Version 0.7.1 remains a beta release intended for controlled production use and early customer projects.
 
 == Installation ==
 
@@ -98,6 +98,16 @@ Yes. Open Music > Settings and change the Music URL base. For example, entering 
 
 Slim Volume rejects a requested base when it conflicts with an existing WordPress route. Changing the base after publishing content may also require redirects for existing external links.
 
+= How do I add the music catalog to my site navigation? =
+
+Slim Volume uses a virtual archive rather than a WordPress Page.
+
+Add the catalog to your site navigation as a Custom Link using the current archive path shown under Music > Settings > Catalog. With the default configuration, the path is `/music/`.
+
+You can label the navigation link “Music,” “Discography,” or anything else you prefer.
+
+If you later change the Slim Volume catalog URL base, update the Custom Link in your site navigation to use the new archive path.
+
 = Why do my music URLs contain index.php or return a 404? =
 
 Open Settings > Permalinks and select a pretty permalink structure such as Post name (`/%postname%/`), then save the settings.
@@ -145,6 +155,13 @@ Source: https://github.com/jberg/butterchurn
 The applicable third-party license information is also bundled with the distributed plugin.
 
 == Changelog ==
+
+= 0.7.1 =
+* Normalized WordPress navigation menu state on Slim Volume archive, release, and track routes.
+* Prevented the configured Blog posts page from appearing active while browsing Slim Volume catalog content.
+* Improved active-state handling for catalog navigation links.
+* Added clearer guidance for adding the Slim Volume virtual archive to site navigation using a Custom Link.
+* Added the current catalog archive path to the settings UI for easier navigation setup.
 
 = 0.7.0 =
 * Added a configurable catalog URL base, with `/music/` preserved as the default.

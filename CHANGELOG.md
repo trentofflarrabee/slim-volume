@@ -2,6 +2,17 @@
 
 All notable changes to Slim Volume are documented here.
 
+## 0.7.1
+
+### Changed
+- Added clearer guidance for adding the Slim Volume catalog to site navigation using a Custom Link.
+- Added current archive-path guidance to the catalog settings UI.
+
+### Fixed
+- Normalized WordPress navigation menu state on Slim Volume archive, release, and track routes.
+- Prevented the configured Blog posts page from appearing active while browsing Slim Volume catalog content.
+- Improved active-state handling for catalog navigation links.
+
 ## 0.7.0
 
 ### Added
